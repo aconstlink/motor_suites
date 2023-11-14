@@ -1,7 +1,10 @@
 
 
 set( subdirs
-    "00_basics"
+    "00_basic_allocator"
+    "00_memory"
+    "01_basics"
+    "02_containers"
     )
 
 if( WIN32 )

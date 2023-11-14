@@ -1,6 +1,6 @@
 
-#include <motor/core/memory/global.h>
-#include <motor/core/log/global.h>
+#include <motor/memory/global.h>
+#include <motor/log/global.h>
 
 namespace this_file
 {
@@ -76,6 +76,7 @@ int main( int argc, char ** argv )
         motor::memory::global_t::release( some_data ) ;
     }
 
+    motor::log::global_t::deinit() ;
     motor::memory::global_t::dump_to_std() ;
 
 
