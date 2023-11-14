@@ -48,7 +48,7 @@ int main( int argc, char ** argv )
     
 
     {
-        motor::core::string_t s ;
+        motor::string_t s ;
 
         s = "Hello World" ;
 
@@ -56,7 +56,7 @@ int main( int argc, char ** argv )
     }
 
     {
-        typedef motor::core::vector< this_file::my_class > my_vector_t ;
+        typedef motor::vector< this_file::my_class > my_vector_t ;
 
         // state the purpose in the ctor so memory tracking will be
         // simplified if memory leaks occurred and memory need to be 

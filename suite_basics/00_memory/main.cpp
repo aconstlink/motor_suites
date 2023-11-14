@@ -72,10 +72,10 @@ namespace this_file
 
     #else
     #define motor_used 1
-    using string_t = motor::core::string_t ;
+    using string_t = motor::string_t ;
 
     template< typename T >
-    using vector = motor::core::vector< T > ;
+    using vector = motor::vector< T > ;
 
     #endif
 }
