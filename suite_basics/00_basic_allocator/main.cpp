@@ -143,12 +143,14 @@ namespace this_file
     };
 }
 
-
+// this test helped to narrow down a bug in 
+// the engines' std allocator replacement class.
 int main( int argc, char ** argv )
 {
     {
         this_file::some_class sc ;
     }
+
     #if 0
     {
         this_file::data_vector_t my_array( this_file::data_vector_t::allocator_type("my purpose") ) ;

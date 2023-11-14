@@ -63,7 +63,12 @@ namespace this_file
         #endif
     };
 
+    //
+    // use this flag to use engines' allocator or the 
+    // dummy allocator from above.
+    //
     #if 0
+
     #define motor_used 0
     using string_t = std::basic_string< char, std::char_traits<char>, allocator< char > > ;
     
@@ -80,6 +85,8 @@ namespace this_file
     #endif
 }
 
+// this test helped to narrow down and fix a bug in 
+// the engines' std allocator replacement class.
 int main( int argc, char ** argv )
 {
     {

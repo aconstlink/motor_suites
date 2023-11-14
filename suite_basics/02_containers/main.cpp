@@ -31,10 +31,14 @@ namespace this_file
 
 int main( int argc, char ** argv )
 {
+    // want to test the function pointer in the
+    // memory global on init of the system
     {
-
+        motor::memory::global_t::dump_to_std() ;
     }
 
+    // want to test memory allocation and deallocation
+    // of motor log system components.
     {
         //motor::memory::global_t::init() ;
 
@@ -45,8 +49,8 @@ int main( int argc, char ** argv )
         motor::memory::global_t::dump_to_std() ;
     }
 
-    
-
+    // want to test motor std allocator with 
+    // std string from the engine.
     {
         motor::string_t s ;
 
@@ -55,6 +59,7 @@ int main( int argc, char ** argv )
         motor::memory::global_t::dump_to_std() ;
     }
 
+    // want to test more complex allocation scenario.
     {
         typedef motor::vector< this_file::my_class > my_vector_t ;
 
@@ -68,7 +73,10 @@ int main( int argc, char ** argv )
         motor::memory::global_t::dump_to_std() ;
     }
 
+    // deinit log system so ...
     motor::log::global_t::deinit() ;
+
+    // ... memory dump should show 0 sib allocated!
     motor::memory::global_t::dump_to_std() ;
 
     return 0 ;
