@@ -64,13 +64,13 @@ int main( int argc, char ** argv )
         {
             auto * ptr = motor::memory::copy_ptr( some_data ) ;
 
-            auto * other = this_file::do_something_take_over( 
-                motor::memory::move_ptr( ptr ) ) ;
+            auto * other = this_file::do_something_take_over( std::move( ptr ) ) ;
+                //motor::memory::move_ptr( ptr ) ) ;
         }
 
         {
             auto * other = this_file::do_something_take_over( 
-                motor::memory::move_ptr( motor::memory::copy_ptr( some_data ) ) ) ;
+                std::move( motor::memory::copy_ptr( some_data ) ) ) ;
         }
 
         motor::memory::global_t::release( some_data ) ;
