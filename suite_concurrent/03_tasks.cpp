@@ -51,18 +51,22 @@ int main( int argc, char ** argv )
 
     motor::memory::global_t::dump_to_std() ;
 
-    motor::concurrent::loose_thread_scheduler lts ;
-    lts.init() ;
-
-    lts.schedule( std::move( t0 ) ) ;
-
-    while( run_loop )
     {
-        lts.update() ;
-        std::this_thread::sleep_for( std::chrono::milliseconds(100) ) ;
+        motor::concurrent::loose_thread_scheduler lts ;
+        lts.init() ;
+
+        lts.schedule( motor::move( t0 ) ) ;
+
+        while( run_loop )
+        {
+            lts.update() ;
+            std::this_thread::sleep_for( std::chrono::milliseconds(100) ) ;
+        }
+
+        lts.deinit() ;
     }
 
-    lts.deinit() ;
-
+    motor::log::global_t::deinit() ;
+    motor::memory::global_t::dump_to_std() ;
     return 0 ;
 }

@@ -1,15 +1,10 @@
 
-#include "main.h"
-
 #include <motor/concurrent/global.h>
 #include <motor/concurrent/semaphore.hpp>
+#include <motor/concurrent/sync_object.hpp>
 #include <motor/concurrent/thread_pool.hpp>
 #include <motor/log/global.h>
 #include <algorithm>
-
-using namespace motor::core::types ;
-
-motor::concurrent::thread_pool_t tp ;
 
 //
 // the thread pool is not particularly suited for 
@@ -18,11 +13,11 @@ motor::concurrent::thread_pool_t tp ;
 //
 int main( int argc, char ** argv )
 {
-    tp.init() ;
+    using namespace motor::core::types ;
 
     motor::concurrent::mutex_t mtx ;
     typedef std::pair< std::thread::id, size_t > count_t ;
-    motor::ntd::vector< count_t > counts ;
+    motor::vector< count_t > counts( motor::vector< count_t >::allocator_type("count vector") ) ;
     
     auto inc_thread_counter = [&]( void_t )
     {
@@ -37,75 +32,99 @@ int main( int argc, char ** argv )
         else counts.emplace_back( count_t( id, 1 ) ) ;
     } ;
 
-    // add 1 task
+    
     {
-        motor::log::global_t::status("[SECTION 1] : adding one task") ;
-        auto const task_funk = [&]( motor::concurrent::task_res_t )
-        {
-            inc_thread_counter() ;
+        motor::concurrent::thread_pool_t tp ;
 
-            for( size_t i=0; i<100000; ++i ) 
+        tp.init() ;
+
+        // add 1 task
+        {
+            motor::log::global_t::status("[SECTION 1] : adding one task") ;
+            auto const task_funk = [&]( motor::concurrent::task_mtr_t )
             {
-                // busy
-            }
-        } ;
+                inc_thread_counter() ;
 
-        motor::concurrent::task_res_t t0 = motor::concurrent::task_t( task_funk ) ;
-        tp.schedule( t0 ) ;
-    }
+                for( size_t i=0; i<100000; ++i ) 
+                {
+                    // busy
+                }
+            } ;
 
-    // add n tasks
-    {
-        motor::log::global_t::status("[SECTION 2] : adding n task linearly") ;
-        size_t const n = 30000 ;
-
-        motor::concurrent::semaphore_t task_counter(n) ;
-
-        auto const task_funk = [&]( motor::concurrent::task_res_t )
-        {
-            inc_thread_counter() ;
-
-            for( size_t i=0; i<100000; ++i ) 
-            {
-                // busy
-            }
-
-            task_counter.decrement() ;
-        } ;
-
-        motor::ntd::vector< motor::concurrent::task_res_t > tasks( n ) ;
-        for( size_t i=0; i<n; ++i )
-        {
-            tasks[i] = motor::concurrent::global_t::make_task( task_funk ) ;
+            tp.schedule( motor::memory::create( motor::concurrent::task_t( task_funk ) ) ) ;
         }
 
-        for( size_t i=0; i<n; ++i )
+        tp.shutdown() ;
+    }
+    //motor::memory::global_t::dump_to_std() ;
+
+
+    {
+        motor::concurrent::thread_pool_t tp ;
+
+        tp.init() ;
+
+        // add n tasks
         {
-            tp.schedule( tasks[i] ) ;
+            motor::log::global_t::status("[SECTION 2] : adding n task linearly") ;
+            size_t const n = 30000 ;
+
+            motor::concurrent::semaphore_t task_counter(n) ;
+
+            auto const task_funk = [&]( motor::concurrent::task_mtr_t )
+            {
+                inc_thread_counter() ;
+
+                for( size_t i=0; i<100000; ++i ) 
+                {
+                    // busy
+                }
+
+                task_counter.decrement() ;
+            } ;
+
+            motor::vector< motor::concurrent::task_mtr_t > tasks( n ) ;
+            for( size_t i=0; i<n; ++i )
+            {
+                tasks[i] = motor::concurrent::global_t::make_task( task_funk ) ;
+            }
+
+            for( size_t i=0; i<n; ++i )
+            {
+                tp.schedule( motor::move( tasks[i] ) ) ;
+            }
+
+            // wait until semaphore == 0
+            task_counter.wait(0) ;
         }
 
-        // wait until semaphore == 0
-        task_counter.wait(0) ;
+        tp.shutdown() ;
     }
+    //motor::memory::global_t::dump_to_std() ;
 
+        
     // test dynamic task insertion
     // the root task inserts n tasks during
     // it is being executed
     {
+        motor::concurrent::thread_pool_t tp ;
+
+        tp.init() ;
+
         motor::log::global_t::status("[SECTION 3] : adding n inbetweeners") ;
 
         size_t const num_in_betweens = 10000 ;
         motor::concurrent::semaphore_t sem_counter(num_in_betweens) ;
 
-        motor::concurrent::sync_object_res_t so =  motor::concurrent::sync_object_t() ;
+        motor::concurrent::sync_object_mtr_t so =  motor::memory::create( motor::concurrent::sync_object_t() ) ;
 
-        motor::concurrent::task_res_t root = motor::concurrent::global_t::make_task( [&]( motor::concurrent::task_res_t this_task )
+        motor::concurrent::task_mtr_t root = motor::concurrent::global_t::make_task( [&]( motor::concurrent::task_mtr_t this_task )
         {
             inc_thread_counter() ;
 
             for( size_t i=0; i<num_in_betweens; ++i ) 
             {
-                this_task->in_between( motor::concurrent::global_t::make_task( [&]( motor::concurrent::task_res_t )
+                this_task->in_between( motor::concurrent::global_t::make_task( [&]( motor::concurrent::task_mtr_t )
                 {
                     // make it busy
                     for( size_t i=0; i<1000000; ++i ) 
@@ -116,34 +135,43 @@ int main( int argc, char ** argv )
             }
         });
 
-        motor::concurrent::task_res_t merge = motor::concurrent::global_t::make_task( [=]( motor::concurrent::task_res_t )
+        motor::concurrent::task_mtr_t merge = motor::concurrent::global_t::make_task( [=]( motor::concurrent::task_mtr_t )
         {
             so->set_and_signal() ;
         } );
 
-        root->then( merge ) ;
+        root->then( motor::move(merge) ) ;
 
-        tp.schedule( root ) ;
+        tp.schedule( motor::move(root) ) ;
 
         // wait until the sync object is 
         // being signaled in the merge task
         so->wait() ;
 
-        natus_assert( sem_counter == num_in_betweens ) ;
+        assert( sem_counter == 0 ) ;
+
+        motor::memory::release_ptr( so ) ;
+
+        tp.shutdown() ;
     }
+    //motor::memory::global_t::dump_to_std() ;
 
     // parallel for with yield and nested
     // this will serve as the prototype for the natus in-engine parallel_for
     {
+        motor::concurrent::thread_pool_t tp ;
+
+        tp.init() ;
+
         motor::log::global_t::status("[SECTION 4] : nested parallel for") ;
         
         motor::concurrent::semaphore_t sem_counter(1) ;
         motor::concurrent::semaphore_t task_counter ;
 
         size_t const num_splits = std::thread::hardware_concurrency() ;
-        motor::log::global_t::status("[SECTION 4] : there should be " + std::to_string(num_splits*num_splits) + " tasks" ) ;
+        motor::log::global_t::status( motor::from_std( "[SECTION 4] : there should be " + std::to_string(num_splits*num_splits) + " tasks" ) ) ;
 
-        motor::concurrent::task_res_t root = motor::concurrent::global_t::make_task( [&]( motor::concurrent::task_res_t this_task )
+        motor::concurrent::task_mtr_t root = motor::concurrent::global_t::make_task( [&]( motor::concurrent::task_mtr_t this_task )
         {
             inc_thread_counter() ;
             
@@ -154,7 +182,7 @@ int main( int argc, char ** argv )
             // outer for: create num_splits tasks that will yield
             for( size_t i=0; i<num_splits; ++i ) 
             {
-                tp.schedule( motor::concurrent::global_t::make_task( [&]( motor::concurrent::task_res_t )
+                tp.schedule( motor::concurrent::global_t::make_task( [&]( motor::concurrent::task_mtr_t )
                 {
                     inc_thread_counter() ;
 
@@ -163,7 +191,7 @@ int main( int argc, char ** argv )
                     // inner for
                     for( size_t i=0; i<num_splits; ++i ) 
                     {
-                        tp.schedule( motor::concurrent::global_t::make_task( [&]( motor::concurrent::task_res_t )
+                        tp.schedule( motor::concurrent::global_t::make_task( [&]( motor::concurrent::task_mtr_t )
                         {
                             inc_thread_counter() ;
 
@@ -192,12 +220,15 @@ int main( int argc, char ** argv )
             } ) ;
         });
         
-        tp.schedule( root ) ;
+        tp.schedule( motor::move(root) ) ;
         sem_counter.wait( 0 ) ;
 
-        motor::log::global_t::status("[SECTION 4] : tasks executed " + std::to_string(task_counter.value()) ) ;
+        motor::log::global_t::status( motor::from_std("[SECTION 4] : tasks executed " + std::to_string(task_counter.value())) ) ;
+        task_counter = 0 ;
     }
-    
-    
+
+    motor::memory::global_t::dump_to_std() ;
+    motor::log::global_t::deinit() ;
+    motor::memory::global_t::dump_to_std() ;
     return 0 ;
 }
