@@ -1,13 +1,7 @@
 
 
 set( tests
-    "00_test_task.cpp"
-    "01_parallel_for.cpp"
-    "02_tasks.cpp"
-    "03_tasks.cpp"
-    "04_thread_pool.cpp"
-    "05_parallel_for.cpp"
-    "06_loose_scheduler.cpp"
+    "00_database.cpp"
     )
 
 if( WIN32 )
@@ -27,9 +21,13 @@ foreach( _test ${tests} )
 
   add_executable( ${app_name} ${_test} ) 
   target_link_libraries( ${app_name} 
+    PRIVATE motor::io 
     PRIVATE motor::concurrent 
     PRIVATE motor::memory )
 
-  set_target_properties( ${app_name} PROPERTIES FOLDER "suite_concurrent" )
+  set_target_properties( ${app_name} PROPERTIES FOLDER "suite_io" )
+
+  set( data_path ${CMAKE_CURRENT_LIST_DIR} ) 
+  target_compile_definitions( ${app_name} PRIVATE -DDATAPATH="${data_path}")
 
 endforeach()

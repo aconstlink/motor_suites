@@ -18,6 +18,7 @@ motor_emacs_default_directory( "${CMAKE_CURRENT_LIST_DIR}/motor" )
 add_subdirectory( "suite_basics" )
 add_subdirectory( "suite_memory" )
 add_subdirectory( "suite_concurrent" )
+add_subdirectory( "suite_io" )
 
 motor_vs_gen_bat_for_dlls()
 
