@@ -25,6 +25,7 @@ int main( int argc, char ** argv )
                 }
             } ) ;
 
+        motor::log::global_t::status( motor::from_std( "counted: " + std::to_string(ia) ) );
         motor::memory::global_t::dump_to_std() ;
     }
 
@@ -42,6 +43,7 @@ int main( int argc, char ** argv )
                 }
             } ) ;
 
+        motor::log::global_t::status( motor::from_std( "counted: " + std::to_string(ia) ) );
         motor::memory::global_t::dump_to_std() ;
     }
 
