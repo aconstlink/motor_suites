@@ -1,7 +1,4 @@
 
-#include "main.h"
-
-
 #include <motor/concurrent/parallel_for.hpp>
 #include <motor/log/global.h>
 #include <algorithm>
@@ -15,7 +12,7 @@ int main( int argc, char ** argv )
 {
     motor::concurrent::mutex_t mtx ;
     typedef std::pair< std::thread::id, size_t > count_t ;
-    motor::ntd::vector< count_t > counts ;
+    motor::vector< count_t > counts( motor::vector< count_t >::allocator_type("counts") ) ;
     motor::concurrent::semaphore_t task_counter ;
     
     
@@ -52,16 +49,18 @@ int main( int argc, char ** argv )
             loop_counter.increment_by( r.difference() ) ;
         } ) ;
 
-        natus_assert( loop_counter.value() == n) ;
+        assert( loop_counter.value() == n) ;
+        loop_counter = 0 ;
         motor::log::global_t::status( "Leaving parallel_for") ;
     }
+    motor::memory::global_t::dump_to_std() ;
 
     // nested parallel_for
     {
         motor::log::global_t::status( "Entering nested parallel_for") ;
 
-        size_t const n1 = 137103 ;
-        size_t const n2 = 100000 ;
+        size_t const n1 = 13710 ;
+        size_t const n2 = 10000 ;
 
         motor::concurrent::semaphore_t loop_counter ;
 
@@ -87,12 +86,20 @@ int main( int argc, char ** argv )
             }
         } ) ;
 
-        natus_assert( loop_counter.value() == n1*n2) ;
+        assert( loop_counter.value() == n1*n2) ;
+        loop_counter = 0 ;
 
         motor::log::global_t::status( "Leaving nested parallel_for") ;
     }
-    
     motor::log::global_t::status( "Good Bye") ;
+
+
+    motor::memory::global_t::dump_to_std() ;
+    motor::concurrent::global_t::deinit() ;
+    motor::log::global_t::deinit() ;
+    motor::memory::global_t::dump_to_std() ;
+
+    task_counter = 0 ;
 
     return 0 ;
 }
