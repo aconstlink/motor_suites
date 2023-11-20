@@ -51,7 +51,7 @@ int main( int argc, char ** argv )
                 }
             } ;
 
-            tp.schedule( motor::memory::create( motor::concurrent::task_t( task_funk ) ) ) ;
+            tp.schedule( motor::memory::create_ptr( motor::concurrent::task_t( task_funk ) ) ) ;
         }
 
         tp.shutdown() ;
@@ -116,7 +116,7 @@ int main( int argc, char ** argv )
         size_t const num_in_betweens = 10000 ;
         motor::concurrent::semaphore_t sem_counter(num_in_betweens) ;
 
-        motor::concurrent::sync_object_mtr_t so =  motor::memory::create( motor::concurrent::sync_object_t() ) ;
+        motor::concurrent::sync_object_mtr_t so =  motor::memory::create_ptr( motor::concurrent::sync_object_t() ) ;
 
         motor::concurrent::task_mtr_t root = motor::concurrent::global_t::make_task( [&]( motor::concurrent::task_mtr_t this_task )
         {

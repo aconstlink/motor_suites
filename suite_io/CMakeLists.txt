@@ -1,7 +1,12 @@
 
 
 set( tests
-    "00_database.cpp"
+    "00_load.cpp"
+    "01_load_store.cpp"
+    "02_async.cpp"
+    "03_database_init.cpp"
+    "04_database_load.cpp"
+    "05_database_pack.cpp"
     )
 
 if( WIN32 )

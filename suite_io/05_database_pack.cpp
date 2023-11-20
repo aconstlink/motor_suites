@@ -5,12 +5,12 @@
 using namespace motor::core::types ;
 
 //
-// this test packs a natus database file from a file system working directory
+// this test packs a motor database file from a file system working directory
 // and for a few seconds, the data monitor can be tested by saving files in the working dir.
 //
 int main( int argc, char ** argv )
 {
-    motor::io::monitor_mtr_t mon = motor::memory::create( motor::io::monitor_t() ) ;
+    motor::io::monitor_mtr_t mon = motor::memory::create_ptr( motor::io::monitor_t() ) ;
 
     motor::io::database db( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
 
@@ -45,19 +45,24 @@ int main( int argc, char ** argv )
 
     db.pack() ;
 
-    for( size_t i=0; i<10; ++i )
+    // Just test file changes
+    size_t const checks = 4 ;
+    for( size_t i=0; i<checks; ++i )
     {
         mon->for_each_and_swap( [&]( motor::io::location_cref_t loc, motor::io::monitor_t::notify const n )
         {
             motor::log::global_t::status( "[monitor] : Got " + motor::io::monitor_t::to_string(n) + " for " + loc.as_string() ) ;
         }) ;
 
-        std::this_thread::sleep_for( ::std::chrono::milliseconds(1000) ) ;
+        std::this_thread::sleep_for( std::chrono::milliseconds(1000) ) ;
     }
 
     db.detach( mon ) ;
 
-    //db.dump_to_std() ;
+    db.dump_to_std() ;
+
+    motor::io::global_t::deinit() ;
+    motor::memory::global_t::dump_to_std() ;
 
     return 0 ;
 }

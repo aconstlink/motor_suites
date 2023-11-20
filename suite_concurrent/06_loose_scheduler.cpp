@@ -14,34 +14,34 @@ int main( int argc, char ** argv )
 {
     bool_t run_loop = true ;
 
-    motor::concurrent::task_mtr_t t0 = motor::memory::create(  motor::concurrent::task_t( [=]( motor::concurrent::task_mtr_t )
+    motor::concurrent::task_mtr_t t0 = motor::memory::create_ptr(  motor::concurrent::task_t( [=]( motor::concurrent::task_mtr_t )
     {
         motor::log::global_t::status( "t0" ) ;
     } ) ) ;
 
-    motor::concurrent::task_mtr_t t1 = motor::memory::create( motor::concurrent::task_t( [=]( motor::concurrent::task_mtr_t )
+    motor::concurrent::task_mtr_t t1 = motor::memory::create_ptr( motor::concurrent::task_t( [=]( motor::concurrent::task_mtr_t )
     {
         motor::log::global_t::status( "t1" ) ;
     } ) ) ;
 
-    motor::concurrent::task_mtr_t t2 = motor::memory::create(   motor::concurrent::task_t( [=]( motor::concurrent::task_mtr_t )
+    motor::concurrent::task_mtr_t t2 = motor::memory::create_ptr(   motor::concurrent::task_t( [=]( motor::concurrent::task_mtr_t )
     {
         motor::log::global_t::status( "t2" ) ;
     } ) );
 
-    motor::concurrent::task_mtr_t t3 = motor::memory::create(   motor::concurrent::task_t( [&]( motor::concurrent::task_mtr_t )
+    motor::concurrent::task_mtr_t t3 = motor::memory::create_ptr(   motor::concurrent::task_t( [&]( motor::concurrent::task_mtr_t )
     {
         run_loop = false ;
         motor::log::global_t::status( "good bye" ) ;
     } ) );
 
-    motor::concurrent::task_mtr_t t4 = motor::memory::create(  motor::concurrent::task_t( [=]( motor::concurrent::task_mtr_t )
+    motor::concurrent::task_mtr_t t4 = motor::memory::create_ptr(  motor::concurrent::task_t( [=]( motor::concurrent::task_mtr_t )
     {
         std::this_thread::sleep_for( std::chrono::milliseconds(100) ) ;
         motor::log::global_t::status( "t4" ) ;
     } ) );
 
-    motor::concurrent::task_mtr_t t5 = motor::memory::create(  motor::concurrent::task_t( [=]( motor::concurrent::task_mtr_t )
+    motor::concurrent::task_mtr_t t5 = motor::memory::create_ptr(  motor::concurrent::task_t( [=]( motor::concurrent::task_mtr_t )
     {
         motor::log::global_t::status( "t5" ) ;
     } ) ) ;
