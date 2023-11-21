@@ -6,7 +6,8 @@ set( tests
     "02_async.cpp"
     "03_database_init.cpp"
     "04_database_load.cpp"
-    "05_database_pack.cpp"
+    "05_database_monitor.cpp"
+    "06_database_pack.cpp"
     )
 
 if( WIN32 )
