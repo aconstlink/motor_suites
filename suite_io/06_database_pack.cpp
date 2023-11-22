@@ -26,7 +26,7 @@ int main( int argc, char ** argv )
         db.pack() ;
 
         {
-            motor::string_t txt("Store after pack") ;
+            motor::string_t txt2("Store after pack") ;
             {
                 db.store( motor::io::location_t( "some_info2.txt" ), txt.c_str(), txt.size() ).wait_for_operation( [=]( motor::io::result const res )
                 {

@@ -1,4 +1,4 @@
-cmake_minimum_required( VERSION 3.6 )
+cmake_minimum_required( VERSION 3.20 )
 project( "motor_suites" )
 
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build )
@@ -13,10 +13,13 @@ include( emacs_default_directory )
 
 motor_emacs_default_directory( "${CMAKE_CURRENT_LIST_DIR}/motor" )
 
+set( CMAKE_DEBUG_POSTFIX d )
+
 add_subdirectory( "suite_basics" )
 add_subdirectory( "suite_memory" )
-#add_subdirectory( "suite_concurrent" )
-#add_subdirectory( "suite_io" )
+add_subdirectory( "suite_concurrent" )
+add_subdirectory( "suite_io" )
 
+install( EXPORT suites-targets DESTINATION "cmake" )
 motor_vs_gen_bat_for_dlls()
 

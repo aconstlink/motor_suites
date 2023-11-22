@@ -16,4 +16,7 @@ foreach( _subdir ${subdirs} )
   set( app_name "${_subdir}" )
   add_subdirectory( ${_subdir} )
   set_target_properties( ${app_name} PROPERTIES FOLDER "suite_basics" )
+
+  install( TARGETS ${app_name} EXPORT suites-targets 
+    RUNTIME DESTINATION bin )
 endforeach()
