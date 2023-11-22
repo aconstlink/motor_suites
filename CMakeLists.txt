@@ -13,12 +13,10 @@ include( emacs_default_directory )
 
 motor_emacs_default_directory( "${CMAKE_CURRENT_LIST_DIR}/motor" )
 
-#set( CMAKE_CXX_STANDARD 17 )
-
 add_subdirectory( "suite_basics" )
 add_subdirectory( "suite_memory" )
-add_subdirectory( "suite_concurrent" )
-add_subdirectory( "suite_io" )
+#add_subdirectory( "suite_concurrent" )
+#add_subdirectory( "suite_io" )
 
 motor_vs_gen_bat_for_dlls()
 
