@@ -31,7 +31,7 @@ namespace this_file
 
     public:
 
-        allocator( void_t ) throw( ) {}
+        allocator( ) throw( ) {}
         allocator( this_cref_t rhv ) throw( ) : _purpose( rhv._purpose ) {}
         allocator( this_rref_t rhv ) throw( ) : _purpose( std::move( rhv._purpose ) ) {}
         allocator( char_cptr_t purpose ) throw( ) : _purpose( purpose ) {}
@@ -39,7 +39,7 @@ namespace this_file
         template< typename U >
         allocator( allocator<U> const& rhv ) throw( ) : _purpose( rhv._purpose ) {}
 
-        ~allocator( void_t ) {}
+        ~allocator( ) {}
 
     public:
 
@@ -54,7 +54,7 @@ namespace this_file
         }
 
         template <class U>     
-        this_ref_t operator=( allocator<U> const &) throw()
+        this_ref_t operator=( allocator<U> const & rhv ) throw()
         {
             _purpose = rhv._purpose ;
             return *this ;
