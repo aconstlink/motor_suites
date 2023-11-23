@@ -19,6 +19,7 @@ add_subdirectory( "suite_basics" )
 add_subdirectory( "suite_memory" )
 add_subdirectory( "suite_concurrent" )
 add_subdirectory( "suite_io" )
+add_subdirectory( "suite_math" )
 
 install( EXPORT suites-targets DESTINATION "cmake" )
 motor_vs_gen_bat_for_dlls()
