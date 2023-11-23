@@ -1,6 +1,7 @@
 
 #include <motor/log/global.h>
 #include <future>
+#include <thread>
 
 using namespace motor::core::types ;
 
