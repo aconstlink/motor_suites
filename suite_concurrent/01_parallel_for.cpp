@@ -13,7 +13,7 @@ int main( int argc, char ** argv )
 
     {
         size_t o =0;
-        std::atomic_size_t ia = 0 ;
+        std::atomic_size_t ia = size_t(0) ;
 
         motor::concurrent::parallel_for<size_t>( motor::concurrent::range_1d<size_t>( 100000 ), 
             [&]( motor::concurrent::range_1d< size_t > const & r )
@@ -31,7 +31,7 @@ int main( int argc, char ** argv )
 
     {
         size_t o =0;
-        std::atomic_size_t ia = 0 ;
+        std::atomic_size_t ia = size_t(0) ;
 
         motor::concurrent::parallel_for<size_t>( motor::concurrent::range_1d<size_t>( 100000 ), 
             [&]( motor::concurrent::range_1d< size_t > const & r )
@@ -49,7 +49,7 @@ int main( int argc, char ** argv )
 
     {
         size_t o =0;
-        std::atomic_size_t ia = 0 ;
+        std::atomic_size_t ia = size_t(0) ;
 
         motor::concurrent::parallel_for<size_t>( motor::concurrent::range_1d<size_t>( 100000 ), 
             [&]( motor::concurrent::range_1d< size_t > const & r )
