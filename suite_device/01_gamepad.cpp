@@ -9,6 +9,13 @@
 
 using namespace motor::core::types ;
 
+// This test is incomplete.
+// It requires a system that creates and spawns a gamepad
+// Moreover that system needs to emulate gamepad events. 
+// @see 00_devices for an example.
+// testing the actual xinput module requires the application
+// layer which is not present at the moment. And if present
+// a particular test will be in the application test suite.
 void_t test_device( motor::device::xbc_device_mtr_t dev ) 
 {
     motor::device::layouts::xbox_controller_t ctrl( dev ) ;
