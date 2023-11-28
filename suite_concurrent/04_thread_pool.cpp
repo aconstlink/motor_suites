@@ -51,7 +51,7 @@ int main( int argc, char ** argv )
                 }
             } ;
 
-            tp.schedule( motor::move( motor::memory::create_ptr( motor::concurrent::task_t( task_funk ) ) ) ) ;
+            tp.schedule( motor::memory::create_ptr( motor::concurrent::task_t( task_funk ) ) ) ;
         }
 
         tp.shutdown() ;

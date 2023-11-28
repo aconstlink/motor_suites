@@ -175,8 +175,7 @@ int main( int argc, char ** argv )
 
     motor::device::global_t::init() ;
     {
-        motor::device::global_t::system()->add_module( 
-            motor::move( motor::memory::create_ptr( this_file::dummy_module(), "my device module" ) ) ) ;
+        motor::device::global_t::system()->add_module( motor::memory::create_ptr( this_file::dummy_module(), "my device module" ) ) ;
     }
     #if 0
     {
