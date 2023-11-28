@@ -12,7 +12,7 @@ int main( int argc, char ** argv )
     // to trigger std::_Container_proxy allocations on the heap.
     // This should be fixed somehow in terms of performance.
     {
-        motor::string_t test ;
+        motor::string_t test("test string") ;
         motor::vector< int > test_v ;
         motor::memory::global_t::dump_to_std() ;
     }
