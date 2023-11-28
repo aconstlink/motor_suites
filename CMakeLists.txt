@@ -1,6 +1,9 @@
 cmake_minimum_required( VERSION 3.20 )
 project( "motor_suites" )
 
+# required by motor
+set( CMAKE_CXX_STANDARD 17 )
+
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build )
 set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/build )
 
@@ -20,6 +23,8 @@ add_subdirectory( "suite_memory" )
 add_subdirectory( "suite_concurrent" )
 add_subdirectory( "suite_io" )
 add_subdirectory( "suite_math" )
+add_subdirectory( "suite_device" )
 
 install( EXPORT suites-targets DESTINATION "cmake" )
+
 

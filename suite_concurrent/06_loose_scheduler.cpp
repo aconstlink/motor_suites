@@ -53,7 +53,7 @@ int main( int argc, char ** argv )
         t0->in_between( motor::move(t5) ) ;
     }
 
-    motor::concurrent::global_t::schedule( motor::move(t0), motor::concurrent::schedule_type::loose ) ;
+    motor::concurrent::global_t::schedule( motor::move( t0 ), motor::concurrent::schedule_type::loose ) ;
 
     while( run_loop )
     {

@@ -51,7 +51,7 @@ int main( int argc, char ** argv )
                 }
             } ;
 
-            tp.schedule( motor::memory::create_ptr( motor::concurrent::task_t( task_funk ) ) ) ;
+            tp.schedule( motor::move( motor::memory::create_ptr( motor::concurrent::task_t( task_funk ) ) ) ) ;
         }
 
         tp.shutdown() ;
@@ -86,7 +86,7 @@ int main( int argc, char ** argv )
             motor::vector< motor::concurrent::task_mtr_t > tasks( n ) ;
             for( size_t i=0; i<n; ++i )
             {
-                tasks[i] = motor::concurrent::global_t::make_task( task_funk ) ;
+                tasks[i] = motor::concurrent::global_t::make_task( task_funk ).mtr() ;
             }
 
             for( size_t i=0; i<n; ++i )
@@ -133,12 +133,12 @@ int main( int argc, char ** argv )
                     --sem_counter ;
                 }) ) ;
             }
-        });
+        }).mtr() ;
 
         motor::concurrent::task_mtr_t merge = motor::concurrent::global_t::make_task( [=]( motor::concurrent::task_mtr_t )
         {
             so->set_and_signal() ;
-        } );
+        } ).mtr() ;
 
         root->then( motor::move(merge) ) ;
 
@@ -218,7 +218,7 @@ int main( int argc, char ** argv )
             {
                 return sem_counter != 0 ;
             } ) ;
-        });
+        }).mtr();
         
         tp.schedule( motor::move(root) ) ;
         sem_counter.wait( 0 ) ;
