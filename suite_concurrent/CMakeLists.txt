@@ -30,7 +30,7 @@ foreach( _test ${tests} )
       PRIVATE motor::concurrent 
       PRIVATE motor::memory )
 
-    set_target_properties( ${app_name} PROPERTIES FOLDER "suite_concurrent" )
+    set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_concurrent" )
 
     install( TARGETS ${app_name} EXPORT suites-targets 
       RUNTIME DESTINATION bin )

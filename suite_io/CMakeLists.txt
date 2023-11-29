@@ -31,7 +31,7 @@ foreach( _test ${tests} )
       PRIVATE motor::concurrent 
       PRIVATE motor::memory )
 
-    set_target_properties( ${app_name} PROPERTIES FOLDER "suite_io" )
+    set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_io" )
 
     set( data_path ${CMAKE_CURRENT_LIST_DIR} ) 
     target_compile_definitions( ${app_name} PRIVATE -DDATAPATH="${data_path}")

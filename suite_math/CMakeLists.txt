@@ -28,7 +28,7 @@ foreach( _test ${tests} )
       
        )
 
-    set_target_properties( ${app_name} PROPERTIES FOLDER "suite_math" )
+    set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_math" )
 
     set( data_path ${CMAKE_CURRENT_LIST_DIR} ) 
     target_compile_definitions( ${app_name} PRIVATE -DDATAPATH="${data_path}")
