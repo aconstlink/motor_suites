@@ -48,7 +48,7 @@ int main( int argc, char ** argv )
     {
         motor::io::database db( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
         {
-            db.load( motor::io::location_t( "some_info2.txt" ) ).wait_for_operation( [&] ( char_cptr_t data, size_t const sib )
+            db.load( motor::io::location_t( "some_info2.txt" ) ).wait_for_operation( [&] ( char_cptr_t data, size_t const sib, motor::io::result const )
             {
                 motor::log::global_t::status( "********************************" ) ;
                 motor::log::global_t::status( "Loaded: " + motor::string_t( data, sib ) ) ;
