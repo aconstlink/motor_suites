@@ -1,0 +1,35 @@
+
+//*
+config myconfig
+{
+    vertex_shader
+    {
+        mat4_t proj : projection ;
+        mat4_t view : view ;
+
+        in vec3_t pos : position ;
+        in vec2_t tx : texcoord0 ;
+
+        out vec2_t tx : texcoord0 ;
+        out vec4_t pos : position ;
+
+        void main()
+        {
+            vec3_t p = nsl.lib_a.myfunk( vec3_t( 1.0, 1.0, 1.0 ), in.pos, vec3_t( 0.5 ) ) ;
+            out.pos = proj * view * vec4_t( in.pos, 1.0 ) ; 
+        }
+    }
+
+    pixel_shader
+    {
+        tex2d_t some_texture ;
+
+        in vec2_t tx : texcoord0 ;
+        out vec4_t color : color ;
+
+        void main()
+        {
+            out.color = texture( some_texture, in.tx ) ;
+        }
+    }
+}

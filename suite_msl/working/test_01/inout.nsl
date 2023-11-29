@@ -1,0 +1,26 @@
+config inout_flow
+{
+    vertex_shader
+    {
+        inout vec4_t some_attr ;
+        inout float_t some_other ;
+        in vec4_t some_in ;
+        out vec4_t some_out ;
+
+        void main() 
+        {
+            out.some_attr = in.some_attr ;
+            out.some_other = in.some_other ;
+            out.some_out = in.some_in ;
+            return ;
+        }
+    }
+
+    pixel_shader
+    {
+        void main() 
+        {
+            return ;
+        }
+    }
+}

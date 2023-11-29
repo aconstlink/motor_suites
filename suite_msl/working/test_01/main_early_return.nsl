@@ -1,0 +1,18 @@
+config test_early
+{
+    vertex_shader
+    {
+        void main() 
+        {
+            return ;
+        }
+    }
+
+    pixel_shader
+    {
+        void main() 
+        {
+            return ;
+        }
+    }
+}

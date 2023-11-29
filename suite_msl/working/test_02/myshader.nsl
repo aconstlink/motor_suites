@@ -1,0 +1,53 @@
+
+//*
+config myconfig
+{
+    render_states
+    {}
+
+    vertex_shader
+    {
+        int_t vid : vertex_id ;
+        int_t iid : instance_id ;
+        int_t pid : primitive_id ;
+
+        mat4_t proj : projection ;
+        mat4_t view : view ;
+
+        float_t some_var ;
+
+        data_buffer_t my_data ;
+
+        in vec3_t pos : position ;
+        in vec2_t tx : texcoord ;
+
+        out vec2_t tex0 ;
+        out vec4_t pos : position ;
+
+        void main()
+        {
+            // build in function
+            vec3_t pos = nsl.math.xyz( nsl.math.xyz( in.pos * vec3_t( nsl.mylib.inner.pi) ) ) ;
+            pos = fetch_data( my_data, vid << 1 + 0 ).xyz ;
+
+            pos[vid] = pos[vid+1%3] + iid ;
+            out.pos = proj * view * nsl.math.to_vec4( pos ) ;
+        }
+    }
+
+    pixel_shader
+    {
+        tex2d_t some_texture ;
+
+        in vec2_t tex0 : texcoord ;
+        out  vec4_t color : color ;
+
+        void main()
+        {
+            out.color = as_vec4(1) ;
+            out.color = vec4_t(12) ; // not possible at the moment
+
+            out.color = texture( some_texture, in.tex0 ) ;
+        }
+    }
+}

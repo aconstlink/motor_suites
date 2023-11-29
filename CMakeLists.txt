@@ -24,6 +24,7 @@ add_subdirectory( "suite_concurrent" )
 add_subdirectory( "suite_io" )
 add_subdirectory( "suite_math" )
 add_subdirectory( "suite_device" )
+add_subdirectory( "suite_msl" )
 
 install( EXPORT suites-targets DESTINATION "cmake" )
 

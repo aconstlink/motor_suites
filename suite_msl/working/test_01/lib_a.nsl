@@ -1,0 +1,36 @@
+library lib_x
+{
+    void_t test_ops() 
+    {
+        int a = (50 * 10) + 1 ;
+        int b = ++( a - 10 * 30 )-- ;
+    }
+    void_t test_for( void_t ) { for( int i=0; i<10; ++(i) ){ abc; } }
+    float_t my_x( float_t x ){ return x ; }
+    float_t my_x( vec2_t x ){ return x.x ; }
+}
+
+library lib_a
+{
+    int_t a = 10 ;
+    uint_t b = 10u ;
+    float_t pi = 3.1231324323f ;
+    float_t a = 10.34234 ;
+
+    float_t myfunk( float_t a, float_t x )
+    {
+        nsl.lib_x.test_ops() ;
+        return step( a, nsl.lib_x.my_x( x ) ) ;
+    }
+
+    float_t myfunk( float_t a, float_t b, float_t x )
+    {
+        return pulse( a, b, nsl.lib_x.my_x( x ) ) ;
+    }
+
+    float_t myfunk( vec3_t a, vec3_t b, vec3_t x )
+    {
+        nsl.lib_x.test_ops() ;
+        return pulse( a, b, x ) ;
+    }
+}

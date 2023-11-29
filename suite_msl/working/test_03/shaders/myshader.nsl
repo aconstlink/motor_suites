@@ -1,0 +1,40 @@
+
+
+config myconfig
+{
+    render_states
+    {}
+
+    vertex_shader
+    {
+        mat4_t proj : projection ;
+        mat4_t view : view ;
+
+        in vec3_t pos : position ;
+        in vec2_t tx : texcoord ;
+
+        out vec4_t pos : position ;
+        out vec2_t tx : texcoord ;
+
+        void main()
+        {
+            out.tx = in.tx ;
+            out.pos = proj * view * vec4_t( in.pos, 1.0 ) ;
+        }
+    }
+
+    pixel_shader
+    {
+        tex2d_t some_texture ;
+        vec4_t some_color ;
+
+        in vec2_t tx : texcoord ;
+        out vec4_t color : color ;
+
+        void main()
+        {
+            out.color = texture( some_texture, in.tx ) ' some_color ;
+            out.color.x = pulse( 0.4, 0.6, in.tx.x ) ;
+        }
+    }
+}

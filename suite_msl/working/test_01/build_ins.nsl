@@ -1,0 +1,26 @@
+
+
+library test
+{
+    void_t test_funk( tex2d_t tex )
+    {
+        vec4_t color = texture_offset( tex, vec2_t(), vec2i_t() ) ;
+        texture_dims() ;
+    }
+}
+
+config myconfig
+{
+    vertex_shader
+    {
+        void main()
+        {
+            vec4_t color = texture_offset( tex, vec2_t(), vec2i_t() ) ;
+            texture_dims() ;
+        }
+    }
+
+    pixel_shader
+    {
+    }
+}

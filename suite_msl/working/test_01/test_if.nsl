@@ -1,0 +1,26 @@
+
+library if_test
+{
+    float_t funk()
+    {
+        int_t a = 4 ;
+        int_t b = 3 ;
+        if( a > b && b > a ) {}
+        else if( a < b ){}
+        else if( a == b ) {}
+        else {a}
+        return 4.0 ;
+    }
+}
+
+config test_if
+{
+    vertex_shader
+    {
+        void main() 
+        { 
+          nsl.if_test.funk() ; 
+          vec2_t p = pulse( 5.0, 4.0, 4.0 ) ;
+        }
+    }
+}

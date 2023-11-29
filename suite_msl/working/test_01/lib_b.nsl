@@ -1,0 +1,7 @@
+library lib_b
+{
+   float myfunk( float a, float b, float x ) 
+    {
+        return nsl.lib_a.myfunk( a, x ) - nsl.lib_a.myfunk( b, x ) ;
+    }
+}

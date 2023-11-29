@@ -1,0 +1,99 @@
+
+library math
+{
+    vec2_t xyz( in vec2_t vin ) {
+        return vin ;
+    }
+
+    vec3_t xyz( in vec3_t vin ) {
+        return vin ;
+    }
+
+    vec4_t to_vec4( in vec3_t vin ) {
+        return vec4_t( nsl.math.xyz( vin ), 1.0 ) ;
+    }
+}
+
+library mylib
+{
+    library inner
+    {
+        float_t pi = 3.1432423 ;
+        {{}}
+        float_t y = 1.0 ;
+        
+        vec2_t_t xyz( in vec2_t vin ) {
+            while( true ) {}
+            for( int i=0; i<10; ++i ){ abc }
+            return vin ;
+        }
+    }
+
+    float_t x = 1.0 ;
+}
+
+library mylib
+{
+    // comment
+    library inner
+    {
+        // comment 1
+        // comment 2
+        float_t pi = 3.1432423 ;
+        float_t c= 5648.3 ;
+        float_t x = 324 ;
+        vec3_t some_vec = vec3_t(1.0) ;
+
+        void no_args() {
+        }
+
+        void no_args( void ) {
+        }
+
+        void unknown_arg_type( in mat4 m, in some_type t ) {
+        }
+
+        vec3_t xyz( in vec3_t p0, in vec3_t p1, in float_t t ) {
+            return mix( p0, p1, t ) ;
+        }
+
+        vec2_t xyz( in vec2_t vin ) {
+            return vin ;
+        }
+
+        vec3_t xyz( in vec3_t vin ) {
+            return vin ;
+        }
+    }
+
+
+    float_t x = 1.0 ;
+
+    vec3_t ref_other( vec3_t vin )
+    {
+        return nsl.mylib.inner.xyz  ( vin * vec3_t( nsl.mylib.inner.pi ) ) ;
+    }
+
+    vec3_t xyz( vec3_t vin )
+    {
+        for( int i=0; i<10; ++i ){}
+
+        return vin ;
+    }
+}
+
+something_else xyz
+{}
+
+library mylib2
+{
+    vec3_t ref_other( vec3_t vin )
+    {
+        return nsl.mylib.inner.xyz( vin * vec3_t( nsl.mylib.inner.pi ) ) ;
+    }
+
+    vec3_t xyz( vec3_t vin )
+    {
+        return vin ;
+    }
+}
