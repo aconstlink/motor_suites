@@ -10,12 +10,12 @@ namespace this_file
 {
     using namespace motor::core::types ;
 
+
     class my_window : public motor::application::window
     {
-        // no instance calling this one here.
+        // does nothing in this test
         virtual void_t check_for_messages( void_t ) noexcept 
         {
-
         }
     };
     motor_typedef( my_window ) ;
@@ -44,7 +44,7 @@ int main( int argc, char ** argv )
         win->register_in( motor::share(lsn) ) ;
 
         // passed shared ptr to function, so need to 
-        // release our intance here
+        // release our instance here
         motor::memory::release_ptr( lsn ) ;
     }
 
@@ -56,7 +56,7 @@ int main( int argc, char ** argv )
         win->register_out( motor::share(lsn) ) ;
 
         // passed shared ptr to function, so need to 
-        // release our intance here
+        // release our instance here
         motor::memory::release_ptr( lsn ) ;
     }
 

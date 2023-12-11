@@ -2,6 +2,7 @@
 set( tests
     "00_window.cpp"
     "01_window_listener.cpp"
+    "02_window_listener.cpp"
     )
 
 if( WIN32 )
