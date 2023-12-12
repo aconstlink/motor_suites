@@ -26,6 +26,7 @@ add_subdirectory( "suite_math" )
 add_subdirectory( "suite_device" )
 add_subdirectory( "suite_msl" )
 add_subdirectory( "suite_application" )
+add_subdirectory( "suite_platform" )
 
 install( EXPORT suites-targets DESTINATION "cmake" )
 
