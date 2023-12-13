@@ -2,6 +2,7 @@
 set( tests
     "00_platform_window.cpp"
     "01_platform_window.cpp"
+    "02_platform_window_cursor.cpp"
     )
 
 if( WIN32 )
