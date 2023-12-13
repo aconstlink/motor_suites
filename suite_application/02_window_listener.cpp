@@ -78,7 +78,7 @@ namespace this_file
 
                 this->foreach_out( [&]( motor::application::iwindow_message_listener_mtr_t ptr ) 
                 {
-                    ptr->on_resize( msg ) ;
+                    ptr->on_message( msg ) ;
                 } ) ;
             }
 
@@ -89,7 +89,7 @@ namespace this_file
 
                 this->foreach_out( [&]( motor::application::iwindow_message_listener_mtr_t ptr ) 
                 {
-                    ptr->on_vsync( msg ) ;
+                    ptr->on_message( msg ) ;
                 } ) ;
             }
 
@@ -100,7 +100,7 @@ namespace this_file
 
                 this->foreach_out( [&]( motor::application::iwindow_message_listener_mtr_t ptr ) 
                 {
-                    ptr->on_fullscreen( msg ) ;
+                    ptr->on_message( msg ) ;
                 } ) ;
             }
         }
@@ -171,7 +171,7 @@ namespace this_file
 
                 _wnd->foreach_in( [&]( motor::application::iwindow_message_listener_mtr_t ptr ) 
                 {
-                    ptr->on_resize( msg ) ;
+                    ptr->on_message( msg ) ;
                 } ) ;
             }
         }

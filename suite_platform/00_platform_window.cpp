@@ -36,7 +36,7 @@ int main( int argc, char ** argv )
             wnd->register_in( motor::share( msgl_in ) ) ;
             wnd->register_out( motor::share( msgl_out ) ) ;
 
-            msgl_in->on_visible( motor::application::show_message( { true } ) ) ;
+            wnd->send_message( motor::application::show_message( { true } ) ) ;
         
             {
                 while( true ) 
@@ -66,8 +66,12 @@ int main( int argc, char ** argv )
             wnd->register_in( motor::share( msgl_in ) ) ;
             wnd->register_out( motor::share( msgl_out ) ) ;
 
-            msgl_in->on_visible( motor::application::show_message( { true } ) ) ;
-        
+            wnd->send_message( motor::application::show_message( { true } ) ) ;
+            std::this_thread::sleep_for( std::chrono::milliseconds(500) ) ;
+            wnd->send_message( motor::application::show_message( { false } ) ) ;
+            std::this_thread::sleep_for( std::chrono::milliseconds(500) ) ;
+            wnd->send_message( motor::application::show_message( { true } ) ) ;
+
             {
                 while( true ) 
                 {
@@ -107,7 +111,7 @@ int main( int argc, char ** argv )
         wnd->register_in( motor::share( msgl_in ) ) ;
         wnd->register_out( motor::share( msgl_out ) ) ;
 
-        msgl_in->on_visible( motor::application::show_message( { true } ) ) ;
+        wnd->send_message( motor::application::show_message( { true } ) ) ;
         
         {
             while( true ) 
@@ -147,7 +151,7 @@ int main( int argc, char ** argv )
         wnd->register_in( motor::share( msgl_in ) ) ;
         wnd->register_out( motor::share( msgl_out ) ) ;
 
-        msgl_in->on_visible( motor::application::show_message( { true } ) ) ;
+        wnd->send_message( motor::application::show_message( { true } ) ) ;
         
         {
             while( true ) 
@@ -187,7 +191,7 @@ int main( int argc, char ** argv )
         wnd->register_in( motor::share( msgl_in ) ) ;
         wnd->register_out( motor::share( msgl_out ) ) ;
 
-        msgl_in->on_visible( motor::application::show_message( { true } ) ) ;
+        wnd->send_message( motor::application::show_message( { true } ) ) ;
         
         {
             while( true ) 
