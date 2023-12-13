@@ -55,6 +55,7 @@ int main( int argc, char ** argv )
             }
         }
 
+        // open second window if first one has been closed
         {
             motor::application::window_info_t wi ;
             wi.x = 100 ;
@@ -213,6 +214,7 @@ int main( int argc, char ** argv )
         motor::memory::release_ptr( msgl_out ) ;
     }) ;
     
+    // end the program by closing the carrier
     auto fut_end = std::async( std::launch::async, [&]( void_t )
     {
         fut_update_loop.wait() ;

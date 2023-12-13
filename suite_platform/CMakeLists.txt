@@ -1,6 +1,7 @@
 
 set( tests
     "00_platform_window.cpp"
+    "01_platform_window.cpp"
     )
 
 if( WIN32 )
