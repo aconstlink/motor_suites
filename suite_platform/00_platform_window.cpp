@@ -11,13 +11,6 @@
 
 #include <motor/platform/application/win32/win32_carrier.h>
 
-namespace this_file
-{
-    using namespace motor::core::types ;
-
-    
-}
-
 int main( int argc, char ** argv )
 {
     using namespace motor::core::types ;
@@ -27,10 +20,10 @@ int main( int argc, char ** argv )
     auto fut_update_loop = std::async( std::launch::async, [&]( void_t )
     {
         motor::application::window_message_listener_mtr_t msgl_in = motor::memory::create_ptr<
-            motor::application::window_message_listener>( "message listener" ) ;
+            motor::application::window_message_listener>( "[in] : message listener" ) ;
 
         motor::application::window_message_listener_mtr_t msgl_out = motor::memory::create_ptr<
-            motor::application::window_message_listener>( "message listener" ) ;
+            motor::application::window_message_listener>( "[out] : message listener" ) ;
 
         {
             motor::application::window_info_t wi ;
@@ -216,15 +209,17 @@ int main( int argc, char ** argv )
         motor::memory::release_ptr( msgl_out ) ;
     }) ;
     
+    auto fut_end = std::async( std::launch::async, [&]( void_t )
+    {
+        fut_update_loop.wait() ;
+        fut_update_loop2.wait() ;
+        fut_update_loop3.wait() ;
+        fut_update_loop4.wait() ;
+
+        carrier->close() ;
+    } ) ;
 
     auto const ret = carrier->exec() ;
-
-    fut_update_loop.wait() ;
-    fut_update_loop2.wait() ;
-    fut_update_loop3.wait() ;
-    fut_update_loop4.wait() ;
-
-
     
     motor::memory::release_ptr( carrier ) ;
 
