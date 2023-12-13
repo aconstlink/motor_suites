@@ -9,7 +9,6 @@
 
 #include <future>
 
-#include <motor/platform/application/win32/win32_carrier.h>
 
 int main( int argc, char ** argv )
 {
