@@ -5,6 +5,7 @@
 
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
+#include <thread>
 #include <future>
 #include <chrono>
 
