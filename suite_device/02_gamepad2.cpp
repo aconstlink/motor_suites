@@ -43,11 +43,11 @@ namespace this_file
             _wid_async = this_t::create_window( "A Render Window", wi ) ;
         }
         test_app( this_cref_t ) = delete ;
-        test_app( this_rref_t rhv ) : app( ::std::move( rhv ) ) 
+        test_app( this_rref_t rhv ) : app( std::move( rhv ) ) 
         {
-            _wid_async = ::std::move( rhv._wid_async ) ;
-            _game_dev = ::std::move( rhv._game_dev ) ;
-            _mappings = ::std::move( rhv._mappings ) ;
+            _wid_async = std::move( rhv._wid_async ) ;
+            _game_dev = std::move( rhv._game_dev ) ;
+            _mappings = std::move( rhv._mappings ) ;
         }
         virtual ~test_app( void_t ) 
         {}
@@ -78,17 +78,17 @@ namespace this_file
             if( ctrl.is( btn, motor::device::components::button_state::pressed, value ) )
             {
                 motor::log::global_t::status( "pressed: " + ctrl_t::to_string( btn ) +
-                    " [" + ::std::to_string( value ) + "]" ) ;
+                    " [" + std::to_string( value ) + "]" ) ;
             }
             else if( ctrl.is( btn, motor::device::components::button_state::pressing, value ) )
             {
                 motor::log::global_t::status( "pressing: " + ctrl_t::to_string( btn ) +
-                    " [" + ::std::to_string( value ) + "]" ) ;
+                    " [" + std::to_string( value ) + "]" ) ;
             }
             else if( ctrl.is( btn, motor::device::components::button_state::released, value ) )
             {
                 motor::log::global_t::status( "released: " + ctrl_t::to_string( btn ) +
-                    " [" + ::std::to_string( value ) + "]" ) ;
+                    " [" + std::to_string( value ) + "]" ) ;
             }
         }
 
@@ -106,12 +106,12 @@ namespace this_file
             motor::math::vec2f_t value ;
             if( ctrl.is( ctrl_t::directional::aim, motor::device::components::stick_state::tilting, value ) )
             {
-                motor::log::global_t::status( "aiming: [" + ::std::to_string( value.x() ) + "," + ::std::to_string( value.y() ) + "]" ) ;
+                motor::log::global_t::status( "aiming: [" + std::to_string( value.x() ) + "," + std::to_string( value.y() ) + "]" ) ;
             }
 
             if( ctrl.is( ctrl_t::directional::movement, motor::device::components::stick_state::tilting, value ) )
             {
-                motor::log::global_t::status( "movement: [" + ::std::to_string( value.x() ) + "," + ::std::to_string( value.y() ) + "]" ) ;
+                motor::log::global_t::status( "movement: [" + std::to_string( value.x() ) + "," + std::to_string( value.y() ) + "]" ) ;
             }
             
         }
@@ -120,7 +120,7 @@ namespace this_file
         { 
             this_t::test_device() ;
 
-            ::std::this_thread::sleep_for( ::std::chrono::milliseconds( 1 ) ) ;
+            std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) ) ;
 
             return motor::application::result::ok ; 
         }

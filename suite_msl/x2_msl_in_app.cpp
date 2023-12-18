@@ -48,7 +48,7 @@ namespace this_file
 
         struct vertex { motor::math::vec3f_t pos ; motor::math::vec2f_t tx ; } ;
         
-        typedef ::std::chrono::high_resolution_clock __clock_t ;
+        typedef std::chrono::high_resolution_clock __clock_t ;
         __clock_t::time_point _tp = __clock_t::now() ;
 
         motor::gfx::pinhole_camera_t _camera_0 ;
@@ -69,7 +69,7 @@ namespace this_file
             _ndb = motor::nsl::database_t() ;
         }
         test_app( this_cref_t ) = delete ;
-        test_app( this_rref_t rhv ) : app( ::std::move( rhv ) ) 
+        test_app( this_rref_t rhv ) : app( std::move( rhv ) ) 
         {
             _wid_async = std::move( rhv._wid_async ) ;
             _camera_0 = std::move( rhv._camera_0 ) ;
@@ -145,7 +145,7 @@ namespace this_file
                 } ) ;
 
                 _gconfig = motor::graphics::geometry_object_t( "quad",
-                    motor::graphics::primitive_type::triangles, ::std::move( vb ), ::std::move( ib ) ) ;
+                    motor::graphics::primitive_type::triangles, std::move( vb ), std::move( ib ) ) ;
 
                 _wid_async.async().configure( _gconfig ) ;
             }
@@ -226,7 +226,7 @@ namespace this_file
                     var->set( "loaded_image" ) ;
                 }
 
-                rc.add_variable_set( ::std::move( vars ) ) ;
+                rc.add_variable_set( std::move( vars ) ) ;
             }
             
             _rc = std::move( rc ) ;
