@@ -27,13 +27,9 @@ int main( int argc, char ** argv )
             wi.y = 100 ;
             wi.w = 800 ;
             wi.h = 600 ;
+            wi.gen = motor::application::graphics_generation::gen4_auto ;
 
-            motor::application::graphics_window_info_t gi ;
-            gi.wi = wi ;
-            gi.api_type = motor::application::graphics_window_info_t::graphics_api_type::gl4 ;
-
-
-            auto wnd = carrier->create_window( gi ) ;
+            auto wnd = carrier->create_window( wi ) ;
 
             wnd->register_in( motor::share( msgl_in ) ) ;
             wnd->register_out( motor::share( msgl_out ) ) ;

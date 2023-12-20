@@ -25,17 +25,15 @@ int main( int argc, char ** argv )
             wi.y = 100 ;
             wi.w = 800 ;
             wi.h = 600 ;
+            //wi.gen = ... is auto
+            
 
-            motor::application::graphics_window_info_t gi ;
-            gi.wi = wi ;
-            gi.api_type = motor::application::graphics_window_info_t::graphics_api_type::gl4 ;
-
-            auto wnd = carrier->create_window( gi ) ;
+            auto wnd = carrier->create_window( wi ) ;
 
             wnd->register_out( motor::share( msgl_out ) ) ;
 
             wnd->send_message( motor::application::show_message( { true } ) ) ;
-            wnd->send_message( motor::application::cursor_message_t( {true} ) ) ;
+            wnd->send_message( motor::application::cursor_message_t( {false} ) ) ;
         }
 
         // create window 2
@@ -45,12 +43,9 @@ int main( int argc, char ** argv )
             wi.y = 200 ;
             wi.w = 800 ;
             wi.h = 500 ;
+            wi.gen = motor::application::graphics_generation::gen4_gl4 ;
 
-            motor::application::graphics_window_info_t gi ;
-            gi.wi = wi ;
-            gi.api_type = motor::application::graphics_window_info_t::graphics_api_type::gl4 ;
-
-            auto wnd = carrier->create_window( gi ) ;
+            auto wnd = carrier->create_window( wi ) ;
             
             wnd->register_out( motor::share( msgl_out ) ) ;
 
