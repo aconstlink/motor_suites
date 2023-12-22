@@ -3,8 +3,8 @@ set( tests
     "00_platform_window.cpp"
     "01_platform_window.cpp"
     "02_platform_window_cursor.cpp"
-    "03_wgl_context.cpp"
-    "04_multi_wgl_windows.cpp"
+    "03_context.cpp"
+    "04_multi_windows.cpp"
     )
 
 if( WIN32 )
