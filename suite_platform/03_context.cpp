@@ -1,6 +1,8 @@
 #include <motor/platform/global.h>
 #include <motor/application/window/window_message_listener.h>
 
+#include <motor/graphics/frontend/gen4/frontend.h>
+
 #include <motor/log/global.h>
 #include <motor/device/global.h>
 #include <motor/memory/global.h>
@@ -35,9 +37,11 @@ int main( int argc, char ** argv )
             wnd->register_out( motor::share( msgl_out ) ) ;
 
             wnd->send_message( motor::application::show_message( { true } ) ) ;
-            wnd->send_message( motor::application::cursor_message_t( {true} ) ) ;
+            wnd->send_message( motor::application::cursor_message_t( {false} ) ) ;
 
             {
+                motor::graphics::state_object_t root_so ;
+
                 while( true ) 
                 {
                     std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) ) ;
@@ -49,6 +53,43 @@ int main( int argc, char ** argv )
                         {
                             break ;
                         }
+                    }
+                    
+                    auto my_rnd_funk = [&]( motor::graphics::gen4::frontend_ptr_t fe )
+                    {
+                        motor::graphics::state_object_t so = motor::graphics::state_object_t(
+                            "root_render_states" ) ;
+
+                        {
+                            motor::graphics::render_state_sets_t rss ;
+                            rss.depth_s.do_change = true ;
+                            rss.depth_s.ss.do_activate = true ;
+                            rss.depth_s.ss.do_depth_write = true ;
+                            rss.polygon_s.do_change = true ;
+                            rss.polygon_s.ss.do_activate = true ;
+                            rss.polygon_s.ss.ff = motor::graphics::front_face::counter_clock_wise ;
+                            rss.polygon_s.ss.cm = motor::graphics::cull_mode::back ;
+                            rss.clear_s.do_change = true ;
+                            rss.clear_s.ss.clear_color = motor::math::vec4f_t(0.5f, 0.9f, 0.5f, 1.0f ) ;
+                            rss.clear_s.ss.do_activate = true ;
+                            rss.clear_s.ss.do_color_clear = true ;
+                            rss.clear_s.ss.do_depth_clear = true ;
+                            rss.view_s.do_change = true ;
+                            rss.view_s.ss.do_activate = true ;
+                            rss.view_s.ss.vp = motor::math::vec4ui_t( 0, 0, 500, 500 ) ;
+                            so.add_render_state_set( rss ) ;
+                        }
+
+                        root_so = std::move( so ) ; 
+                        fe->configure( motor::delay(&root_so) ) ;
+                        fe->push( motor::delay(&root_so) ) ;
+                        fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ; ;
+                    } ;
+
+
+                    if( wnd->render_frame< motor::graphics::gen4::frontend_t >( my_rnd_funk ) )
+                    {
+                        // funk has been rendered.
                     }
                 }
             }
