@@ -17,12 +17,82 @@ int main( int argc, char ** argv )
 
     auto fut_update_loop = std::async( std::launch::async, [&]( void_t )
     {
-        motor::application::window_message_listener_mtr_t msgl_out = motor::memory::create_ptr<
+        motor::application::window_message_listener_mtr_t msgl_out1 = motor::memory::create_ptr<
             motor::application::window_message_listener>( "[out] : message listener" ) ;
+
+        motor::application::window_message_listener_mtr_t msgl_out2 = motor::memory::create_ptr<
+            motor::application::window_message_listener>( "[out] : message listener" ) ;
+
+        motor::application::iwindow_mtr_t wnd1 ;
+        motor::application::iwindow_mtr_t wnd2 ;
+
+        // create window 1
+        {
+            motor::application::window_info_t wi ;
+            wi.x = 100 ;
+            wi.y = 100 ;
+            wi.w = 800 ;
+            wi.h = 600 ;
+            //wi.gen = ... is auto
+            
+            wnd1 = carrier->create_window( wi ) ;
+            
+
+            wnd1->register_out( motor::share( msgl_out1 ) ) ;
+
+            wnd1->send_message( motor::application::show_message( { true } ) ) ;
+            wnd1->send_message( motor::application::cursor_message_t( {false} ) ) ;
+        }
+
+        // create window 2
+        {
+            motor::application::window_info_t wi ;
+            wi.x = 200 ;
+            wi.y = 200 ;
+            wi.w = 800 ;
+            wi.h = 500 ;
+            wi.gen = motor::application::graphics_generation::gen4_gl4 ;
+
+            wnd2 = carrier->create_window( wi ) ;
+            
+            wnd2->register_out( motor::share( msgl_out2 ) ) ;
+
+            wnd2->send_message( motor::application::show_message( { true } ) ) ;
+            wnd2->send_message( motor::application::cursor_message_t( {false} ) ) ;
+        }
+
+        // wait for window creation
+        {
+            size_t count = 0  ;
+            while( count < 2 ) 
+            {
+                {
+                    motor::application::window_message_listener_t::state_vector_t sv ;
+                    if( msgl_out1->swap_and_reset( sv ) )
+                    {
+                        if( sv.create_changed )
+                        {
+                            ++count ;
+                        }
+                    }
+                }
+
+                {
+                    motor::application::window_message_listener_t::state_vector_t sv ;
+                    if( msgl_out2->swap_and_reset( sv ) )
+                    {
+                        if( sv.create_changed )
+                        {
+                            ++count ;
+                        }
+                    }
+                }
+            }
+        }
 
         motor::graphics::state_object_t root_so ;
 
-        auto my_rnd_funk = [&]( motor::graphics::gen4::frontend_ptr_t fe )
+        auto my_rnd_funk_init = [&]( motor::graphics::gen4::frontend_ptr_t fe )
         {
             motor::graphics::state_object_t so = motor::graphics::state_object_t(
                 "root_render_states" ) ;
@@ -49,75 +119,64 @@ int main( int argc, char ** argv )
 
             root_so = std::move( so ) ; 
             fe->configure( motor::delay(&root_so) ) ;
+        } ;
+
+        
+
+        // init rendering objects
+        {
+            if( wnd1->render_frame< motor::graphics::gen4::frontend_t >( my_rnd_funk_init ) )
+            {
+                int bp = 0 ;
+            }
+
+            if( wnd2->render_frame< motor::graphics::gen4::frontend_t >( my_rnd_funk_init ) )
+            {
+                int bp = 0 ;
+            }
+        }
+
+
+        auto my_rnd_funk_use = [&]( motor::graphics::gen4::frontend_ptr_t fe )
+        {
             fe->push( motor::delay(&root_so) ) ;
             fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ; 
         } ;
 
-        motor::application::iwindow_mtr_t wnd1 ;
-        motor::application::iwindow_mtr_t wnd2 ;
-
-        // create window 1
-        {
-            motor::application::window_info_t wi ;
-            wi.x = 100 ;
-            wi.y = 100 ;
-            wi.w = 800 ;
-            wi.h = 600 ;
-            //wi.gen = ... is auto
-            
-            wnd1 = carrier->create_window( wi ) ;
-            
-
-            wnd1->register_out( motor::share( msgl_out ) ) ;
-
-            wnd1->send_message( motor::application::show_message( { true } ) ) ;
-            wnd1->send_message( motor::application::cursor_message_t( {false} ) ) ;
-        }
-
-        // create window 2
-        {
-            motor::application::window_info_t wi ;
-            wi.x = 200 ;
-            wi.y = 200 ;
-            wi.w = 800 ;
-            wi.h = 500 ;
-            wi.gen = motor::application::graphics_generation::gen4_gl4 ;
-
-            wnd2 = carrier->create_window( wi ) ;
-            
-            wnd2->register_out( motor::share( msgl_out ) ) ;
-
-            wnd2->send_message( motor::application::show_message( { true } ) ) ;
-            wnd2->send_message( motor::application::cursor_message_t( {false} ) ) ;
-        }
-
+        // use rendering objects
         {
             while( true ) 
             {
                 std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) ) ;
                 
                 motor::application::window_message_listener_t::state_vector_t sv ;
-                if( msgl_out->swap_and_reset( sv ) )
+                if( msgl_out1->swap_and_reset( sv ) )
                 {
-                    if( sv.close_changed )
-                    {
-                        break ;
-                    }
+                    if( sv.close_changed ) break ;
                 }
 
-                if( wnd1->render_frame< motor::graphics::gen4::frontend_t >( my_rnd_funk ) )
+                if( msgl_out2->swap_and_reset( sv ) )
                 {
-                    // funk has been rendered.
+                    if( sv.close_changed ) break ;
                 }
 
-                if( wnd2->render_frame< motor::graphics::gen4::frontend_t >( my_rnd_funk ) )
+                if( wnd1->render_frame< motor::graphics::gen4::frontend_t >( my_rnd_funk_use ) )
                 {
                     // funk has been rendered.
+                    int bp = 0 ;
                 }
+
+                if( wnd2->render_frame< motor::graphics::gen4::frontend_t >( my_rnd_funk_use ) )
+                {
+                    // funk has been rendered.
+                    int bp = 0 ;
+                }
+
             }
         }
 
-        motor::memory::release_ptr( msgl_out ) ;
+        motor::memory::release_ptr( msgl_out1 ) ;
+        motor::memory::release_ptr( msgl_out2 ) ;
     }) ;
 
     // end the program by closing the carrier
