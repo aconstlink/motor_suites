@@ -52,6 +52,7 @@ int main( int argc, char ** argv )
                     }
                 }
             }
+            motor::memory::release_ptr( wnd ) ;
         }
 
         // open second window if first one has been closed
@@ -62,7 +63,7 @@ int main( int argc, char ** argv )
             wi.w = 800 ;
             wi.h = 600 ;
 
-            auto wnd = motor::memory::copy_ptr( carrier->create_window( wi ) ) ;
+            auto wnd = carrier->create_window( wi ) ;
             wnd->register_in( motor::share( msgl_in ) ) ;
             wnd->register_out( motor::share( msgl_out ) ) ;
 
@@ -131,6 +132,7 @@ int main( int argc, char ** argv )
             }
         }
 
+        motor::memory::release_ptr( wnd ) ;
         motor::memory::release_ptr( msgl_in ) ;
         motor::memory::release_ptr( msgl_out ) ;
     }) ;
@@ -171,6 +173,7 @@ int main( int argc, char ** argv )
             }
         }
 
+        motor::memory::release_ptr( wnd ) ;
         motor::memory::release_ptr( msgl_in ) ;
         motor::memory::release_ptr( msgl_out ) ;
     }) ;
@@ -211,6 +214,7 @@ int main( int argc, char ** argv )
             }
         }
 
+        motor::memory::release_ptr( wnd ) ;
         motor::memory::release_ptr( msgl_in ) ;
         motor::memory::release_ptr( msgl_out ) ;
     }) ;

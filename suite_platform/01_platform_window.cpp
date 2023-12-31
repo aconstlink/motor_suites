@@ -87,8 +87,10 @@ int main( int argc, char ** argv )
                     }
                 }
             }
-        }
 
+            motor::memory::release_ptr( wnd ) ;
+        }
+        
         motor::memory::release_ptr( msgl_in ) ;
         motor::memory::release_ptr( msgl_out ) ;
     }) ;

@@ -175,6 +175,8 @@ int main( int argc, char ** argv )
             }
         }
 
+        motor::memory::release_ptr( wnd1 ) ;
+        motor::memory::release_ptr( wnd2 ) ;
         motor::memory::release_ptr( msgl_out1 ) ;
         motor::memory::release_ptr( msgl_out2 ) ;
     }) ;
