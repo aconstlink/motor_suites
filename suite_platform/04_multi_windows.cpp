@@ -36,7 +36,6 @@ int main( int argc, char ** argv )
             //wi.gen = ... is auto
             
             wnd1 = carrier->create_window( wi ) ;
-            
 
             wnd1->register_out( motor::share( msgl_out1 ) ) ;
 
@@ -63,7 +62,7 @@ int main( int argc, char ** argv )
 
         // wait for window creation
         {
-            size_t count = 0  ;
+            size_t count = 0 ;
             while( count < 2 ) 
             {
                 {
@@ -121,8 +120,6 @@ int main( int argc, char ** argv )
             fe->configure( motor::delay(&root_so) ) ;
         } ;
 
-        
-
         // init rendering objects
         {
             if( wnd1->render_frame< motor::graphics::gen4::frontend_t >( my_rnd_funk_init ) )
@@ -135,7 +132,6 @@ int main( int argc, char ** argv )
                 int bp = 0 ;
             }
         }
-
 
         auto my_rnd_funk_use = [&]( motor::graphics::gen4::frontend_ptr_t fe )
         {
@@ -171,7 +167,6 @@ int main( int argc, char ** argv )
                     // funk has been rendered.
                     int bp = 0 ;
                 }
-
             }
         }
 

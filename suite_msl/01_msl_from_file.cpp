@@ -23,9 +23,9 @@ void_t test_1( motor::io::database_mtr_t db )
 {
     motor::msl::database_mtr_t ndb = motor::memory::create_ptr( motor::msl::database_t() ) ;
     motor::vector< motor::io::location_t > shader_locations = {
-        motor::io::location_t( "test_01.lib_a.nsl" ),
-        motor::io::location_t( "test_01.lib_b.nsl" ),
-        motor::io::location_t( "test_01.effect.nsl" )
+        motor::io::location_t( "test_01.lib_a.msl" ),
+        motor::io::location_t( "test_01.lib_b.msl" ),
+        motor::io::location_t( "test_01.effect.msl" )
     };
 
     motor::vector< motor::msl::symbol_t > config_symbols ;
@@ -69,7 +69,7 @@ void_t test_2( motor::io::database_mtr_t db )
 {
     motor::msl::database_mtr_t ndb = motor::memory::create_ptr( motor::msl::database_t() ) ;
     motor::vector< motor::io::location_t > shader_locations = {
-        motor::io::location_t( "shaders.test_if.nsl" )
+        motor::io::location_t( "shaders.test_if.msl" )
     };
 
     motor::vector< motor::msl::symbol_t > config_symbols ;
@@ -109,7 +109,7 @@ void_t test_3( motor::io::database_mtr_t db )
 {
     motor::msl::database_mtr_t ndb = motor::memory::create_ptr( motor::msl::database_t() ) ;
     motor::vector< motor::io::location_t > shader_locations = {
-        motor::io::location_t( "shaders.build_ins.nsl" )
+        motor::io::location_t( "shaders.build_ins.msl" )
     };
 
     motor::vector< motor::msl::symbol_t > config_symbols ;
@@ -147,7 +147,7 @@ void_t test_4( motor::io::database_mtr_t db )
 {
     motor::msl::database_mtr_t ndb = motor::memory::create_ptr( motor::msl::database_t() ) ;
     motor::vector< motor::io::location_t > shader_locations = {
-        motor::io::location_t( "shaders.main_early_return.nsl" )
+        motor::io::location_t( "shaders.main_early_return.msl" )
     };
 
     motor::vector< motor::msl::symbol_t > config_symbols ;
@@ -185,7 +185,7 @@ void_t test_5( motor::io::database_mtr_t db )
 {
     motor::msl::database_mtr_t ndb = motor::memory::create_ptr( motor::msl::database_t() ) ;
     motor::vector< motor::io::location_t > shader_locations = {
-        motor::io::location_t( "shaders.inout.nsl" )
+        motor::io::location_t( "shaders.inout.msl" )
     };
 
     motor::vector< motor::msl::symbol_t > config_symbols ;
