@@ -29,7 +29,7 @@ int main( int argc, char ** argv )
             wi.y = 100 ;
             wi.w = 800 ;
             wi.h = 600 ;
-            wi.gen = motor::application::graphics_generation::gen4_gl4 ;
+            wi.gen = motor::application::graphics_generation::gen4_auto ;
 
             auto wnd = carrier->create_window( wi ) ;
 
@@ -56,9 +56,10 @@ int main( int argc, char ** argv )
 
             {
                 motor::graphics::state_object_t root_so ;
-                motor::graphics::render_object_t rc ;
-                motor::graphics::shader_object_t sc ;
-                motor::graphics::geometry_object_t gconfig ;
+                motor::graphics::render_object_t render_obj ;
+                motor::graphics::shader_object_t shader_obj ;
+                motor::graphics::geometry_object_t geo_obj ;
+                motor::graphics::image_object_t img_obj ;
 
                 struct vertex { motor::math::vec3f_t pos ; motor::math::vec2f_t tx ; } ;
                 
@@ -93,15 +94,47 @@ int main( int argc, char ** argv )
                         array[ 5 ] = 3 ;
                     } ) ;
 
-                    gconfig = motor::graphics::geometry_object_t( "quad",
+                    geo_obj = motor::graphics::geometry_object_t( "quad",
                         motor::graphics::primitive_type::triangles, std::move( vb ), std::move( ib ) ) ;
+                }
+
+                // image configuration
+                {
+                    motor::graphics::image_t img = motor::graphics::image_t( motor::graphics::image_t::dims_t( 100, 100 ) )
+                        .update( [&]( motor::graphics::image_ptr_t, motor::graphics::image_t::dims_in_t dims, void_ptr_t data_in )
+                    {
+                        typedef motor::math::vector4< uint8_t > rgba_t ;
+                        auto* data = reinterpret_cast< rgba_t * >( data_in ) ;
+
+                        size_t const w = 5 ;
+
+                        size_t i = 0 ; 
+                        for( size_t y = 0; y < dims.y(); ++y )
+                        {
+                            bool_t const odd = ( y / w ) & 1 ;
+
+                            for( size_t x = 0; x < dims.x(); ++x )
+                            {
+                                bool_t const even = ( x / w ) & 1 ;
+
+                                data[ i++ ] = even || odd ? rgba_t( 255 ) : rgba_t( 0, 0, 0, 255 );
+                                //data[ i++ ] = rgba_t(255) ;
+                            }
+                        }
+                    } ) ;
+
+                    img_obj = motor::graphics::image_object_t( "checker_board", std::move( img ) )
+                        .set_wrap( motor::graphics::texture_wrap_mode::wrap_s, motor::graphics::texture_wrap_type::repeat )
+                        .set_wrap( motor::graphics::texture_wrap_mode::wrap_t, motor::graphics::texture_wrap_type::repeat )
+                        .set_filter( motor::graphics::texture_filter_mode::min_filter, motor::graphics::texture_filter_type::nearest )
+                        .set_filter( motor::graphics::texture_filter_mode::mag_filter, motor::graphics::texture_filter_type::nearest );
                 }
 
                 // shaders
                 {
                     // shader configuration
                     {
-                        sc = motor::graphics::shader_object_t( "quad" ) ;
+                        shader_obj = motor::graphics::shader_object_t( "quad" ) ;
 
                         // shaders : ogl 3.0
                         {
@@ -126,15 +159,15 @@ int main( int argc, char ** argv )
                                     out vec4 out_color ;
                                     in vec2 var_tx0 ;
 
-                                    //uniform sampler2D u_tex ;
+                                    uniform sampler2D u_tex ;
                                     uniform vec4 u_color ;
                         
                                     void main()
                                     {    
-                                        out_color = vec4(u_color.xyz, 1.0) ; //u_color * texture( u_tex, var_tx0 ) ;
+                                        out_color = u_color * texture( u_tex, var_tx0 ) ;
                                     } )" ) ) ;
                     
-                            sc.insert( motor::graphics::shader_api_type::glsl_1_4, std::move(ss) ) ;
+                            shader_obj.insert( motor::graphics::shader_api_type::glsl_1_4, std::move(ss) ) ;
                         }
 
                         // shaders : es 3.0
@@ -169,7 +202,7 @@ int main( int argc, char ** argv )
                                         out_color = u_color * texture( u_tex, var_tx0 ) ;
                                     } )" ) ) ;
 
-                            sc.insert( motor::graphics::shader_api_type::glsles_3_0, std::move(ss) ) ;
+                            shader_obj.insert( motor::graphics::shader_api_type::glsles_3_0, std::move(ss) ) ;
                         }
 
                         // shaders : hlsl 11(5.0)
@@ -216,15 +249,15 @@ int main( int argc, char ** argv )
 
                                     float4 PS( VS_OUTPUT input ) : SV_Target
                                     {
-                                        return float4( u_color.xyz, 1.0) ;//u_tex.Sample( smp_u_tex, input.tx ) * u_color ;
+                                        return u_tex.Sample( smp_u_tex, input.tx ) * u_color ;
                                     } )" ) ) ;
 
-                            sc.insert( motor::graphics::shader_api_type::hlsl_5_0, std::move( ss ) ) ;
+                            shader_obj.insert( motor::graphics::shader_api_type::hlsl_5_0, std::move( ss ) ) ;
                         }
 
                         // configure more details
                         {
-                            sc
+                            shader_obj
                                 .add_vertex_input_binding( motor::graphics::vertex_attribute::position, "in_pos" )
                                 .add_vertex_input_binding( motor::graphics::vertex_attribute::texcoord0, "in_tx" )
                                 .add_input_binding( motor::graphics::binding_point::view_matrix, "u_view" )
@@ -234,9 +267,9 @@ int main( int argc, char ** argv )
 
                     // render object
                     {
-                        rc = motor::graphics::render_object_t("render_quad") ;
-                        rc.link_geometry( "quad" ) ;
-                        rc.link_shader( "quad" ) ;
+                        render_obj = motor::graphics::render_object_t("render_quad") ;
+                        render_obj.link_geometry( "quad" ) ;
+                        render_obj.link_shader( "quad" ) ;
                     
                         // variable sets
                         // add variable set 0
@@ -257,7 +290,7 @@ int main( int argc, char ** argv )
                                 var->set( "checker_board" ) ;
                             }
 
-                            rc.add_variable_set( motor::memory::create_ptr( std::move( vars ), "a variable set" ) ) ;
+                            render_obj.add_variable_set( motor::memory::create_ptr( std::move( vars ), "a variable set" ) ) ;
                         }
 
                         // variable sets
@@ -279,7 +312,7 @@ int main( int argc, char ** argv )
                                 var->set( "checker_board" ) ;
                             }
 
-                            rc.add_variable_set( motor::memory::create_ptr( std::move(vars), "a variable set" ) ) ;
+                            render_obj.add_variable_set( motor::memory::create_ptr( std::move(vars), "a variable set" ) ) ;
                         }
                     }
                 }
@@ -317,9 +350,11 @@ int main( int argc, char ** argv )
 
                     // 
                     {
-                        fe->configure( motor::delay(&gconfig) ) ;
-                        fe->configure( motor::delay(&sc) ) ;
-                        fe->configure( motor::delay(&rc) ) ;
+                        fe->configure( motor::delay(&geo_obj) ) ;
+                        fe->configure( motor::delay(&img_obj)) ;
+                        fe->configure( motor::delay(&shader_obj) ) ;
+                        fe->configure( motor::delay(&render_obj) ) ;
+                        
                     }
                 } ;
 
@@ -349,7 +384,7 @@ int main( int argc, char ** argv )
                             detail.start = 0 ;
                             //detail.num_elems = 3 ;
                             detail.varset = 0 ;
-                            fe->render( motor::delay( &rc ), detail ) ;
+                            fe->render( motor::delay( &render_obj ), detail ) ;
                         }
                         fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ; ;
                     } ;
