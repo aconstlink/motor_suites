@@ -398,14 +398,27 @@ int main( int argc, char ** argv )
 
                 while( true ) 
                 {
-                    std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) ) ;
+                    //std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) ) ;
                 
-                    motor::application::window_message_listener_t::state_vector_t sv ;
-                    if( msgl_out1->swap_and_reset( sv ) )
                     {
-                        if( sv.close_changed )
+                        motor::application::window_message_listener_t::state_vector_t sv ;
+                        if( msgl_out1->swap_and_reset( sv ) )
                         {
-                            break ;
+                            if( sv.close_changed )
+                            {
+                                break ;
+                            }
+                        }
+                    }
+
+                    {
+                        motor::application::window_message_listener_t::state_vector_t sv ;
+                        if( msgl_out2->swap_and_reset( sv ) )
+                        {
+                            if( sv.close_changed )
+                            {
+                                break ;
+                            }
                         }
                     }
                     
@@ -419,7 +432,12 @@ int main( int argc, char ** argv )
                             detail.varset = 0 ;
                             fe->render( motor::delay( &render_obj ), detail ) ;
                         }
-                        fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ; ;
+                        fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ; 
+
+                        fe->fence( [=]( void_t )
+                        {
+                            //motor::log::global_t::status("fence hit") ;
+                        } ) ;
                     } ;
 
 
