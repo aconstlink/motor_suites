@@ -28,6 +28,7 @@ add_subdirectory( "suite_msl" )
 add_subdirectory( "suite_application" )
 add_subdirectory( "suite_platform" )
 add_subdirectory( "suite_graphics" )
+add_subdirectory( "suite_tool" )
 
 install( EXPORT suites-targets DESTINATION "cmake" )
 

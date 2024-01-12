@@ -88,24 +88,30 @@ int main( int argc, char ** argv )
                 motor::graphics::geometry_object_t geo_obj ;
                 motor::graphics::image_object_t img_obj ;
 
-                struct vertex { motor::math::vec3f_t pos ; motor::math::vec2f_t tx ; } ;
+                struct vertex { motor::math::vec2f_t pos ; motor::math::vec2f_t tx ; motor::math::vec4f_t color ; } ;
                 
                 // vertex/index buffer
                 {
                     auto vb = motor::graphics::vertex_buffer_t()
-                        .add_layout_element( motor::graphics::vertex_attribute::position, motor::graphics::type::tfloat, motor::graphics::type_struct::vec3 )
+                        .add_layout_element( motor::graphics::vertex_attribute::position, motor::graphics::type::tfloat, motor::graphics::type_struct::vec2 )
                         .add_layout_element( motor::graphics::vertex_attribute::texcoord0, motor::graphics::type::tfloat, motor::graphics::type_struct::vec2 )
+                        .add_layout_element( motor::graphics::vertex_attribute::color0, motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
                         .resize( 4 ).update<vertex>( [=] ( vertex* array, size_t const ne )
                     {
-                        array[ 0 ].pos = motor::math::vec3f_t( -0.5f, -0.5f, 0.0f ) ;
-                        array[ 1 ].pos = motor::math::vec3f_t( -0.5f, +0.5f, 0.0f ) ;
-                        array[ 2 ].pos = motor::math::vec3f_t( +0.5f, +0.5f, 0.0f ) ;
-                        array[ 3 ].pos = motor::math::vec3f_t( +0.5f, -0.5f, 0.0f ) ;
+                        array[ 0 ].pos = motor::math::vec2f_t( -0.5f, -0.5f ) ;
+                        array[ 1 ].pos = motor::math::vec2f_t( -0.5f, +0.5f ) ;
+                        array[ 2 ].pos = motor::math::vec2f_t( +0.5f, +0.5f ) ;
+                        array[ 3 ].pos = motor::math::vec2f_t( +0.5f, -0.5f ) ;
 
                         array[ 0 ].tx = motor::math::vec2f_t( -0.0f, -0.0f ) ;
                         array[ 1 ].tx = motor::math::vec2f_t( -0.0f, +1.0f ) ;
                         array[ 2 ].tx = motor::math::vec2f_t( +1.0f, +1.0f ) ;
                         array[ 3 ].tx = motor::math::vec2f_t( +1.0f, -0.0f ) ;
+
+                        array[ 0 ].color = motor::math::vec4f_t( 1.0f, 0.0f, 1.0f, 1.0f ) ;
+                        array[ 1 ].color = motor::math::vec4f_t( 1.0f, 0.0f, 1.0f, 1.0f ) ;
+                        array[ 2 ].color = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
+                        array[ 3 ].color = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
                     } );
 
                     auto ib = motor::graphics::index_buffer_t().
@@ -169,29 +175,34 @@ int main( int argc, char ** argv )
 
                                 set_vertex_shader( motor::graphics::shader_t( R"(
                                     #version 140
-                                    in vec3 in_pos ;
+                                    in vec2 in_pos ;
                                     in vec2 in_tx ;
+                                    in vec4 in_color ;
                                     out vec2 var_tx0 ;
+                                    out vec4 var_color ;
                                     //uniform mat4 u_proj ;
                                     //uniform mat4 u_view ;
                             
                                     void main()
                                     {
                                         var_tx0 = in_tx ;
-                                        gl_Position = vec4( in_pos.xyz, 1.0 ) ; //u_proj * u_view * vec4( in_pos, 1.0 ) ;
+                                        var_color = in_color ;
+                                        gl_Position = vec4( in_pos.xy, 0.0, 1.0 ) ; //u_proj * u_view * vec4( in_pos, 1.0 ) ;
                                     } )" ) ).
 
                                 set_pixel_shader( motor::graphics::shader_t( R"(
                                     #version 140
                                     out vec4 out_color ;
                                     in vec2 var_tx0 ;
+                                    in vec4 var_color ;
 
                                     uniform sampler2D u_tex ;
                                     uniform vec4 u_color ;
                         
                                     void main()
                                     {    
-                                        out_color = u_color * texture( u_tex, var_tx0 ) ;
+                                        vec4 color = mix( var_color, u_color, 0.0 ) ; 
+                                        out_color = color * texture( u_tex, var_tx0 ) ;
                                     } )" ) ) ;
                     
                             shader_obj.insert( motor::graphics::shader_api_type::glsl_1_4, std::move(ss) ) ;
@@ -247,16 +258,22 @@ int main( int argc, char ** argv )
                                     {
                                         float4 pos : SV_POSITION;
                                         float2 tx : TEXCOORD0;
+                                        float4 color : COLOR0;
                                     };
 
-                                    VS_OUTPUT VS( float4 in_pos : POSITION, float2 in_tx : TEXCOORD0 )
+                                    VS_OUTPUT VS( float2 in_pos : POSITION, float2 in_tx : TEXCOORD0,
+                                                    float4 in_color : COLOR0)
                                     {
+                                        float4 pos = float4( in_pos, 0.0, 1.0 ) ;
+
                                         VS_OUTPUT output = (VS_OUTPUT)0 ;
                                         //output.Pos = mul( Pos, World ) ;
-                                        output.pos = mul( in_pos, u_view );
+                                        output.pos = mul( pos, u_view );
                                         output.pos = mul( output.pos, u_proj );
-                                        output.pos = float4( in_pos.xyz, 1.0 ) ;
+    
+                                        output.pos = float4( pos.xyz, 1.0 ) ;
                                         output.tx = in_tx ;
+                                        output.color = in_color ;
                                         return output;
                                     } )" ) ).
 
@@ -272,11 +289,13 @@ int main( int argc, char ** argv )
                                     {
                                         float4 Pos : SV_POSITION;
                                         float2 tx : TEXCOORD0;
+                                        float4 color : COLOR0 ;
                                     };
 
                                     float4 PS( VS_OUTPUT input ) : SV_Target
                                     {
-                                        return u_tex.Sample( smp_u_tex, input.tx ) * u_color ;
+                                        float4 color = lerp( input.color, u_color, 0.0 ) ; 
+                                        return u_tex.Sample( smp_u_tex, input.tx ) * color ;
                                     } )" ) ) ;
 
                             shader_obj.insert( motor::graphics::shader_api_type::hlsl_5_0, std::move( ss ) ) ;
@@ -287,6 +306,7 @@ int main( int argc, char ** argv )
                             shader_obj
                                 .add_vertex_input_binding( motor::graphics::vertex_attribute::position, "in_pos" )
                                 .add_vertex_input_binding( motor::graphics::vertex_attribute::texcoord0, "in_tx" )
+                                .add_vertex_input_binding( motor::graphics::vertex_attribute::color0, "in_color" )
                                 .add_input_binding( motor::graphics::binding_point::view_matrix, "u_view" )
                                 .add_input_binding( motor::graphics::binding_point::projection_matrix, "u_proj" ) ;
                         }
