@@ -3,8 +3,8 @@
 #include <motor/math/vector/vector4.hpp>
 #include <motor/math/matrix/matrix4.hpp>
 
+#include <motor/device/system.h>
 #include <motor/device/layouts/xbox_controller.hpp>
-#include <motor/device/global.h>
 #include <motor/log/global.h>
 
 using namespace motor::core::types ;
@@ -233,10 +233,10 @@ int main( int argc, char ** argv )
 {
     motor::device::xbc_device_mtr_t dev = nullptr ;
 
-    motor::device::global_t::init() ;
+    motor::device::system_t sys ;
 
     {
-        motor::device::global_t::system()->search( [&] ( motor::device::idevice_mtr_t dev_in )
+        sys.search( [&] ( motor::device::idevice_mtr_t dev_in )
         {
             if( auto * ptr1 = dynamic_cast<motor::device::xbc_device_mtr_t>(dev_in); ptr1 != nullptr )
             {

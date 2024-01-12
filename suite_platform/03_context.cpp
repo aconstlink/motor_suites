@@ -4,7 +4,6 @@
 #include <motor/graphics/frontend/gen4/frontend.h>
 
 #include <motor/log/global.h>
-#include <motor/device/global.h>
 #include <motor/memory/global.h>
 
 #include <future>
@@ -113,7 +112,6 @@ int main( int argc, char ** argv )
     
     motor::memory::release_ptr( carrier ) ;
 
-    motor::device::global_t::deinit() ;
     motor::log::global::deinit() ;
     motor::memory::global::dump_to_std() ;
 

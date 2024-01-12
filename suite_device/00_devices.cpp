@@ -1,7 +1,8 @@
 
+#include <motor/device/system.h>
+#include <motor/device/imodule.h>
 #include <motor/device/layouts/three_mouse.hpp>
 #include <motor/device/layouts/ascii_keyboard.hpp>
-#include <motor/device/global.h>
 
 #include <motor/math/vector/vector2.hpp>
 #include <motor/math/interpolation/interpolate.hpp>
@@ -32,8 +33,8 @@ namespace this_file
 
         dummy_module( void_t ) noexcept
         {
-            mouse_dev = motor::memory::create_ptr( motor::device::three_device_t(), "mouse" ) ;
-            ascii_dev = motor::memory::create_ptr( motor::device::ascii_device_t(), "ascii" ) ;
+            mouse_dev = motor::memory::create_ptr( motor::device::three_device_t(), "[dummy_module] : mouse" ) ;
+            ascii_dev = motor::memory::create_ptr( motor::device::ascii_device_t(), "[dummy_module] : ascii" ) ;
 
             _tp_beg = clock_t::now() ;
         }
@@ -41,8 +42,8 @@ namespace this_file
         dummy_module( this_cref_t rhv ) = delete ;
         dummy_module( this_rref_t rhv ) noexcept
         {
-            mouse_dev = motor::move( rhv.mouse_dev ).mtr() ;
-            ascii_dev = motor::move( rhv.ascii_dev ).mtr() ;
+            mouse_dev = motor::move( rhv.mouse_dev ) ;
+            ascii_dev = motor::move( rhv.ascii_dev ) ;
             _tp = std::move( rhv._tp ) ;
             _tp_beg = std::move( rhv._tp_beg ) ;
         }
@@ -57,8 +58,8 @@ namespace this_file
         // call funk for each supported/created device
         virtual void_t search( motor::device::imodule::search_funk_t funk ) noexcept 
         {
-            funk( mouse_dev ) ;
-            funk( ascii_dev ) ;
+            funk( motor::share(mouse_dev) ) ;
+            funk( motor::share(ascii_dev) ) ;
         }
 
         virtual void_t update( void_t ) noexcept 
@@ -170,13 +171,14 @@ namespace this_file
 
 int main( int argc, char ** argv )
 {
-    motor::device::three_device_mtr_t mouse_dev = nullptr ;
-    motor::device::ascii_device_mtr_t ascii_dev = nullptr ;
-
-    motor::device::global_t::init() ;
     {
-        motor::device::global_t::system()->add_module( motor::memory::create_ptr( this_file::dummy_module(), "my device module" ) ) ;
+        motor::device::system_t sys ;
+        motor::device::three_device_mtr_t mouse_dev = nullptr ;
+        motor::device::ascii_device_mtr_t ascii_dev = nullptr ;
+
+        sys.add_module( motor::memory::create_ptr( this_file::dummy_module(), "my device module" ) ) ;
     }
+
     #if 0
     {
         // looking for device. It is managed, so pointer must be copied.
@@ -302,7 +304,6 @@ int main( int argc, char ** argv )
     }
 
     #endif
-    motor::device::global_t::deinit() ;
     motor::log::global_t::deinit() ;
     motor::memory::global_t::dump_to_std() ;
 }

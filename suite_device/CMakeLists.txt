@@ -3,6 +3,8 @@
 set( tests
     "00_devices.cpp"
     "01_gamepad.cpp"
+
+    "04_window_and_device.cpp"
     )
 
 if( WIN32 )
@@ -22,7 +24,9 @@ foreach( _test ${tests} )
 
     add_executable( ${app_name} ${_test} ) 
     target_link_libraries( ${app_name} 
-      PRIVATE motor::device )
+      PRIVATE motor::device
+      PRIVATE motor::application
+      PRIVATE motor::platform )
 
     set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_device" )
 
