@@ -5,6 +5,7 @@ set( tests
     "01_gamepad.cpp"
 
     "04_window_and_device.cpp"
+    "05_window_and_gamepad.cpp"
     )
 
 if( WIN32 )
