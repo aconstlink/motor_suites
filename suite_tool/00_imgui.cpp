@@ -51,26 +51,10 @@ int main( int argc, char ** argv )
             wnd->send_message( motor::application::show_message( { true } ) ) ;
             //wnd->send_message( motor::application::vsync_message_t( { true } ) ) ;
 
-            // wait for window creation
-            {
-                while( true ) 
-                {
-                    motor::application::window_message_listener_t::state_vector_t sv ;
-                    if( msgl_out->swap_and_reset( sv ) )
-                    {
-                        if( sv.create_changed )
-                        {
-                            break ;
-                        }
-                    }
-                }
-            }
-
             {
                 motor::tool::imgui_t imgui ;
 
-                int_t w = 1000 ;
-                int_t h = 1000 ;
+                bool_t created = false ;
 
                 while( true ) 
                 {
@@ -79,6 +63,11 @@ int main( int argc, char ** argv )
                     motor::application::window_message_listener_t::state_vector_t sv ;
                     if( msgl_out->swap_and_reset( sv ) )
                     {
+                        if( sv.create_changed )
+                        {
+                            created = true ;
+                        }
+
                         if( sv.close_changed )
                         {
                             break ;
@@ -86,11 +75,13 @@ int main( int argc, char ** argv )
 
                         if( sv.resize_changed )
                         {
-                            w = (int_t)sv.resize_msg.w ;
-                            h = (int_t)sv.resize_msg.h ;
-                            imgui.update( {w,h} ) ;
+                            imgui.update( {(int_t)sv.resize_msg.w,(int_t)sv.resize_msg.h} ) ;
                         }
                     }
+
+                    // wait for window creation
+                    // without creation, there is no rendering.
+                    if( !created ) continue ;
                     
                     // must be done along with the user thread due
                     // to synchronization issues with any device 
@@ -105,8 +96,7 @@ int main( int argc, char ** argv )
                     {
                         imgui.execute( [&]( void_t )
                         {
-                            if( ImGui::Begin("test window") )
-                            {}
+                            if( ImGui::Begin("test window") ){}
                             ImGui::End() ;
 
                             bool_t show = true ;
