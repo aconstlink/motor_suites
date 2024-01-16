@@ -44,7 +44,7 @@ int main( int argc, char ** argv )
             wi.y = 100 ;
             wi.w = 800 ;
             wi.h = 600 ;
-            wi.gen = motor::application::graphics_generation::gen4_d3d11;
+            wi.gen = motor::application::graphics_generation::gen4_auto;
 
             auto wnd = carrier->create_window( wi ) ;
             wnd->register_out( motor::share( msgl_out ) ) ;
