@@ -417,7 +417,7 @@ int main( int argc, char ** argv )
 
                 while( true ) 
                 {
-                    //std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) ) ;
+                    std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) ) ;
                 
                     {
                         motor::application::window_message_listener_t::state_vector_t sv ;

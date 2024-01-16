@@ -22,9 +22,6 @@ int main( int argc, char ** argv )
         motor::application::window_message_listener_mtr_t msgl_out = motor::memory::create_ptr<
             motor::application::window_message_listener>( "[out] : message listener" ) ;
 
-        motor::tool::imgui_t imgui ;
-        imgui.init() ;
-
         motor::device::ascii_device_mtr_t ascii_dev = nullptr ;
         motor::device::three_device_mtr_t mouse_dev = nullptr ;
 
@@ -47,12 +44,12 @@ int main( int argc, char ** argv )
             wi.y = 100 ;
             wi.w = 800 ;
             wi.h = 600 ;
-            wi.gen = motor::application::graphics_generation::gen4_auto;
+            wi.gen = motor::application::graphics_generation::gen4_d3d11;
 
             auto wnd = carrier->create_window( wi ) ;
             wnd->register_out( motor::share( msgl_out ) ) ;
             wnd->send_message( motor::application::show_message( { true } ) ) ;
-            wnd->send_message( motor::application::vsync_message_t( { true } ) ) ;
+            //wnd->send_message( motor::application::vsync_message_t( { true } ) ) ;
 
             // wait for window creation
             {
@@ -70,10 +67,14 @@ int main( int argc, char ** argv )
             }
 
             {
+                motor::tool::imgui_t imgui ;
+
+                int_t w = 1000 ;
+                int_t h = 1000 ;
+
                 while( true ) 
                 {
-                    std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) ) ;
-                
+                    #if 1
                     motor::application::window_message_listener_t::state_vector_t sv ;
                     if( msgl_out->swap_and_reset( sv ) )
                     {
@@ -84,9 +85,12 @@ int main( int argc, char ** argv )
 
                         if( sv.resize_changed )
                         {
-                            imgui.update( {(int_t)sv.resize_msg.w, (int_t)sv.resize_msg.h} ) ;
+                            w = (int_t)sv.resize_msg.w ;
+                            h = (int_t)sv.resize_msg.h ;
+                            imgui.update( {w,h} ) ;
                         }
                     }
+                    #endif
                     
                     // must be done along with the user thread due
                     // to synchronization issues with any device 
@@ -101,23 +105,24 @@ int main( int argc, char ** argv )
                     {
                         imgui.execute( [&]( ImGuiContext * ctx )
                         {
-                            auto * old = ImGui::GetCurrentContext() ;
-                            ImGui::SetCurrentContext( ctx ) ;
                             imgui.begin() ;
                             {
                                 if( ImGui::Begin("test window") )
                                 {
-                                
+                                    
                                 }
                                 ImGui::End() ;
+
                                 bool_t show = true ;
                                 ImGui::ShowDemoWindow( &show ) ;
                             }
                             imgui.end() ;
-                            ImGui::SetCurrentContext( old ) ;
                         } ) ;
                         imgui.render( fe ) ;
                     } ) ;
+                    
+                    std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) ) ;
+
                     
                 }
             }
