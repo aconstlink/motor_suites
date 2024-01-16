@@ -47,11 +47,12 @@ int main( int argc, char ** argv )
             wi.y = 100 ;
             wi.w = 800 ;
             wi.h = 600 ;
-            wi.gen = motor::application::graphics_generation::gen4_d3d11 ;
+            wi.gen = motor::application::graphics_generation::gen4_auto;
 
             auto wnd = carrier->create_window( wi ) ;
             wnd->register_out( motor::share( msgl_out ) ) ;
             wnd->send_message( motor::application::show_message( { true } ) ) ;
+            wnd->send_message( motor::application::vsync_message_t( { true } ) ) ;
 
             // wait for window creation
             {
@@ -86,48 +87,38 @@ int main( int argc, char ** argv )
                             imgui.update( {(int_t)sv.resize_msg.w, (int_t)sv.resize_msg.h} ) ;
                         }
                     }
-
+                    
                     // must be done along with the user thread due
                     // to synchronization issues with any device 
                     carrier->update_device_system() ;
 
                     {
-                        
                         imgui.update( motor::share( ascii_dev ) ) ;
                         imgui.update( motor::share( mouse_dev ) ) ;
                     }
                     
-                    imgui.execute( [&]( ImGuiContext * ctx )
-                    {
-                        auto * old = ImGui::GetCurrentContext() ;
-                        ImGui::SetCurrentContext( ctx ) ;
-                        imgui.begin() ;
-                        {
-                            if( ImGui::Begin("test window") )
-                            {
-                                
-                            }
-                            ImGui::End() ;
-                            bool_t show = true ;
-                            ImGui::ShowDemoWindow( &show ) ;
-                        }
-                        imgui.end() ;
-                        ImGui::SetCurrentContext( old ) ;
-                    } ) ;
-                    
-
                     wnd->render_frame< motor::graphics::gen4::frontend_t >( [&]( motor::graphics::gen4::frontend_ptr_t fe )
                     {
+                        imgui.execute( [&]( ImGuiContext * ctx )
+                        {
+                            auto * old = ImGui::GetCurrentContext() ;
+                            ImGui::SetCurrentContext( ctx ) ;
+                            imgui.begin() ;
+                            {
+                                if( ImGui::Begin("test window") )
+                                {
+                                
+                                }
+                                ImGui::End() ;
+                                bool_t show = true ;
+                                ImGui::ShowDemoWindow( &show ) ;
+                            }
+                            imgui.end() ;
+                            ImGui::SetCurrentContext( old ) ;
+                        } ) ;
                         imgui.render( fe ) ;
                     } ) ;
                     
-                }
-
-                {
-                    wnd->render_frame< motor::graphics::gen4::frontend_t >( [&]( motor::graphics::gen4::frontend_ptr_t fe )
-                    {
-                        imgui.deinit( fe ) ;
-                    } ) ;
                 }
             }
 
