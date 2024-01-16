@@ -1,6 +1,7 @@
 
 set( tests
     "00_imgui.cpp"
+    "01_imgui.cpp"
     )
 
 foreach( _test ${tests} )
