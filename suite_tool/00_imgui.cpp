@@ -74,7 +74,8 @@ int main( int argc, char ** argv )
 
                 while( true ) 
                 {
-                    #if 1
+                    std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) ) ;
+
                     motor::application::window_message_listener_t::state_vector_t sv ;
                     if( msgl_out->swap_and_reset( sv ) )
                     {
@@ -90,7 +91,6 @@ int main( int argc, char ** argv )
                             imgui.update( {w,h} ) ;
                         }
                     }
-                    #endif
                     
                     // must be done along with the user thread due
                     // to synchronization issues with any device 
@@ -103,27 +103,17 @@ int main( int argc, char ** argv )
                     
                     wnd->render_frame< motor::graphics::gen4::frontend_t >( [&]( motor::graphics::gen4::frontend_ptr_t fe )
                     {
-                        imgui.execute( [&]( ImGuiContext * ctx )
+                        imgui.execute( [&]( void_t )
                         {
-                            imgui.begin() ;
-                            {
-                                if( ImGui::Begin("test window") )
-                                {
-                                    
-                                }
-                                ImGui::End() ;
+                            if( ImGui::Begin("test window") )
+                            {}
+                            ImGui::End() ;
 
-                                bool_t show = true ;
-                                ImGui::ShowDemoWindow( &show ) ;
-                            }
-                            imgui.end() ;
+                            bool_t show = true ;
+                            ImGui::ShowDemoWindow( &show ) ;
                         } ) ;
                         imgui.render( fe ) ;
                     } ) ;
-                    
-                    std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) ) ;
-
-                    
                 }
             }
 
