@@ -56,6 +56,10 @@ int main( int argc, char ** argv )
 
             {
                 motor::tool::imgui_t imgui ;
+                motor::tool::timeline_t tl("my timeline") ;
+                motor::tool::timeline_t tl2("my timeline2") ;
+                motor::tool::player_controller_t pc ;
+                size_t cur_time = 0 ;
 
                 bool_t created = false ;
 
@@ -97,6 +101,8 @@ int main( int argc, char ** argv )
                     
                     wnd->render_frame< motor::graphics::gen4::frontend_t >( [&]( motor::graphics::gen4::frontend_ptr_t fe )
                     {
+                        
+
                         imgui.execute( [&]( void_t )
                         {
                             motor::tool::custom_imgui_widgets::text_overlay( "overlay", "Test Overlay" ) ;
@@ -120,17 +126,58 @@ int main( int argc, char ** argv )
                             {
                                 if( ImGui::Begin("motor custom widgets") )
                                 {
-                                   motor::tool::time_info_t ti {1000000, 0};
+                                    motor::tool::time_info_t ti {1000000, cur_time};
 
-                                    static motor::tool::timeline_t tl ;
-                                    tl.begin( ti ) ;
-                                    tl.end( ) ;
+                                    // the timeline stores some state, so it 
+                                    // is defined further above
+                                    {
+                                        tl.begin( ti ) ;
+                                        tl.end() ;
+                                        cur_time = ti.cur_milli ;
+                                    }
+
+                                    // the timeline stores some state, so it 
+                                    // is defined further above
+                                    {
+                                        tl2.begin( ti ) ;
+                                        tl2.end() ;
+                                        cur_time = ti.cur_milli ;
+                                    }
+
+                                    // the player_controller stores some state, 
+                                    // so it is defined further above
+                                    {
+                                        auto const s = pc.do_tool( "Player" ) ;
+                                        if( s == motor::tool::player_controller_t::player_state::stop )
+                                        {
+                                            cur_time = 0  ;
+                                        }
+                                        else if( s == motor::tool::player_controller_t::player_state::play )
+                                        {
+                                            if( ti.cur_milli >= ti.max_milli ) 
+                                            {
+                                                cur_time = 0 ;
+                                                
+                                            }
+                                        }
+
+                                        if( pc.get_state() == motor::tool::player_controller_t::player_state::play )
+                                        {
+                                            cur_time += 100 ;
+                                        }
+
+                                        if( cur_time > ti.max_milli )
+                                        {
+                                            cur_time = ti.max_milli ;
+                                            pc.set_stop() ;
+                                        }
+                                    }
                                 }
                                 ImGui::End() ;
                             }
 
-                            bool_t show = true ;
-                            ImGui::ShowDemoWindow( &show ) ;
+                            //bool_t show = true ;
+                            //ImGui::ShowDemoWindow( &show ) ;
                         } ) ;
                         imgui.render( fe ) ;
                     } ) ;
