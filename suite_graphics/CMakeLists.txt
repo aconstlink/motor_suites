@@ -2,6 +2,8 @@
 set( tests
     "00_simple_rendering.cpp"
     "01_simple_rendering_two_window.cpp"
+    "02_simple_msl.cpp"
+    "03_two_window_msl.cpp"
     )
 
 foreach( _test ${tests} )

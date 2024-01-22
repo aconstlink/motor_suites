@@ -40,9 +40,9 @@ void_t test_1( motor::io::database_mtr_t db )
             doc = motor::msl::parser_t( l.as_string() ).process( std::move( file ) ) ;
         } ) ;
 
-        //if( res ) ndb->insert( std::move( doc ), config_symbols ) ;
+        if( res ) ndb->insert( std::move( doc ), config_symbols ) ;
     }
-    #if 0
+
     for( auto const & c : config_symbols )
     {
         motor::msl::generatable_t res = motor::msl::dependency_resolver_t().resolve( motor::share( ndb ), c ) ;
@@ -55,12 +55,18 @@ void_t test_1( motor::io::database_mtr_t db )
             }
         }
 
+        motor::msl::generator_t gen( std::move( res ) ) ;
+
         {
-            auto code = motor::msl::generator_t( std::move( res ) ).generate() ;
+            auto code = gen.generate<motor::msl::glsl::generator_t>() ;
+            int const bp = 0 ;
+        }
+
+        {
+            auto code = gen.generate<motor::msl::hlsl::generator_t>() ;
             int const bp = 0 ;
         }
     }
-    #endif
     motor::memory::release_ptr( ndb ) ;
 }
 
@@ -97,7 +103,12 @@ void_t test_2( motor::io::database_mtr_t db )
         }
 
         {
-            auto code = motor::msl::generator_t( std::move( res ) ).generate() ;
+            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::glsl::generator_t>() ;
+            int const bp = 0 ;
+        }
+
+        {
+            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::hlsl::generator_t>() ;
             int const bp = 0 ;
         }
     }
@@ -137,7 +148,12 @@ void_t test_3( motor::io::database_mtr_t db )
         }
 
         {
-            auto code = motor::msl::generator_t( std::move( res ) ).generate() ;
+            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::glsl::generator_t>() ;
+            int const bp = 0 ;
+        }
+
+        {
+            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::hlsl::generator_t>() ;
             int const bp = 0 ;
         }
     }
@@ -175,7 +191,12 @@ void_t test_4( motor::io::database_mtr_t db )
         }
 
         {
-            auto code = motor::msl::generator_t( std::move( res ) ).generate() ;
+            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::glsl::generator_t>() ;
+            int const bp = 0 ;
+        }
+
+        {
+            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::hlsl::generator_t>() ;
             int const bp = 0 ;
         }
     }
@@ -214,7 +235,12 @@ void_t test_5( motor::io::database_mtr_t db )
         }
 
         {
-            auto code = motor::msl::generator_t( std::move( res ) ).generate() ;
+            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::glsl::generator_t>() ;
+            int const bp = 0 ;
+        }
+
+        {
+            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::hlsl::generator_t>() ;
             int const bp = 0 ;
         }
     }
@@ -227,6 +253,7 @@ int main( int argc, char ** argv )
 
     
     test_1( db ) ;
+    //test_2( db ) ;
     //test_3( db ) ;
 
     //test_4( db ) ;
