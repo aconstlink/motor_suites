@@ -1,7 +1,7 @@
 #include <motor/platform/global.h>
 #include <motor/application/window/window_message_listener.h>
 
-#include <motor/graphics/frontend/gen4/frontend.h>
+#include <motor/graphics/frontend/gen4/frontend.hpp>
 
 #include <motor/graphics/object/render_object.h>
 #include <motor/graphics/object/geometry_object.h>

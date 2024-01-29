@@ -1,7 +1,7 @@
 #include <motor/platform/global.h>
 #include <motor/application/window/window_message_listener.h>
 
-#include <motor/graphics/frontend/gen4/frontend.h>
+#include <motor/graphics/frontend/gen4/frontend.hpp>
 
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
@@ -16,9 +16,6 @@ int main( int argc, char ** argv )
 
     auto fut_update_loop = std::async( std::launch::async, [&]( void_t )
     {
-        motor::application::window_message_listener_mtr_t msgl_in = motor::memory::create_ptr<
-            motor::application::window_message_listener>( "[in] : message listener" ) ;
-
         motor::application::window_message_listener_mtr_t msgl_out = motor::memory::create_ptr<
             motor::application::window_message_listener>( "[out] : message listener" ) ;
 
@@ -32,7 +29,6 @@ int main( int argc, char ** argv )
 
             auto wnd = carrier->create_window( wi ) ;
 
-            wnd->register_in( motor::share( msgl_in ) ) ;
             wnd->register_out( motor::share( msgl_out ) ) ;
 
             wnd->send_message( motor::application::show_message( { true } ) ) ;
@@ -96,7 +92,6 @@ int main( int argc, char ** argv )
             motor::memory::release_ptr( wnd ) ;
         }
 
-        motor::memory::release_ptr( msgl_in ) ;
         motor::memory::release_ptr( msgl_out ) ;
     }) ;
 
