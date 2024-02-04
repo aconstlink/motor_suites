@@ -25,7 +25,7 @@ int main( int argc, char ** argv )
             wi.y = 100 ;
             wi.w = 800 ;
             wi.h = 600 ;
-            wi.gen = motor::application::graphics_generation::gen4_auto ;
+            wi.gen = motor::application::graphics_generation::gen4_gl4 ;
 
             auto wnd = carrier->create_window( wi ) ;
 
@@ -76,8 +76,8 @@ int main( int argc, char ** argv )
                         }
 
                         root_so = std::move( so ) ; 
-                        fe->configure( motor::delay(&root_so) ) ;
-                        fe->push( motor::delay(&root_so) ) ;
+                        fe->configure<motor::graphics::state_object_t>( &root_so ) ;
+                        fe->push( &root_so ) ;
                         fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ; ;
                     } ;
 

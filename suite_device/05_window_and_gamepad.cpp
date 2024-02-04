@@ -22,12 +22,12 @@ int main( int argc, char ** argv )
         motor::device::xbc_device_mtr_t gp_dev = nullptr ;
 
         // looking for device. It is managed, so pointer must be copied.
-        carrier->device_system()->search( [&] ( motor::device::idevice_mtr_shared_t dev_in )
+        carrier->device_system()->search( [&] ( motor::device::idevice_borrow_t::mtr_t dev_in )
         {
             // find the first one
-            if( auto * ptr1 = dynamic_cast<motor::device::xbc_device_mtr_t>(dev_in.mtr()); ptr1 != nullptr && gp_dev == nullptr )
+            if( auto * ptr1 = dynamic_cast<motor::device::xbc_device_mtr_t>(dev_in); ptr1 != nullptr && gp_dev == nullptr )
             {
-                gp_dev = motor::memory::copy_ptr( ptr1 ) ;
+                gp_dev = motor::share( ptr1 ) ;
             }
         } ) ;
 

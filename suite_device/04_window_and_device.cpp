@@ -24,15 +24,15 @@ int main( int argc, char ** argv )
         motor::device::three_device_mtr_t mouse_dev = nullptr ;
 
         // looking for device. It is managed, so pointer must be copied.
-        carrier->device_system()->search( [&] ( motor::device::idevice_mtr_shared_t dev_in )
+        carrier->device_system()->search( [&] ( motor::device::idevice_borrow_t::mtr_t dev_in )
         {
-            if( auto * ptr1 = dynamic_cast<motor::device::three_device_mtr_t>(dev_in.mtr()); ptr1 != nullptr && mouse_dev == nullptr )
+            if( auto * ptr1 = dynamic_cast<motor::device::three_device_mtr_t>(dev_in); ptr1 != nullptr && mouse_dev == nullptr )
             {
-                mouse_dev = motor::memory::copy_ptr( ptr1 ) ;
+                mouse_dev = motor::share( ptr1 ) ;
             }
-            else if( auto * ptr2 = dynamic_cast<motor::device::ascii_device_mtr_t>(dev_in.mtr()); ptr2 != nullptr && ascii_dev == nullptr )
+            else if( auto * ptr2 = dynamic_cast<motor::device::ascii_device_mtr_t>(dev_in); ptr2 != nullptr && ascii_dev == nullptr )
             {
-                ascii_dev = motor::memory::copy_ptr( ptr2 ) ;
+                ascii_dev = motor::share( ptr2 ) ;
             }
         } ) ;
 

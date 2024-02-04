@@ -21,14 +21,9 @@ namespace this_file
     };
     motor_typedef( test_class ) ;
 
-    void_t funk( test_class_mtr_shared_t x ) noexcept
+    void_t funk( test_class_mtr_safe_t x ) noexcept
     {
-        // x needs to be copied
-    }
-
-    void_t funk( test_class_mtr_unique_t x ) noexcept
-    {
-        // ownership of x left here.
+        // x was copied
         motor::memory::release_ptr( x ) ;
     }
 }

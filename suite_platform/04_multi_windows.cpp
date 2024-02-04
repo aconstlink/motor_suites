@@ -116,7 +116,7 @@ int main( int argc, char ** argv )
             }
 
             root_so = std::move( so ) ; 
-            fe->configure( motor::delay(&root_so) ) ;
+            fe->configure<motor::graphics::state_object_t>( &root_so ) ;
         } ;
 
         // init rendering objects
@@ -129,12 +129,12 @@ int main( int argc, char ** argv )
             if( wnd2->render_frame< motor::graphics::gen4::frontend_t >( my_rnd_funk_init ) )
             {
                 int bp = 0 ;
-            }
+            } 
         }
 
         auto my_rnd_funk_use = [&]( motor::graphics::gen4::frontend_ptr_t fe )
         {
-            fe->push( motor::delay(&root_so) ) ;
+            fe->push( &root_so ) ;
             fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ; 
         } ;
 

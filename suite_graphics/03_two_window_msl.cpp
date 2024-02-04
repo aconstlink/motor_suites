@@ -285,14 +285,14 @@ int main( int argc, char ** argv )
                         }
 
                         root_so = std::move( so ) ; 
-                        fe->configure( motor::delay(&root_so) ) ;
+                        fe->configure<motor::graphics::state_object_t>( &root_so ) ;
                     }
 
                     // 
                     {
-                        fe->configure( motor::delay(&geo_obj) ) ;
-                        fe->configure( motor::delay(&img_obj)) ;
-                        fe->configure( motor::delay(&msl_obj) ) ;
+                        fe->configure<motor::graphics::geometry_object_t>( &geo_obj ) ;
+                        fe->configure<motor::graphics::image_object_t>( &img_obj ) ;
+                        fe->configure<motor::graphics::msl_object_t>( &msl_obj ) ;
                         
                     }
                 } ;
@@ -335,13 +335,13 @@ int main( int argc, char ** argv )
                     
                     auto my_rnd_funk = [&]( motor::graphics::gen4::frontend_ptr_t fe )
                     {
-                        fe->push( motor::delay(&root_so) ) ;
+                        fe->push( &root_so ) ;
                         {
                             motor::graphics::gen4::backend_t::render_detail_t detail ;
                             detail.start = 0 ;
                             //detail.num_elems = 3 ;
                             detail.varset = 0 ;
-                            fe->render( motor::delay( &msl_obj), detail ) ;
+                            fe->render(  &msl_obj, detail ) ;
                         }
                         fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ; 
 

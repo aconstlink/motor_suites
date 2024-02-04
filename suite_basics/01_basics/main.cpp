@@ -24,25 +24,15 @@ namespace this_file
     };
     motor_typedef( my_class ) ;
     
-    // pass by value means that ptr IS ref counted 
-    // in this function.
+    // it is borrowed. Not refcounted
     my_class_mtr_t do_something_value( my_class_mtr_t ptr )
-    {
-        motor::memory::copy_ptr<my_class_t>( ptr )->set( 10 ) ;
-        return motor::memory::release_ptr( ptr ) ;
-    }
-
-    // pass by reference means that ptr IS NOT ref counted 
-    // in this function.
-    my_class_mtr_t do_something_ref( my_class_mtr_ref_t ptr )
     {
         ptr->set( 10 ) ;
         return ptr ;
     }
 
-    // pass by reference means that ptr IS NOT ref counted 
-    // in this function. It takes over the managed pointer
-    my_class_mtr_t do_something_take_over( my_class_mtr_rref_t ptr )
+    // a safe_t pointer needs to be shared or unique.
+    my_class_mtr_t do_something_value( my_class_mtr_safe_t ptr )
     {
         ptr->set( 10 ) ;
         return motor::memory::release_ptr( ptr ) ;
@@ -59,20 +49,18 @@ int main( int argc, char ** argv )
             motor::memory::global_t::create<this_file::my_class_t>( "my object from main" ) ;
 
         this_file::do_something_value( some_data ) ;
-        this_file::do_something_ref( some_data ) ;
 
         {
-            auto * ptr = motor::memory::copy_ptr( some_data ) ;
-
-            auto * other = this_file::do_something_take_over( std::move( ptr ) ) ;
-                //motor::memory::move_ptr( ptr ) ) ;
+            auto * other = this_file::do_something_value( motor::share( some_data ) ) ;
+            assert( other == some_data ) ;
         }
 
         {
-            auto * other = this_file::do_something_take_over( 
-                std::move( motor::memory::copy_ptr( some_data ) ) ) ;
+            auto * other = this_file::do_something_value( motor::unique( some_data ) ) ;
+            assert( other == nullptr ) ;
         }
 
+        // some_data should be released by now.
         motor::memory::global_t::release( some_data ) ;
     }
 

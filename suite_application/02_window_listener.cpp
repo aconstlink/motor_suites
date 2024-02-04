@@ -140,7 +140,7 @@ namespace this_file
 
     public:
 
-        my_app( motor::application::window_mtr_shared_t wnd ) noexcept : _wnd( motor::memory::copy_ptr(wnd) )
+        my_app( motor::application::window_mtr_safe_t wnd ) noexcept : _wnd( motor::memory::copy_ptr(wnd) )
         {
             _lsn = motor::memory::create_ptr( 
                 motor::application::window_message_listener_t(), "[test] : out listener" ) ;

@@ -60,14 +60,14 @@ int main( int argc, char ** argv )
             for( int_t i=0; i<50; ++i )
             {
                 wnd->send_message( motor::application::resize_message_t( { true, 200+2*i, 500, false, 0, 0 } ) ) ;
-                std::this_thread::sleep_for( std::chrono::milliseconds(50) ) ;
+                std::this_thread::sleep_for( std::chrono::milliseconds(10) ) ;
             }
 
-            motor::log::global_t::status( "[test] : resize window #4" ) ;
+            motor::log::global_t::status( "[test] : resize window #5" ) ;
             for( int_t i=0; i<50; ++i )
             {
                 wnd->send_message( motor::application::resize_message_t( { true, 200, 500+2*i, false, 0, 0 } ) ) ;
-                std::this_thread::sleep_for( std::chrono::milliseconds(50) ) ;
+                std::this_thread::sleep_for( std::chrono::milliseconds(10) ) ;
             }
             
 
