@@ -45,7 +45,7 @@ void_t test_1( motor::io::database_mtr_t db )
 
     for( auto const & c : config_symbols )
     {
-        motor::msl::generatable_t res = motor::msl::dependency_resolver_t().resolve( motor::share( ndb ), c ) ;
+        motor::msl::generatable_t res = motor::msl::dependency_resolver_t().resolve( ndb, c ) ;
         if( res.missing.size() != 0 )
         {
             motor::log::global_t::warning( "We have missing symbols." ) ;

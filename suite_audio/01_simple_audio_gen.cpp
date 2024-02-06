@@ -155,8 +155,8 @@ int main( int argc, char ** argv )
                     carrier->update_device_system() ;
 
                     {
-                        imgui.update( motor::share( ascii_dev ) ) ;
-                        imgui.update( motor::share( mouse_dev ) ) ;
+                        imgui.update( ascii_dev ) ;
+                        imgui.update( mouse_dev ) ;
                     }
                     
                     wnd->render_frame< motor::graphics::gen4::frontend_t >( [&]( motor::graphics::gen4::frontend_ptr_t fe )

@@ -58,7 +58,7 @@ int main( int argc, char ** argv )
 
                 while( true ) 
                 {
-                    std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) ) ;
+                    //std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) ) ;
 
                     motor::application::window_message_listener_t::state_vector_t sv ;
                     if( msgl_out->swap_and_reset( sv ) )

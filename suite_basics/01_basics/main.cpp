@@ -41,7 +41,6 @@ namespace this_file
 
 int main( int argc, char ** argv )
 {
-    motor::memory::global_t::init() ;
     motor::log::global_t::init() ;
 
     {
