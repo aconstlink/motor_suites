@@ -4,6 +4,7 @@ set( tests
     "00_vector.cpp"
     "01_matrix.cpp"
     "02_angle.cpp"
+    "03_spline_keyframe.cpp"
     )
 
 if( MSVC )
@@ -25,6 +26,7 @@ foreach( _test ${tests} )
     add_executable( ${app_name} ${_test} ) 
     target_link_libraries( ${app_name} 
       PRIVATE motor::math 
+      PRIVATE motor::log
       
        )
 
