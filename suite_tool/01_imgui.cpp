@@ -93,15 +93,13 @@ int main( int argc, char ** argv )
                     // must be done along with the user thread due
                     // to synchronization issues with any device 
                     carrier->update_device_system() ;
-
-                    {
-                        imgui.update( ascii_dev ) ;
-                        imgui.update( mouse_dev ) ;
-                    }
                     
                     wnd->render_frame< motor::graphics::gen4::frontend_t >( [&]( motor::graphics::gen4::frontend_ptr_t fe )
                     {
-                        
+                        {
+                            imgui.update( ascii_dev ) ;
+                            imgui.update( mouse_dev ) ;
+                        }
 
                         imgui.execute( [&]( void_t )
                         {
