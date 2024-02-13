@@ -5,6 +5,7 @@ set( subdirs
     "00_memory"
     "01_basics"
     "02_containers"
+    "03_some_basic_tests"
     )
 
 if( WIN32 )
