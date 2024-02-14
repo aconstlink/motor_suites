@@ -30,6 +30,7 @@ add_subdirectory( "suite_platform" )
 add_subdirectory( "suite_graphics" )
 add_subdirectory( "suite_tool" )
 add_subdirectory( "suite_audio" )
+add_subdirectory( "suite_format" )
 
 install( EXPORT suites-targets DESTINATION "cmake" )
 
