@@ -50,7 +50,7 @@ int main( int argc, char ** argv )
         motor::io::monitor_mtr_t mon = motor::memory::create_ptr( motor::io::monitor_t() ) ;
         motor::io::database db( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
 
-        db.attach( mon ) ;
+        db.attach( motor::share( mon ) ) ;
         //db.attach( "data.some_info2", mon ) ;
         //db.attach( "subfolder.data", mon ) ;
 
@@ -62,7 +62,6 @@ int main( int argc, char ** argv )
             {
                 motor::log::global_t::status( "store result: " + motor::io::to_string(res) ) ;
             } ) ;
-            
         }
 
         // test file changes
