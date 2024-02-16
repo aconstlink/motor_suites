@@ -5,6 +5,7 @@ set( tests
     "02_simple_msl.cpp"
     "03_two_window_msl.cpp"
     "04_framebuffer.cpp"
+    "05_multi_geometry.cpp"
     )
 
 foreach( _test ${tests} )
@@ -25,7 +26,8 @@ foreach( _test ${tests} )
       PRIVATE motor::memory
       PRIVATE motor::application
       PRIVATE motor::graphics
-      PRIVATE motor::platform )
+      PRIVATE motor::platform
+      PRIVATE motor::gfx )
 
     set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_graphics" )
 
