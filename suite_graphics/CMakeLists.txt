@@ -4,6 +4,7 @@ set( tests
     "01_simple_rendering_two_window.cpp"
     "02_simple_msl.cpp"
     "03_two_window_msl.cpp"
+    "04_framebuffer.cpp"
     )
 
 foreach( _test ${tests} )
