@@ -1,12 +1,12 @@
 
 set( tests
     "00_simple_rendering.cpp"
-    "01_simple_rendering_two_window.cpp"
-    "02_simple_msl.cpp"
-    "03_two_window_msl.cpp"
-    "04_framebuffer.cpp"
-    "05_multi_geometry.cpp"
-    "06_framebuffer_mrt.cpp"
+    "01_simple_msl.cpp"
+    "02_framebuffer.cpp"
+    "03_multi_geometry.cpp"
+    "04_framebuffer_mrt.cpp"
+    "05_array_object_raw.cpp"
+    "06_array_object.cpp"
     )
 
 foreach( _test ${tests} )
