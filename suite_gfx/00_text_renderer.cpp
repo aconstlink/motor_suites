@@ -1,15 +1,10 @@
+
 #include <motor/platform/global.h>
-#include <motor/application/window/window_message_listener.h>
-#include <motor/io/global.h>
 
 #include <motor/gfx/font/text_render_2d.h>
-
 #include <motor/format/global.h>
 #include <motor/format/future_items.hpp>
 #include <motor/property/property_sheet.hpp>
-
-#include <motor/graphics/object/render_object.h>
-#include <motor/graphics/object/geometry_object.h>
 
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
@@ -17,21 +12,18 @@
 
 #include <future>
 
-int main( int argc, char ** argv )
+namespace this_file
 {
     using namespace motor::core::types ;
 
-    motor::application::carrier_mtr_t carrier = motor::platform::global_t::create_carrier() ;
-
-    auto fut_update_loop = std::async( std::launch::async, [&]( void_t )
+    class my_app : public motor::application::app
     {
-        motor::io::database db( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
+        motor_this_typedefs( my_app ) ;
 
-        motor::application::window_message_listener_mtr_t msgl_out = motor::memory::create_ptr<
-            motor::application::window_message_listener>( "[out] : message listener" ) ;
-
+        motor::io::database db = motor::io::database( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
         motor::gfx::text_render_2d_mtr_t tr = nullptr ;
 
+        virtual void_t on_init( void_t ) noexcept
         {
             motor::application::window_info_t wi ;
             wi.x = 100 ;
@@ -40,30 +32,12 @@ int main( int argc, char ** argv )
             wi.h = 600 ;
             wi.gen = motor::application::graphics_generation::gen4_auto ;
 
-            auto wnd = carrier->create_window( wi ) ;
-
-            wnd->register_out( motor::share( msgl_out ) ) ;
-
-            wnd->send_message( motor::application::show_message( { true } ) ) ;
-            wnd->send_message( motor::application::cursor_message_t( {false} ) ) ;
-            wnd->send_message( motor::application::vsync_message_t( { true } ) ) ;
-
-            // wait for window creation
+            this_t::send_window_message( this_t::create_window( wi ), [&]( motor::application::app::window_view & wnd )
             {
-                std::this_thread::sleep_for( std::chrono::milliseconds(10) ) ;
-
-                while( true ) 
-                {
-                    motor::application::window_message_listener_t::state_vector_t sv ;
-                    if( msgl_out->swap_and_reset( sv ) )
-                    {
-                        if( sv.create_changed )
-                        {
-                            break ;
-                        }
-                    }
-                }
-            }
+                wnd.send_message( motor::application::show_message( { true } ) ) ;
+                wnd.send_message( motor::application::cursor_message_t( {false} ) ) ;
+                wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
+            } ) ;
 
             // import fonts and create text render
             {
@@ -110,92 +84,76 @@ int main( int argc, char ** argv )
 
                 motor::memory::release_ptr( mod_reg ) ;
             }
-
-            {
-                auto my_rnd_funk_init = [&]( motor::graphics::gen4::frontend_ptr_t fe )
-                {
-                    tr->on_frame_init( fe ) ; 
-                } ;
-
-                if( wnd->render_frame< motor::graphics::gen4::frontend_t >( my_rnd_funk_init ) )
-                {
-                    // funk has been rendered.
-                }
-
-                while( true ) 
-                {
-                    std::this_thread::sleep_for( std::chrono::milliseconds( 10 ) ) ;
-                
-                    motor::application::window_message_listener_t::state_vector_t sv ;
-                    if( msgl_out->swap_and_reset( sv ) )
-                    {
-                        if( sv.close_changed )
-                        {
-                            break ;
-                        }
-                    }
-                    
-                    auto my_rnd_funk = [&]( motor::graphics::gen4::frontend_ptr_t fe )
-                    {
-                        {
-                            tr->draw_text( 0, 0, 10, motor::math::vec2f_t(0.0f, -0.60f), 
-                                motor::math::vec4f_t(1.0f), "Hello World Group 0!" ) ;
-
-                            tr->draw_text( 1, 1, 25, motor::math::vec2f_t(0.0f, -0.7f), 
-                                motor::math::vec4f_t(1.0f), "Hello World Group 1!" ) ;
-
-                            static uint_t number = 0 ;
-                            ++number ;
-                            tr->draw_text( 0, 1, 120, motor::math::vec2f_t(0.0f, -0.5f), 
-                                motor::math::vec4f_t(1.0f), motor::to_string(number) ) ;
-
-                            tr->prepare_for_rendering(fe) ;
-                        }
-
-                        for( size_t i=0; i<10; ++i )
-                        {
-                            float_t const yoff = 0.08f * float_t(i) ;
-                            size_t const pt = 25 - i * 2 ;
-                            tr->draw_text( 0, 0, pt, motor::math::vec2f_t(-0.8f, 0.40f-yoff), 
-                                motor::math::vec4f_t(1.0f), "Hello World! This is changing point ("+
-                                motor::to_string(pt) +") size." ) ;
-                        }
-
-                        // render text layer 0 to screen
-                        {
-                            tr->render( fe, 0 ) ;
-                            tr->render( fe, 1 ) ;
-                        }
-                    } ;
-
-                    if( wnd->render_frame< motor::graphics::gen4::frontend_t >( my_rnd_funk ) )
-                    {
-                        // funk has been rendered.
-                    }
-                }
-            }
-
-            motor::memory::release_ptr( tr ) ;
-            motor::memory::release_ptr( wnd ) ;
         }
 
-        motor::memory::release_ptr( msgl_out ) ;
-    }) ;
+        virtual void_t on_event( window_id_t const wid, 
+                motor::application::window_message_listener::state_vector_cref_t sv ) noexcept
+        {
+            if( sv.create_changed )
+            {
+                motor::log::global_t::status("[my_app] : window created") ;
+            }
+            if( sv.close_changed )
+            {
+                motor::log::global_t::status("[my_app] : window closed") ;
+                this->close() ;
+            }
+        }
 
-    // end the program by closing the carrier
-    auto fut_end = std::async( std::launch::async, [&]( void_t )
-    {
-        fut_update_loop.wait() ;
+        virtual void_t on_render( this_t::window_id_t const, motor::graphics::gen4::frontend_ptr_t fe, 
+            motor::application::app::render_data_in_t rd ) noexcept 
+        {
+            {
+                tr->draw_text( 0, 0, 10, motor::math::vec2f_t(0.0f, -0.60f), 
+                    motor::math::vec4f_t(1.0f), "Hello World Group 0!" ) ;
 
-        carrier->close() ;
-    } ) ;
+                tr->draw_text( 1, 1, 25, motor::math::vec2f_t(0.0f, -0.7f), 
+                    motor::math::vec4f_t(1.0f), "Hello World Group 1!" ) ;
 
+                static uint_t number = 0 ;
+                ++number ;
+                tr->draw_text( 0, 1, 120, motor::math::vec2f_t(0.0f, -0.5f), 
+                    motor::math::vec4f_t(1.0f), motor::to_string(number) ) ;
+
+                tr->prepare_for_rendering(fe) ;
+            }
+
+            for( size_t i=0; i<10; ++i )
+            {
+                float_t const yoff = 0.08f * float_t(i) ;
+                size_t const pt = 25 - i * 2 ;
+                tr->draw_text( 0, 0, pt, motor::math::vec2f_t(-0.8f, 0.40f-yoff), 
+                    motor::math::vec4f_t(1.0f), "Hello World! This is changing point ("+
+                    motor::to_string(pt) +") size." ) ;
+            }
+
+            // render text layer 0 to screen
+            {
+                tr->render( fe, 0 ) ;
+                tr->render( fe, 1 ) ;
+            }
+        }
+
+        virtual void_t on_shutdown( void_t ) noexcept 
+        {
+            motor::memory::release_ptr( tr ) ;
+        } 
+    };
+}
+
+int main( int argc, char ** argv )
+{
+    using namespace motor::core::types ;
+
+    motor::application::carrier_mtr_t carrier = motor::platform::global_t::create_carrier(
+        motor::shared( this_file::my_app() ) ) ;
+    
     auto const ret = carrier->exec() ;
     
     motor::memory::release_ptr( carrier ) ;
 
-    motor::io::global_t::deinit() ;
-    motor::concurrent::global_t::deinit() ;
+    motor::io::global::deinit() ;
+    motor::concurrent::global::deinit() ;
     motor::log::global::deinit() ;
     motor::memory::global::dump_to_std() ;
 
