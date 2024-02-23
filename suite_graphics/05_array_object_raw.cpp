@@ -20,6 +20,9 @@
 
 #include <future>
 
+// fist test application just shows how the 
+// array object is used in api shaders. 
+// Do not use this method, instead use msl shaders.
 namespace this_file
 {
     using namespace motor::core::types ;

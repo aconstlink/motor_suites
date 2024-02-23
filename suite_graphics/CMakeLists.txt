@@ -7,6 +7,7 @@ set( tests
     "04_framebuffer_mrt.cpp"
     "05_array_object_raw.cpp"
     "06_array_object.cpp"
+    "07_texture_array_raw.cpp"
     )
 
 foreach( _test ${tests} )
@@ -29,7 +30,8 @@ foreach( _test ${tests} )
       PRIVATE motor::graphics
       PRIVATE motor::platform
       PRIVATE motor::gfx
-      PRIVATE motor::geometry )
+      PRIVATE motor::geometry
+      PRIVATE motor::format )
 
     set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_graphics" )
 
