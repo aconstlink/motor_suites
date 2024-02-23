@@ -136,8 +136,6 @@ namespace this_file
             }
             return true ; 
         }
-
-        virtual void_t on_shutdown( void_t ) noexcept {}
     };
 }
 
