@@ -117,7 +117,6 @@ namespace this_file
                             if( ti.cur_milli >= ti.max_milli ) 
                             {
                                 cur_time = 0 ;
-                                                
                             }
                         }
 
