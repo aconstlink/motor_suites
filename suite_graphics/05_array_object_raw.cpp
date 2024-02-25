@@ -17,6 +17,7 @@
 #include <motor/concurrent/parallel_for.hpp>
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
+#include <motor/io/global.h>
 
 #include <future>
 
@@ -823,6 +824,7 @@ int main( int argc, char ** argv )
     
     motor::memory::release_ptr( carrier ) ;
 
+    motor::io::global::deinit() ;
     motor::concurrent::global::deinit() ;
     motor::log::global::deinit() ;
     motor::memory::global::dump_to_std() ;

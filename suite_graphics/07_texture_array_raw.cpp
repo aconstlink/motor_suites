@@ -10,6 +10,7 @@
 
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
+#include <motor/concurrent/global.h>
 
 #include <future>
 
@@ -177,6 +178,7 @@ namespace this_file
                         if( auto * ii = dynamic_cast<motor::format::image_item_mtr_t>( items[i].get() ); ii != nullptr )
                         {
                             img.append( *ii->img ) ;
+                            motor::memory::release_ptr( ii->img ) ;
                             motor::memory::release_ptr( ii ) ;
                         }
                         else
@@ -193,6 +195,8 @@ namespace this_file
                         .set_wrap( motor::graphics::texture_wrap_mode::wrap_t, motor::graphics::texture_wrap_type::repeat )
                         .set_filter( motor::graphics::texture_filter_mode::min_filter, motor::graphics::texture_filter_type::nearest )
                         .set_filter( motor::graphics::texture_filter_mode::mag_filter, motor::graphics::texture_filter_type::nearest );
+
+                    motor::memory::release_ptr( mod_reg ) ;
                 }
 
                 // shader configuration
@@ -488,7 +492,9 @@ int main( int argc, char ** argv )
     auto const ret = carrier->exec() ;
     
     motor::memory::release_ptr( carrier ) ;
-
+    
+    motor::io::global::deinit() ;
+    motor::concurrent::global::deinit() ;
     motor::log::global::deinit() ;
     motor::memory::global::dump_to_std() ;
 
