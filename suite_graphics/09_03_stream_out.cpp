@@ -312,7 +312,7 @@ namespace this_file
 
                                 out.pos = vec4_t( pos, in.pos.w ) ;
                                 out.vel = vec4_t( vel, 0.0 ) ;
-                                out.accel = as_vec4(0.0) ; //vec4_t( acl, 0.0 ) ;
+                                out.accel = as_vec4(0.0) ;
                                 out.force = in.force ;
                             }
                         }
