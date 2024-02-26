@@ -26,7 +26,8 @@ namespace this_file
         motor::math::vec4ui_t fb_dims = motor::math::vec4ui_t( 0, 0, 1920, 1080 ) ;
 
         motor::graphics::state_object_t scene_so ;
-        motor::graphics::geometry_object_t geo_obj ;
+        motor::graphics::geometry_object_t quad_geo ;
+        motor::graphics::geometry_object_t points_geo ;
 
         motor::graphics::shader_object_t sh_obj ;
         motor::graphics::shader_object_t sh_so_obj ;
@@ -159,8 +160,32 @@ namespace this_file
                         array[ 5 ] = 3 ;
                     } ) ;
 
-                    geo_obj = motor::graphics::geometry_object_t( "quad",
+                    quad_geo = motor::graphics::geometry_object_t( "quad",
                         motor::graphics::primitive_type::triangles, std::move( vb ), std::move( ib ) ) ;
+                }
+
+                // geometry configuration
+                {
+                    struct vertex { motor::math::vec4f_t pos ; motor::math::vec4f_t color ; } ;
+
+                    auto vb = motor::graphics::vertex_buffer_t()
+                        .add_layout_element( motor::graphics::vertex_attribute::position, motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
+                        .add_layout_element( motor::graphics::vertex_attribute::color0, motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
+                        .resize( 4 ).update<vertex>( [=] ( vertex* array, size_t const ne )
+                    {
+                        array[ 0 ].pos = motor::math::vec4f_t( -0.5f, -0.5f, 0.0f, 1.0f ) ;
+                        array[ 1 ].pos = motor::math::vec4f_t( -0.5f, +0.5f, 0.0f, 1.0f ) ;
+                        array[ 2 ].pos = motor::math::vec4f_t( +0.5f, +0.5f, 0.0f, 1.0f ) ;
+                        array[ 3 ].pos = motor::math::vec4f_t( +0.5f, -0.5f, 0.0f, 1.0f ) ;
+
+                        array[ 0 ].color = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
+                        array[ 1 ].color = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
+                        array[ 2 ].color = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
+                        array[ 3 ].color = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
+                    } );
+
+                    points_geo = motor::graphics::geometry_object_t( "points",
+                        motor::graphics::primitive_type::points, std::move( vb ) ) ;
                 }
 
                 // stream out object configuration
@@ -186,11 +211,18 @@ namespace this_file
                                 in vec4 in_pos ;
                                 in vec4 in_color ;
                                 out vec4 var_color ;
+                            
+                                uniform samplerBuffer u_data ;
 
                                 void main()
                                 {
-                                    var_color = in_color ;
-                                    gl_Position = in_pos * vec4(0.5, 0.5, 1.0, 1.0) ;
+                                    int idx = gl_VertexID / 4 ;
+                                    vec4 pos = texelFetch( u_data, (idx *2) + 0 ) ;
+                                    vec4 col = texelFetch( u_data, (idx *2) + 1 ) ;
+
+                                    pos = vec4( (pos + in_pos).xyz, 1.0 ) * vec4(0.5, 0.5, 1.0, 1.0) ;
+                                    var_color = ( gl_VertexID < 2) ? in_color : col ;
+                                    gl_Position = pos ;
 
                                 } )" ) ).
 
@@ -198,7 +230,7 @@ namespace this_file
                                 #version 140
                                 #extension GL_ARB_separate_shader_objects : enable
                                 #extension GL_ARB_explicit_attrib_location : enable
-
+    
                                 in vec4 var_color ;
                                 layout( location = 0 ) out vec4 out_color ;
 
@@ -216,14 +248,23 @@ namespace this_file
 
                             set_vertex_shader( motor::graphics::shader_t( R"(
                                 #version 320 es
+                                precision mediump samplerBuffer ;
+
                                 in vec4 in_pos ;
                                 in vec4 in_color ;
                                 out vec4 var_color ;
 
+                                uniform samplerBuffer u_data ;
+
                                 void main()
                                 {
-                                    var_color = in_color * vec4(0.5, 0.5, 1.0, 1.0) ;
-                                    gl_Position = vec4( in_pos  ) ;
+                                    int idx = gl_VertexID / 4 ;
+                                    vec4 pos = texelFetch( u_data, (idx *2) + 0 ) ;
+                                    vec4 col = texelFetch( u_data, (idx *2) + 1 ) ;
+
+                                    pos = vec4( (pos + in_pos).xyz, 1.0 ) * vec4(0.5, 0.5, 1.0, 1.0) ;
+                                    var_color = ( gl_VertexID < 2) ? in_color : col ;
+                                    gl_Position = pos ;
 
                                 } )" ) ).
 
@@ -234,7 +275,7 @@ namespace this_file
                                 precision mediump sampler2DArray ;
 
                                 in vec4 var_color ;
-                                out vec4 out_color ;
+                                layout( location = 0 ) out vec4 out_color ;
 
                                 void main()
                                 {
@@ -248,47 +289,53 @@ namespace this_file
                     {
                         motor::graphics::shader_set_t ss = motor::graphics::shader_set_t().
 
-                        set_vertex_shader( motor::graphics::shader_t( R"(
-                            cbuffer ConstantBuffer : register( b0 ) 
-                            {
-                            }
+                            set_vertex_shader( motor::graphics::shader_t( R"(
+                                cbuffer ConstantBuffer : register( b0 ) 
+                                {
+                                }
 
-                            struct VS_INPUT
-                            {
-                                float4 in_pos : POSITION ; 
-                                float4 in_color : COLOR ;
-                            } ;
+                                struct VS_INPUT
+                                {
+                                    float4 in_pos : POSITION ; 
+                                    float4 in_color : COLOR0 ;
+                                } ;
 
-                            struct VS_OUTPUT
-                            {
-                                float4 pos : SV_POSITION ;
-                                float4 col : COLOR ;
-                            };
+                                struct VS_OUTPUT
+                                {
+                                    float4 pos : SV_POSITION ;
+                                    float4 col : COLOR0 ;
+                                };
 
-                            VS_OUTPUT VS( VS_INPUT input )
-                            {
-                                VS_OUTPUT output = (VS_OUTPUT)0 ;
+                                Buffer< float4 > u_data ;
 
-                                output.pos = input.in_pos * float4(0.5, 0.5, 1.0, 1.0) ;
-                                output.col = input.in_color ;
-                                return output;
-                            } )" ) ).
+                                VS_OUTPUT VS( VS_INPUT input, uint in_id: SV_VertexID )
+                                {
+                                    VS_OUTPUT output = (VS_OUTPUT)0 ;
+                                
+                                    int idx = in_id / 4 ;
+                                    float4 pos = u_data.Load( (idx * 2) + 0 ) ;
+                                    float4 col = u_data.Load( (idx * 2) + 1 ) ;
+        
+                                    output.pos = float4( (pos + input.in_pos).xyz, 1.0 ) * float4(0.5, 0.5, 1.0, 1.0) ;
+                                    output.col = (in_id < 2) ? input.in_color : col ;
+                                    return output;
+                                } )" ) ).
 
-                        set_pixel_shader( motor::graphics::shader_t( R"(
+                            set_pixel_shader( motor::graphics::shader_t( R"(
+                            
+                                cbuffer ConstantBuffer : register( b0 ) 
+                                {}
 
-                            cbuffer ConstantBuffer : register( b0 ) 
-                            {}
+                                struct VS_OUTPUT
+                                {
+                                    float4 pos : SV_POSITION;
+                                    float4 col : COLOR0 ;
+                                } ;
 
-                            struct VS_OUTPUT
-                            {
-                                float4 pos : SV_POSITION;
-                                float4 col : COLOR ;
-                            } ;
-
-                            float4 PS( VS_OUTPUT input ) : SV_Target0
-                            {
-                                return input.col ;
-                            } )" ) ) ;
+                                float4 PS( VS_OUTPUT input ) : SV_Target0
+                                {
+                                    return input.col ;
+                                } )" ) ) ;
 
                         sc.insert( motor::graphics::shader_api_type::hlsl_5_0, std::move( ss ) ) ;
                     }
@@ -407,14 +454,17 @@ namespace this_file
                     motor::graphics::render_object_t rc = motor::graphics::render_object_t( "quad" ) ;
 
                     {
-                        rc.link_geometry( "quad", "compute" ) ;
+                        rc.link_geometry( "quad" ) ;
                         rc.link_shader( "render_original" ) ;
                     }
 
                     // add variable set 0
                     {
                         motor::graphics::variable_set_t vars ;
-                        {}
+                        {
+                            auto* var = vars.array_variable_streamout( "u_data" ) ;
+                            var->set( "compute" ) ;
+                        }
                         rc.add_variable_set( motor::shared( std::move( vars ) ) ) ;
                     }
 
@@ -426,7 +476,7 @@ namespace this_file
                     motor::graphics::render_object_t rc = motor::graphics::render_object_t( "stream_out" ) ;
 
                     {
-                        rc.link_geometry( "quad", "compute" ) ;
+                        rc.link_geometry( "points", "compute" ) ;
                         rc.link_shader( "stream_out" ) ;
                     }
 
@@ -451,7 +501,8 @@ namespace this_file
                 rnd_init[wid] = true ;
 
                 fe->configure<motor::graphics::state_object_t>( &scene_so ) ;
-                fe->configure<motor::graphics::geometry_object_t>( &geo_obj ) ;
+                fe->configure<motor::graphics::geometry_object_t>( &quad_geo ) ;
+                fe->configure<motor::graphics::geometry_object_t>( &points_geo ) ;
                 fe->configure<motor::graphics::streamout_object_t>( &so_obj ) ;
                 fe->configure<motor::graphics::shader_object_t>( &sh_obj ) ;
                 fe->configure<motor::graphics::shader_object_t>( &sh_so_obj ) ;

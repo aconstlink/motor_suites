@@ -10,6 +10,7 @@ set( tests
     "07_texture_array_raw.cpp"
     "08_texture_array.cpp"
     "09_00_stream_out.cpp"
+    "09_01_stream_out.cpp"
     )
 
 foreach( _test ${tests} )
