@@ -15,6 +15,7 @@ set( tests
     "09_03_stream_out.cpp"
     "10_00_gs_pass_through_raw.cpp"
     "10_01_gs_pass_through.cpp"
+    "10_02_gs_generate.cpp"
     )
 
 foreach( _test ${tests} )
