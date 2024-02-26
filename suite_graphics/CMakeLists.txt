@@ -8,6 +8,8 @@ set( tests
     "05_array_object_raw.cpp"
     "06_array_object.cpp"
     "07_texture_array_raw.cpp"
+    "08_texture_array.cpp"
+    "09_00_stream_out.cpp"
     )
 
 foreach( _test ${tests} )
