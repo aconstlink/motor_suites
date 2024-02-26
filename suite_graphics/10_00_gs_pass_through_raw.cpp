@@ -5,9 +5,6 @@
 #include <motor/graphics/object/render_object.h>
 #include <motor/graphics/object/geometry_object.h>
 
-#include <motor/format/global.h>
-#include <motor/format/future_items.hpp>
-
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
 #include <motor/concurrent/global.h>
@@ -25,10 +22,7 @@ namespace this_file
         bool_t graphics_init = false ;
         motor::vector< bool_t > rnd_init ;
 
-        motor::io::database db = motor::io::database( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
-
         motor::graphics::geometry_object_t geo_obj ;
-        motor::graphics::image_object_t img_obj ;
         motor::graphics::shader_object_t sh_obj ;
         motor::graphics::render_object_t rd_obj ;
 
@@ -122,49 +116,6 @@ namespace this_file
 
                     geo_obj = motor::graphics::geometry_object_t( "quad",
                         motor::graphics::primitive_type::triangles, std::move( vb ), std::move( ib ) ) ;
-                }
-
-                // image configuration
-                {
-                    motor::format::module_registry_mtr_t mod_reg = motor::format::global::register_default_modules( 
-                        motor::shared( motor::format::module_registry_t() ) ) ;
-
-                    motor::format::future_item_t items[4] = 
-                    {
-                        mod_reg->import_from( motor::io::location_t( "images.1.png" ), &db ),
-                        mod_reg->import_from( motor::io::location_t( "images.2.png" ), &db ),
-                        mod_reg->import_from( motor::io::location_t( "images.3.png" ), &db ),
-                        mod_reg->import_from( motor::io::location_t( "images.4.png" ), &db )
-                    } ;
-
-                    // taking all slices
-                    motor::graphics::image_t img ;
-
-                    // load each slice into the image
-                    for( size_t i=0; i<4; ++i )
-                    {
-                        if( auto * ii = dynamic_cast<motor::format::image_item_mtr_t>( items[i].get() ); ii != nullptr )
-                        {
-                            img.append( *ii->img ) ;
-                            motor::memory::release_ptr( ii->img ) ;
-                            motor::memory::release_ptr( ii ) ;
-                        }
-                        else
-                        {
-                            motor::memory::release_ptr( ii ) ;
-                            std::exit( 1 ) ;
-                        }
-                    }
-
-                    img_obj = motor::graphics::image_object_t( 
-                        "image_array", std::move( img ) )
-                        .set_type( motor::graphics::texture_type::texture_2d_array )
-                        .set_wrap( motor::graphics::texture_wrap_mode::wrap_s, motor::graphics::texture_wrap_type::repeat )
-                        .set_wrap( motor::graphics::texture_wrap_mode::wrap_t, motor::graphics::texture_wrap_type::repeat )
-                        .set_filter( motor::graphics::texture_filter_mode::min_filter, motor::graphics::texture_filter_type::nearest )
-                        .set_filter( motor::graphics::texture_filter_mode::mag_filter, motor::graphics::texture_filter_type::nearest );
-
-                    motor::memory::release_ptr( mod_reg ) ;
                 }
 
                 // shader configuration
@@ -444,7 +395,6 @@ namespace this_file
                 rnd_init[wid] = true ;
 
                 fe->configure<motor::graphics::geometry_object_t>( &geo_obj ) ;
-                fe->configure<motor::graphics::image_object_t>( &img_obj ) ;
                 fe->configure<motor::graphics::shader_object_t>( &sh_obj ) ;
                 fe->configure<motor::graphics::render_object_t>( &rd_obj ) ;
             }
@@ -470,7 +420,6 @@ int main( int argc, char ** argv )
     
     motor::memory::release_ptr( carrier ) ;
     
-    motor::io::global::deinit() ;
     motor::concurrent::global::deinit() ;
     motor::log::global::deinit() ;
     motor::memory::global::dump_to_std() ;

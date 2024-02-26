@@ -23,8 +23,6 @@ namespace this_file
         bool_t graphics_init = false ;
         motor::vector< bool_t > rnd_init ;
 
-        motor::math::vec4ui_t fb_dims = motor::math::vec4ui_t( 0, 0, 1920, 1080 ) ;
-
         motor::graphics::state_object_t scene_so ;
         motor::graphics::geometry_object_t quad_geo ;
         motor::graphics::geometry_object_t points_geo ;
@@ -88,44 +86,12 @@ namespace this_file
                 motor::log::global_t::status("[my_app] : window closed") ;
                 this->close() ;
             }
-            if( sv.resize_changed )
-            {
-                fb_dims = motor::math::vec4ui_t( uint_t(sv.resize_msg.x), uint_t(sv.resize_msg.y), 
-                    uint_t(sv.resize_msg.w), uint_t(sv.resize_msg.h) ) ;
-            }
         }
 
         virtual void_t on_graphics( motor::application::app::graphics_data_in_t gd ) noexcept 
         {
             if( !graphics_init ) 
             {
-                {
-                    motor::graphics::render_state_sets_t rss ;
-
-                    rss.depth_s.do_change = true ;
-                    rss.depth_s.ss.do_activate = true ;
-                    rss.depth_s.ss.do_depth_write = true ;
-
-                    rss.polygon_s.do_change = true ;
-                    rss.polygon_s.ss.do_activate = true ;
-                    rss.polygon_s.ss.ff = motor::graphics::front_face::counter_clock_wise ;
-                    rss.polygon_s.ss.cm = motor::graphics::cull_mode::back ;
-                    rss.polygon_s.ss.fm = motor::graphics::fill_mode::fill ;
-                   
-                    rss.clear_s.do_change = true ;
-                    rss.clear_s.ss.do_activate = true ;
-                    rss.clear_s.ss.clear_color = motor::math::vec4f_t(0.4f,0.4f,0.0f,1.0f) ;
-                    rss.clear_s.ss.do_color_clear = true ;
-                    rss.clear_s.ss.do_depth_clear = true ;
-
-                    rss.view_s.do_change = true ;
-                    rss.view_s.ss.do_activate = true ;
-                    rss.view_s.ss.vp = fb_dims ;
-
-                    scene_so = motor::graphics::state_object_t( "scene_render_states" ) ;
-                    scene_so.add_render_state_set( rss ) ;
-                }
-
                 // geometry configuration
                 {
                     struct vertex { motor::math::vec4f_t pos ; motor::math::vec4f_t color ; } ;
