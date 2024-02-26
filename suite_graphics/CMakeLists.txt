@@ -12,6 +12,7 @@ set( tests
     "09_00_stream_out.cpp"
     "09_01_stream_out.cpp"
     "09_02_stream_out.cpp"
+    "09_03_stream_out.cpp"
     )
 
 foreach( _test ${tests} )
