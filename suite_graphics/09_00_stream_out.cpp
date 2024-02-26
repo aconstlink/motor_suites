@@ -62,7 +62,7 @@ namespace this_file
 
             {
                 motor::application::window_info_t wi ;
-                wi.x = 400 ;
+                wi.x = 900 ;
                 wi.y = 100 ;
                 wi.w = 800 ;
                 wi.h = 600 ;
@@ -187,14 +187,10 @@ namespace this_file
                                 in vec4 in_color ;
                                 out vec4 var_color ;
 
-                                uniform mat4 u_proj ;
-                                uniform mat4 u_view ;
-                                uniform mat4 u_world ;
-
                                 void main()
                                 {
                                     var_color = in_color ;
-                                    gl_Position = /*u_proj * u_view * u_world * */ in_pos ;
+                                    gl_Position = in_pos ;
 
                                 } )" ) ).
 
@@ -224,14 +220,10 @@ namespace this_file
                                 in vec4 in_color ;
                                 out vec4 var_color ;
 
-                                uniform mat4 u_proj ;
-                                uniform mat4 u_view ;
-                                uniform mat4 u_world ;
-
                                 void main()
                                 {
                                     var_color = in_color ;
-                                    gl_Position = u_proj * u_view * u_world * vec4( in_pos  ) ;
+                                    gl_Position = vec4( in_pos  ) ;
 
                                 } )" ) ).
 
@@ -259,9 +251,6 @@ namespace this_file
                         set_vertex_shader( motor::graphics::shader_t( R"(
                             cbuffer ConstantBuffer : register( b0 ) 
                             {
-                                float4x4 u_proj ;
-                                float4x4 u_view ;
-                                float4x4 u_world ;
                             }
 
                             struct VS_INPUT
@@ -281,9 +270,6 @@ namespace this_file
                                 VS_OUTPUT output = (VS_OUTPUT)0 ;
 
                                 output.pos = input.in_pos ;
-                                //output.pos = mul( input.in_pos, u_world ) ;
-                                //output.pos = mul( output.pos, u_view ) ;
-                                //output.pos = mul( output.pos, u_proj ) ;
                                 output.col = input.in_color ;
                                 return output;
                             } )" ) ).
