@@ -243,7 +243,7 @@ namespace this_file
                             {
                                 float_t t = u_ani * 3.14526 * 2.0 ;
                                 out.pos = in.pos + vec4_t( 0.02 * cos(t), 0.02 * sin(t), 0.0, 0.0 ) ;
-                                out.color = vec4_t( 1.0, 1.0, 0.0, 1.0 ) ;
+                                out.color = vec4_t( 1.0, 1.0, 0.0, 1.0 ) ' in.color ;
                             }
                         }
 

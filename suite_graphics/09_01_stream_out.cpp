@@ -373,7 +373,7 @@ namespace this_file
                                 {
                                     float t = u_ani * 3.14526 * 2.0 ;
                                     out_pos = in_pos + vec4( 0.02 *cos(t), 0.02 *sin(t), 0.0, 0.0 ) ;
-                                    out_col = vec4( 1.0, 1.0, 0.0, 1.0 ) ;
+                                    out_col = vec4( 1.0, 1.0, 0.0, 1.0 ) * in_color ;
                                 } )" ) ) ;
 
                         sc.insert( motor::graphics::shader_api_type::glsl_4_0, std::move( ss ) ) ;
