@@ -1,6 +1,7 @@
 
 set( tests
     "00_text_renderer.cpp"
+    "01_primitive_renderer.cpp"
     )
 
 foreach( _test ${tests} )
