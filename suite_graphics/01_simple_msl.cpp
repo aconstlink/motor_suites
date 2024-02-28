@@ -81,8 +81,6 @@ namespace this_file
             }
         }
 
-        virtual void_t on_update( motor::application::app::update_data_in_t ) noexcept {}
-
         virtual void_t on_graphics( motor::application::app::graphics_data_in_t ) noexcept 
         {
             if( graphics_init ) return ;
