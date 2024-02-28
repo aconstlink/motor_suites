@@ -2,6 +2,7 @@
 set( tests
     "00_simple_audio_gen.cpp"
     "01_simple_audio_gen.cpp"
+    "02_audio_capture_helper.cpp"
     )
 
 foreach( _test ${tests} )
