@@ -128,7 +128,7 @@ namespace this_file
         {
             static float_t inc = 0.0f ;
 
-            motor::math::vec2f_t const max_dims = img_obj.image().get_dims() ;
+            motor::math::vec2f_t const max_dims = motor::math::vec2f_t( img_obj.image().get_dims() ) ;
 
             motor::math::vec2f_t pos( -1.0f, 0.5f ) ;
 
