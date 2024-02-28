@@ -1,0 +1,33 @@
+config msl_quad
+{
+    vertex_shader
+    {
+        in vec3_t pos : position ;
+        in vec2_t tx : texcoord0 ;
+
+        out vec2_t tx : texcoord0 ;
+        out vec4_t pos : position ;
+
+        void main()
+        {
+            //vec3_t p = msl.lib_a.myfunk( vec3_t( 1.0, 1.0, 1.0 ), in.pos, vec3_t( 0.5 ) ) ;
+            out.tx = in.tx ;
+            out.pos = vec4_t( in.pos, 1.0 ) ; 
+        }
+    }
+
+    pixel_shader
+    {
+        tex2d_t u_tex ;
+
+        in vec2_t tx : texcoord0 ;
+        out vec4_t color : color ;
+
+        vec4_t u_color ;
+
+        void main()
+        {
+            out.color = texture( u_tex, in.tx ) ' u_color  ;
+        }
+    }
+}
