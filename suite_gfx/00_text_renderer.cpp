@@ -21,23 +21,46 @@ namespace this_file
         motor_this_typedefs( my_app ) ;
 
         motor::io::database db = motor::io::database( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
-        motor::gfx::text_render_2d_mtr_t tr = nullptr ;
+        motor::gfx::text_render_2d_t tr ;
 
+        motor::vector< bool_t > rnd_init ;
+
+        //***************************************************************************************************
         virtual void_t on_init( void_t ) noexcept
         {
-            motor::application::window_info_t wi ;
-            wi.x = 100 ;
-            wi.y = 100 ;
-            wi.w = 800 ;
-            wi.h = 600 ;
-            wi.gen = motor::application::graphics_generation::gen4_auto ;
-
-            this_t::send_window_message( this_t::create_window( wi ), [&]( motor::application::app::window_view & wnd )
             {
-                wnd.send_message( motor::application::show_message( { true } ) ) ;
-                wnd.send_message( motor::application::cursor_message_t( {false} ) ) ;
-                wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
-            } ) ;
+                motor::application::window_info_t wi ;
+                wi.x = 100 ;
+                wi.y = 100 ;
+                wi.w = 800 ;
+                wi.h = 600 ;
+                wi.gen = motor::application::graphics_generation::gen4_auto ;
+
+                this_t::send_window_message( this_t::create_window( wi ), [&]( motor::application::app::window_view & wnd )
+                {
+                    wnd.send_message( motor::application::show_message( { true } ) ) ;
+                    wnd.send_message( motor::application::cursor_message_t( {false} ) ) ;
+                    wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
+                } ) ;
+                rnd_init.push_back( false ) ;
+            }
+
+            {
+                motor::application::window_info_t wi ;
+                wi.x = 100 ;
+                wi.y = 100 ;
+                wi.w = 800 ;
+                wi.h = 600 ;
+                wi.gen = motor::application::graphics_generation::gen4_auto ;
+
+                this_t::send_window_message( this_t::create_window( wi ), [&]( motor::application::app::window_view & wnd )
+                {
+                    wnd.send_message( motor::application::show_message( { true } ) ) ;
+                    wnd.send_message( motor::application::cursor_message_t( {false} ) ) ;
+                    wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
+                } ) ;
+                rnd_init.push_back( false ) ;
+            }
 
             // import fonts and create text render
             {
@@ -72,8 +95,7 @@ namespace this_file
 
                 if( auto * ii = dynamic_cast<motor::format::glyph_atlas_item_mtr_t>( fitem.get() ); ii != nullptr )
                 {
-                    tr = motor::shared( motor::gfx::text_render_2d_t() ) ;
-                    tr->init( "my_text_render", motor::move( ii->obj ) ) ;
+                    tr.init( "my_text_render", motor::move( ii->obj ) ) ;
                     motor::memory::release_ptr( ii ) ;
                 }
                 else
@@ -86,6 +108,7 @@ namespace this_file
             }
         }
 
+        //***************************************************************************************************
         virtual void_t on_event( window_id_t const wid, 
                 motor::application::window_message_listener::state_vector_cref_t sv ) noexcept
         {
@@ -100,44 +123,51 @@ namespace this_file
             }
         }
 
-        virtual void_t on_render( this_t::window_id_t const, motor::graphics::gen4::frontend_ptr_t fe, 
-            motor::application::app::render_data_in_t rd ) noexcept 
+        //***************************************************************************************************
+        virtual void_t on_graphics( motor::application::app::graphics_data_in_t ) noexcept 
         {
             {
-                tr->draw_text( 0, 0, 10, motor::math::vec2f_t(0.0f, -0.60f), 
+                tr.draw_text( 0, 0, 10, motor::math::vec2f_t(0.0f, -0.60f), 
                     motor::math::vec4f_t(1.0f), "Hello World Group 0!" ) ;
 
-                tr->draw_text( 1, 1, 25, motor::math::vec2f_t(0.0f, -0.7f), 
+                tr.draw_text( 1, 1, 25, motor::math::vec2f_t(0.0f, -0.7f), 
                     motor::math::vec4f_t(1.0f), "Hello World Group 1!" ) ;
 
                 static uint_t number = 0 ;
                 ++number ;
-                tr->draw_text( 0, 1, 120, motor::math::vec2f_t(0.0f, -0.5f), 
+                tr.draw_text( 0, 1, 120, motor::math::vec2f_t(0.0f, -0.5f), 
                     motor::math::vec4f_t(1.0f), motor::to_string(number) ) ;
-
-                tr->prepare_for_rendering(fe) ;
             }
 
             for( size_t i=0; i<10; ++i )
             {
                 float_t const yoff = 0.08f * float_t(i) ;
                 size_t const pt = 25 - i * 2 ;
-                tr->draw_text( 0, 0, pt, motor::math::vec2f_t(-0.8f, 0.40f-yoff), 
+                tr.draw_text( 0, 0, pt, motor::math::vec2f_t(-0.8f, 0.40f-yoff), 
                     motor::math::vec4f_t(1.0f), "Hello World! This is changing point ("+
                     motor::to_string(pt) +") size." ) ;
             }
 
-            // render text layer 0 to screen
+            tr.prepare_for_rendering() ;
+        } 
+
+        //***************************************************************************************************
+        virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe, 
+            motor::application::app::render_data_in_t rd ) noexcept 
+        {
+            if( !rnd_init[ wid ] )
             {
-                tr->render( fe, 0 ) ;
-                tr->render( fe, 1 ) ;
+                tr.configure( fe ) ;
+                rnd_init[ wid ] = true ;
+            }
+
+            // prepare and render layer 0 and 1
+            {
+                tr.prepare_for_rendering(fe) ;
+                tr.render( fe, 0 ) ;
+                tr.render( fe, 1 ) ;
             }
         }
-
-        virtual void_t on_shutdown( void_t ) noexcept 
-        {
-            motor::memory::release_ptr( tr ) ;
-        } 
     };
 }
 
