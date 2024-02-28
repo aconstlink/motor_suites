@@ -39,7 +39,8 @@ int main( int argc, char ** argv )
                     float_t accum = 0.0f ;
                     for( auto const s : samples ) accum += s ;
 
-                    motor::log::global_t::status( motor::to_string(accum / float_t(samples.size()))  ) ;
+                    motor::log::global_t::status( "[" + motor::to_string( samples.size() ) + "] : " + 
+                        motor::to_string(accum / float_t(samples.size()))  ) ;
                 }
                 samples.clear() ;
             }
@@ -47,6 +48,8 @@ int main( int argc, char ** argv )
 
         hlp->stop() ;
     }
+
+    hlp->release() ;
 
     motor::memory::release_ptr( hlp ) ;
     motor::memory::global_t::dump_to_std() ;
