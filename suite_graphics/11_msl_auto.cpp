@@ -27,15 +27,14 @@ namespace this_file
     {
         motor_this_typedefs( my_app ) ;
 
-        bool_t graphics_init = false ;
-        motor::vector< bool_t > rnd_init ;
-
         motor::graphics::image_object_t img_obj ;
         motor::graphics::geometry_object_t geo_obj ;
         motor::graphics::msl_object_t msl_obj ;
 
         motor::io::monitor_mtr_t mon = motor::memory::create_ptr( motor::io::monitor_t() ) ;
         motor::io::database db = motor::io::database( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
+
+        motor::vector< motor::graphics::msl_object_ptr_t > reconfigs ;
 
         virtual void_t on_init( void_t ) noexcept
         {
@@ -52,8 +51,6 @@ namespace this_file
                     wnd.send_message( motor::application::show_message( { true } ) ) ;
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
-
-                rnd_init.emplace_back( false ) ;
             }
 
             {
@@ -68,48 +65,10 @@ namespace this_file
                     wnd.send_message( motor::application::show_message( { true } ) ) ;
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
-                rnd_init.emplace_back( false ) ;
             }
 
             db.attach( mon ) ;
-        }
 
-        virtual void_t on_event( window_id_t const wid, 
-                motor::application::window_message_listener::state_vector_cref_t sv ) noexcept
-        {
-            if( sv.create_changed )
-            {
-                motor::log::global_t::status("[my_app] : window created") ;
-            }
-            if( sv.close_changed )
-            {
-                motor::log::global_t::status("[my_app] : window closed") ;
-                this->close() ;
-            }
-        }
-
-        virtual void_t on_update( motor::application::app::update_data_in_t ) noexcept 
-        {
-            mon->for_each_and_swap( [&]( motor::io::location_cref_t loc, motor::io::monitor_t::notify const n )
-            {
-                motor::log::global_t::status( "[monitor] : Got " + motor::io::monitor_t::to_string(n) + " for " + loc.as_string() ) ;
-
-                motor::string_t shd ;
-                db.load( loc ).wait_for_operation( [&] ( char_cptr_t data, size_t const sib, motor::io::result const ) 
-                { 
-                    shd = motor::string_t( data, sib ) ;
-                } ) ;
-
-                msl_obj.clear_shaders().add( motor::graphics::msl_api_type::msl_4_0, shd ) ;
-
-                // force reconfigure per window
-                for( size_t i=0; i<rnd_init.size(); ++i ) rnd_init[i] = false ;
-            }) ;
-        }
-
-        virtual void_t on_graphics( motor::application::app::graphics_data_in_t gd ) noexcept 
-        {
-            if( !graphics_init ) 
             {
                 struct vertex { motor::math::vec3f_t pos ; motor::math::vec2f_t tx ; } ;
 
@@ -217,48 +176,65 @@ namespace this_file
                     msl_obj = std::move( mslo ) ;
                 }
             }
+        }
 
-            graphics_init = true ;
+        virtual void_t on_event( window_id_t const wid, 
+                motor::application::window_message_listener::state_vector_cref_t sv ) noexcept
+        {
+            if( sv.create_changed )
+            {
+                motor::log::global_t::status("[my_app] : window created") ;
+            }
+            if( sv.close_changed )
+            {
+                motor::log::global_t::status("[my_app] : window closed") ;
+                this->close() ;
+            }
+        }
 
+        virtual void_t on_update( motor::application::app::update_data_in_t ) noexcept 
+        {
+            mon->for_each_and_swap( [&]( motor::io::location_cref_t loc, motor::io::monitor_t::notify const n )
+            {
+                motor::log::global_t::status( "[monitor] : Got " + motor::io::monitor_t::to_string(n) + " for " + loc.as_string() ) ;
+
+                motor::string_t shd ;
+                db.load( loc ).wait_for_operation( [&] ( char_cptr_t data, size_t const sib, motor::io::result const ) 
+                { 
+                    shd = motor::string_t( data, sib ) ;
+                } ) ;
+
+                msl_obj.clear_shaders().add( motor::graphics::msl_api_type::msl_4_0, shd ) ;
+
+                reconfigs.push_back( &msl_obj ) ;
+            }) ;
         }
 
         virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
             motor::application::app::render_data_in_t rd ) noexcept 
         {            
-            if( !rnd_init[wid] )
+            if( rd.first_frame )
             {
-                rnd_init[wid] = true ;
-
                 fe->configure<motor::graphics::geometry_object_t>( &geo_obj ) ;
                 fe->configure<motor::graphics::image_object_t>( &img_obj ) ;
                 fe->configure<motor::graphics::msl_object_t>( &msl_obj ) ;
             }
             
+            for( auto * obj : reconfigs )
+            {
+                fe->configure<motor::graphics::msl_object_t>( obj ) ;
+            }
+
             {
                 motor::graphics::gen4::backend_t::render_detail_t detail ;
                 fe->render( &msl_obj, detail ) ;
             }
         }
 
-        #if 0
-        virtual bool_t on_tool( this_t::window_id_t const, motor::application::app::tool_data_ref_t ) noexcept 
+        virtual void_t on_frame_done( void_t ) noexcept 
         {
-            
-            ImGui::Begin( "Test Control" ) ;
-
-            {
-                motor::math::vec2f_t d = dir.xy() ;
-                if( motor::tool::custom_imgui_widgets::direction( "dir", d ) )
-                {
-                    dir = motor::math::vec3f_t( d, 0.0f ) ;
-                }
-            }
-
-            ImGui::End() ;
-            
-            return true ;
-        }
-        #endif
+            reconfigs.clear() ;
+        } 
     };
 }
 

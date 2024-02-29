@@ -23,9 +23,6 @@ namespace this_file
     {
         motor_this_typedefs( my_app ) ;
 
-        bool_t graphics_init = false ;
-        motor::vector< bool_t > rnd_init ;
-
         motor::math::vec4ui_t fb_dims = motor::math::vec4ui_t(0, 0, 1920, 1080) ;
 
         motor::graphics::state_object_t scene_so ;
@@ -57,8 +54,6 @@ namespace this_file
                     wnd.send_message( motor::application::cursor_message_t( {false} ) ) ;
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
-
-                rnd_init.emplace_back( false ) ;
             }
 
             {
@@ -74,30 +69,7 @@ namespace this_file
                     wnd.send_message( motor::application::cursor_message_t( {false} ) ) ;
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
-                rnd_init.emplace_back( false ) ;
             }
-        }
-
-        virtual void_t on_event( window_id_t const wid, 
-                motor::application::window_message_listener::state_vector_cref_t sv ) noexcept
-        {
-            if( sv.create_changed )
-            {
-                motor::log::global_t::status("[my_app] : window created") ;
-            }
-            if( sv.close_changed )
-            {
-                motor::log::global_t::status("[my_app] : window closed") ;
-                this->close() ;
-            }
-        }
-
-        virtual void_t on_update( motor::application::app::update_data_in_t ) noexcept {}
-
-        virtual void_t on_graphics( motor::application::app::graphics_data_in_t ) noexcept 
-        {
-            if( graphics_init ) return ;
-            graphics_init = true ;
 
             {
                 camera.perspective_fov( motor::math::angle<float_t>::degree_to_radian( 45.0f ) ) ;
@@ -410,12 +382,25 @@ namespace this_file
             }
         }
 
+        virtual void_t on_event( window_id_t const wid, 
+                motor::application::window_message_listener::state_vector_cref_t sv ) noexcept
+        {
+            if( sv.create_changed )
+            {
+                motor::log::global_t::status("[my_app] : window created") ;
+            }
+            if( sv.close_changed )
+            {
+                motor::log::global_t::status("[my_app] : window closed") ;
+                this->close() ;
+            }
+        }
+
         virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
             motor::application::app::render_data_in_t rd ) noexcept 
         {            
-            if( !rnd_init[wid] )
+            if( rd.first_frame )
             {
-                rnd_init[wid] = true ;
                 {
                     fe->configure<motor::graphics::state_object_t>( &scene_so ) ;
                     fe->configure<motor::graphics::state_object_t>( &fb_so ) ;

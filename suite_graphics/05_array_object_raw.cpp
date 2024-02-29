@@ -32,9 +32,6 @@ namespace this_file
     {
         motor_this_typedefs( my_app ) ;
 
-        bool_t graphics_init = false ;
-        motor::vector< bool_t > rnd_init ;
-
         int_t num_objects = 0 ;
         int_t max_objects = 0 ;
 
@@ -71,8 +68,6 @@ namespace this_file
                     wnd.send_message( motor::application::cursor_message_t( {false} ) ) ;
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
-
-                rnd_init.emplace_back( false ) ;
             }
 
             {
@@ -88,151 +83,7 @@ namespace this_file
                     wnd.send_message( motor::application::cursor_message_t( {false} ) ) ;
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
-                rnd_init.emplace_back( false ) ;
             }
-        }
-
-        virtual void_t on_event( window_id_t const wid, 
-                motor::application::window_message_listener::state_vector_cref_t sv ) noexcept
-        {
-            if( sv.create_changed )
-            {
-                motor::log::global_t::status("[my_app] : window created") ;
-            }
-            if( sv.close_changed )
-            {
-                motor::log::global_t::status("[my_app] : window closed") ;
-                this->close() ;
-            }
-        }
-
-        virtual void_t on_update( motor::application::app::update_data_in_t ) noexcept {}
-
-        virtual void_t on_graphics( motor::application::app::graphics_data_in_t gd ) noexcept 
-        {
-            if( graphics_init ) 
-            {
-                float_t const dt = gd.sec_dt ;
-
-                static float_t v = 0.0f ;
-                v += dt * 0.1f;
-                if( v > 1.0f ) v = 0.0f ;
-
-                num_objects = std::min( max_objects, motor::math::interpolation<int_t>::linear( 1, max_objects-100, v ) ) ;
-                
-                // update array object data
-                {
-                    static float_t  angle_ = 0.0f ;
-                    angle_ += ( ( ((dt))  ) * 2.0f * motor::math::constants<float_t>::pi() ) / 1.0f ;
-                    if( angle_ > 4.0f * motor::math::constants<float_t>::pi() ) angle_ = 0.0f ;
-
-                    float_t s = 5.0f * std::sin(angle_) ;
-
-                    struct the_data
-                    {
-                        motor::math::vec4f_t pos ;
-                        motor::math::vec4f_t col ;
-                    };
-                
-                    ar_obj.data_buffer().resize( num_objects ).
-                    update< the_data >( [&]( the_data * array, size_t const ne )
-                    {
-                        size_t const w = 20 ;
-                        size_t const h = 50 ;
-                    
-                        #if 0 // serial for
-                        for( size_t e=0; e<std::min( size_t(_num_objects_rnd), ne ); ++e )
-                        {
-                            size_t const x = e % w ;
-                            size_t const y = (e / w) % h ;
-                            size_t const z = (e / w) / h ;
-
-                            motor::math::vec4f_t pos(
-                                float_t(x) - float_t(w/2),
-                                float_t(z) - float_t(w/2),//10.0f * std::sin( y + angle_ ),
-                                float_t( y ) - float_t(w/2),
-                                30.0f
-                            ) ;
-
-                            array[e].pos = pos ;
-
-                            float_t c = float_t( rand() % 255 ) /255.0f ;
-                            array[e].col = motor::math::vec4f_t ( 0.1f, c, (c) , 1.0f ) ;
-                        }
-
-                        #else // parallel for
-
-                        typedef motor::concurrent::range_1d<size_t> range_t ;
-                        auto const & range = range_t( 0, std::min( size_t(num_objects), ne ) ) ;
-
-                        motor::concurrent::parallel_for<size_t>( range, [&]( range_t const & r )
-                        {
-                            for( size_t e=r.begin(); e<r.end(); ++e )
-                            {
-                                size_t const x = e % w ;
-                                size_t const y = (e / w) % h ;
-                                size_t const z = (e / w) / h ;
-
-                                motor::math::vec4f_t pos(
-                                    float_t(x) - float_t(w/2),
-                                    float_t(z) - float_t(w/2),//10.0f * std::sin( y + angle_ ),
-                                    float_t( y ) - float_t(w/2),
-                                    30.0f
-                                ) ;
-
-                                array[e].pos = pos ;
-
-                                float_t c = float_t( rand() % 255 ) /255.0f ;
-                                array[e].col = motor::math::vec4f_t ( 0.1f, c, (c) , 1.0f ) ;
-                            }
-                        } ) ;
-
-                        #endif
-
-                    } ) ;
-                }
-
-                // update render object variable sets
-                {
-                    rd_obj.for_each( [&]( size_t const i, motor::graphics::variable_set_mtr_t vs )
-                    {
-                        {
-                            auto * var = vs->data_variable< motor::math::mat4f_t>("u_view") ;
-                            var->set( camera.mat_view() ) ;
-                        }
-
-                        {
-                            auto * var = vs->data_variable< motor::math::mat4f_t>("u_proj") ;
-                            var->set( camera.mat_proj() ) ;
-                        }
-
-                        {
-                            auto* var = vs->data_variable< motor::math::vec4f_t >( "u_color" ) ;
-                            var->set( motor::math::vec4f_t( v, 0.0f, 1.0f, 0.5f ) ) ;
-                        }
-
-                        {
-                            static float_t  angle = 0.0f ;
-                            angle = ( ( (dt/10.0f)  ) * 2.0f * motor::math::constants<float_t>::pi() ) ;
-                            if( angle > 2.0f * motor::math::constants<float_t>::pi() ) angle = 0.0f ;
-                        
-                            auto* var = vs->data_variable< motor::math::mat4f_t >( "u_world" ) ;
-                            motor::math::m3d::trafof_t trans( var->get() ) ;
-
-                            motor::math::m3d::trafof_t rotation ;
-                            rotation.rotate_by_axis_fr( motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), angle ) ;
-                        
-                            trans.transform_fl( rotation ) ;
-
-                            var->set( trans.get_transformation() ) ;
-                        }
-                    } ) ;
-                }
-
-                return ;
-            }
-
-            graphics_init = true ;
 
             {
                 camera.perspective_fov( motor::math::angle<float_t>::degree_to_radian( 90.0f ) ) ;
@@ -752,12 +603,145 @@ namespace this_file
             }
         }
 
+        virtual void_t on_event( window_id_t const wid, 
+                motor::application::window_message_listener::state_vector_cref_t sv ) noexcept
+        {
+            if( sv.create_changed )
+            {
+                motor::log::global_t::status("[my_app] : window created") ;
+            }
+            if( sv.close_changed )
+            {
+                motor::log::global_t::status("[my_app] : window closed") ;
+                this->close() ;
+            }
+        }
+
+        virtual void_t on_graphics( motor::application::app::graphics_data_in_t gd ) noexcept 
+        {
+            float_t const dt = gd.sec_dt ;
+
+            static float_t v = 0.0f ;
+            v += dt * 0.1f;
+            if( v > 1.0f ) v = 0.0f ;
+
+            num_objects = std::min( max_objects, motor::math::interpolation<int_t>::linear( 1, max_objects-100, v ) ) ;
+                
+            // update array object data
+            {
+                static float_t  angle_ = 0.0f ;
+                angle_ += ( ( ((dt))  ) * 2.0f * motor::math::constants<float_t>::pi() ) / 1.0f ;
+                if( angle_ > 4.0f * motor::math::constants<float_t>::pi() ) angle_ = 0.0f ;
+
+                float_t s = 5.0f * std::sin(angle_) ;
+
+                struct the_data
+                {
+                    motor::math::vec4f_t pos ;
+                    motor::math::vec4f_t col ;
+                };
+                
+                ar_obj.data_buffer().resize( num_objects ).
+                update< the_data >( [&]( the_data * array, size_t const ne )
+                {
+                    size_t const w = 20 ;
+                    size_t const h = 50 ;
+                    
+                    #if 0 // serial for
+                    for( size_t e=0; e<std::min( size_t(_num_objects_rnd), ne ); ++e )
+                    {
+                        size_t const x = e % w ;
+                        size_t const y = (e / w) % h ;
+                        size_t const z = (e / w) / h ;
+
+                        motor::math::vec4f_t pos(
+                            float_t(x) - float_t(w/2),
+                            float_t(z) - float_t(w/2),//10.0f * std::sin( y + angle_ ),
+                            float_t( y ) - float_t(w/2),
+                            30.0f
+                        ) ;
+
+                        array[e].pos = pos ;
+
+                        float_t c = float_t( rand() % 255 ) /255.0f ;
+                        array[e].col = motor::math::vec4f_t ( 0.1f, c, (c) , 1.0f ) ;
+                    }
+
+                    #else // parallel for
+
+                    typedef motor::concurrent::range_1d<size_t> range_t ;
+                    auto const & range = range_t( 0, std::min( size_t(num_objects), ne ) ) ;
+
+                    motor::concurrent::parallel_for<size_t>( range, [&]( range_t const & r )
+                    {
+                        for( size_t e=r.begin(); e<r.end(); ++e )
+                        {
+                            size_t const x = e % w ;
+                            size_t const y = (e / w) % h ;
+                            size_t const z = (e / w) / h ;
+
+                            motor::math::vec4f_t pos(
+                                float_t(x) - float_t(w/2),
+                                float_t(z) - float_t(w/2),//10.0f * std::sin( y + angle_ ),
+                                float_t( y ) - float_t(w/2),
+                                30.0f
+                            ) ;
+
+                            array[e].pos = pos ;
+
+                            float_t c = float_t( rand() % 255 ) /255.0f ;
+                            array[e].col = motor::math::vec4f_t ( 0.1f, c, (c) , 1.0f ) ;
+                        }
+                    } ) ;
+
+                    #endif
+
+                } ) ;
+            }
+
+            // update render object variable sets
+            {
+                rd_obj.for_each( [&]( size_t const i, motor::graphics::variable_set_mtr_t vs )
+                {
+                    {
+                        auto * var = vs->data_variable< motor::math::mat4f_t>("u_view") ;
+                        var->set( camera.mat_view() ) ;
+                    }
+
+                    {
+                        auto * var = vs->data_variable< motor::math::mat4f_t>("u_proj") ;
+                        var->set( camera.mat_proj() ) ;
+                    }
+
+                    {
+                        auto* var = vs->data_variable< motor::math::vec4f_t >( "u_color" ) ;
+                        var->set( motor::math::vec4f_t( v, 0.0f, 1.0f, 0.5f ) ) ;
+                    }
+
+                    {
+                        static float_t  angle = 0.0f ;
+                        angle = ( ( (dt/10.0f)  ) * 2.0f * motor::math::constants<float_t>::pi() ) ;
+                        if( angle > 2.0f * motor::math::constants<float_t>::pi() ) angle = 0.0f ;
+                        
+                        auto* var = vs->data_variable< motor::math::mat4f_t >( "u_world" ) ;
+                        motor::math::m3d::trafof_t trans( var->get() ) ;
+
+                        motor::math::m3d::trafof_t rotation ;
+                        rotation.rotate_by_axis_fr( motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), angle ) ;
+                        
+                        trans.transform_fl( rotation ) ;
+
+                        var->set( trans.get_transformation() ) ;
+                    }
+                } ) ;
+            }
+        }
+
         virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
             motor::application::app::render_data_in_t rd ) noexcept 
         {            
-            if( !rnd_init[wid] )
+            if( rd.first_frame )
             {
-                rnd_init[wid] = true ;
                 {
                     fe->configure<motor::graphics::state_object_t>( &scene_so ) ;
                     fe->configure<motor::graphics::state_object_t>( &fb_so ) ;

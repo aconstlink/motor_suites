@@ -20,9 +20,6 @@ namespace this_file
     {
         motor_this_typedefs( my_app ) ;
 
-        bool_t graphics_init = false ;
-        motor::vector< bool_t > rnd_init ;
-
         motor::graphics::state_object_t scene_so ;
         motor::graphics::geometry_object_t quad_geo ;
         motor::graphics::geometry_object_t points_geo ;
@@ -52,8 +49,6 @@ namespace this_file
                     wnd.send_message( motor::application::show_message( { true } ) ) ;
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
-
-                rnd_init.emplace_back( false ) ;
             }
 
             {
@@ -68,7 +63,178 @@ namespace this_file
                     wnd.send_message( motor::application::show_message( { true } ) ) ;
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
-                rnd_init.emplace_back( false ) ;
+            }
+
+            // geometry configuration
+            {
+                struct vertex { motor::math::vec4f_t pos ; motor::math::vec4f_t color ; } ;
+
+                auto vb = motor::graphics::vertex_buffer_t()
+                    .add_layout_element( motor::graphics::vertex_attribute::position, motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
+                    .add_layout_element( motor::graphics::vertex_attribute::color0, motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
+                    .resize( 4 ).update<vertex>( [=] ( vertex* array, size_t const ne )
+                {
+                    array[ 0 ].pos = motor::math::vec4f_t( -0.5f, -0.5f, 0.0f, 1.0f ) ;
+                    array[ 1 ].pos = motor::math::vec4f_t( -0.5f, +0.5f, 0.0f, 1.0f ) ;
+                    array[ 2 ].pos = motor::math::vec4f_t( +0.5f, +0.5f, 0.0f, 1.0f ) ;
+                    array[ 3 ].pos = motor::math::vec4f_t( +0.5f, -0.5f, 0.0f, 1.0f ) ;
+
+                    array[ 0 ].color = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
+                    array[ 1 ].color = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
+                    array[ 2 ].color = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
+                    array[ 3 ].color = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
+                } );
+
+                auto ib = motor::graphics::index_buffer_t().
+                    set_layout_element( motor::graphics::type::tuint ).resize( 6 ).
+                    update<uint_t>( [] ( uint_t* array, size_t const ne )
+                {
+                    array[ 0 ] = 0 ;
+                    array[ 1 ] = 1 ;
+                    array[ 2 ] = 2 ;
+
+                    array[ 3 ] = 0 ;
+                    array[ 4 ] = 2 ;
+                    array[ 5 ] = 3 ;
+                } ) ;
+
+                quad_geo = motor::graphics::geometry_object_t( "quad",
+                    motor::graphics::primitive_type::triangles, std::move( vb ), std::move( ib ) ) ;
+            }
+
+            // geometry configuration
+            {
+                struct vertex { motor::math::vec4f_t pos ; motor::math::vec4f_t color ; } ;
+
+                auto vb = motor::graphics::vertex_buffer_t()
+                    .add_layout_element( motor::graphics::vertex_attribute::position, motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
+                    .add_layout_element( motor::graphics::vertex_attribute::color0, motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
+                    .resize( 4 ).update<vertex>( [=] ( vertex* array, size_t const ne )
+                {
+                    array[ 0 ].pos = motor::math::vec4f_t( -0.5f, -0.5f, 0.0f, 1.0f ) ;
+                    array[ 1 ].pos = motor::math::vec4f_t( -0.5f, +0.5f, 0.0f, 1.0f ) ;
+                    array[ 2 ].pos = motor::math::vec4f_t( +0.5f, +0.5f, 0.0f, 1.0f ) ;
+                    array[ 3 ].pos = motor::math::vec4f_t( +0.5f, -0.5f, 0.0f, 1.0f ) ;
+
+                    array[ 0 ].color = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
+                    array[ 1 ].color = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
+                    array[ 2 ].color = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
+                    array[ 3 ].color = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
+                } );
+
+                points_geo = motor::graphics::geometry_object_t( "points",
+                    motor::graphics::primitive_type::points, std::move( vb ) ) ;
+            }
+
+            // stream out object configuration
+            {
+                auto vb = motor::graphics::vertex_buffer_t()
+                    .add_layout_element( motor::graphics::vertex_attribute::position, motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
+                    .add_layout_element( motor::graphics::vertex_attribute::color0, motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 ) ;
+
+
+                so_obj = motor::graphics::streamout_object_t( "compute", std::move( vb ) ).resize( 1000 ) ;
+            }
+
+            // render original
+            {
+                motor::graphics::msl_object_t mslo("render_original") ;
+
+                mslo.add( motor::graphics::msl_api_type::msl_4_0, R"(
+                config render_original
+                {
+                    vertex_shader
+                    {
+                        in vec4_t pos : position ;
+                        in vec4_t color : color ;
+
+                        out vec4_t pos : position ;
+                        out vec4_t color : color ;
+
+                        uint_t vid : vertex_id ;
+
+                        // will contain the transform feedback data
+                        data_buffer_t u_data ;
+
+                        void main()
+                        {
+                            int_t idx = vid / 4 ;
+                            vec4_t pos = fetch_data( u_data, (idx << 1) + 0 ) ; 
+                            vec4_t col = fetch_data( u_data, (idx << 1) + 1 ) ;
+
+                            pos = vec4_t( (pos + in.pos).xyz, 1.0 ) ;
+                            pos = pos ' vec4_t( 0.5, 0.5, 1.0, 1.0 ) ;
+                            out.color = ( vid < 2) ? in.color : col ;
+                            out.pos = pos ;
+                        }
+                    }
+
+                    pixel_shader
+                    {
+                        in vec4_t color : color ;
+                        out vec4_t color : color ;
+
+                        void main()
+                        {
+                            out.color = in.color ;
+                        }
+                    }
+                })" ) ;
+
+                        
+                mslo.link_geometry( {"quad"} ) ;
+
+                // add variable set 0
+                {
+                    motor::graphics::variable_set_t vars ;
+                    {
+                        auto* var = vars.array_variable_streamout( "u_data" ) ;
+                        var->set( "compute" ) ;
+                    }
+                    mslo.add_variable_set( motor::shared( std::move( vars ) ) ) ;
+                }
+
+                msl_orig_obj = std::move( mslo ) ;
+            }
+
+            // shader configuration
+            {
+                motor::graphics::msl_object_t mslo("streamout") ;
+
+                mslo.add( motor::graphics::msl_api_type::msl_4_0, R"(
+                config stream_out
+                {
+                    vertex_shader
+                    {
+                        in vec4_t pos : position ;
+                        in vec4_t color : color ;
+
+                        out vec4_t pos : position ;
+                        out vec4_t color : color ;
+
+                        float_t u_ani ;
+
+                        void main()
+                        {
+                            float_t t = u_ani * 3.14526 * 2.0 ;
+                            out.pos = in.pos + vec4_t( 0.02 * cos(t), 0.02 * sin(t), 0.0, 0.0 ) ;
+                            out.color = vec4_t( 1.0, 1.0, 0.0, 1.0 ) ' in.color ;
+                        }
+                    }
+
+                    // automatically enable streamout when no pixel shader is present.
+                })" ) ;
+                        
+                mslo.link_geometry( "points", "compute" ) ;
+
+                // add variable set
+                {
+                    motor::graphics::variable_set_t vars ;
+                    {}
+                    mslo.add_variable_set( motor::shared( std::move( vars ) ) ) ;
+                }
+
+                msl_so_obj = std::move( mslo ) ;
             }
         }
 
@@ -86,193 +252,11 @@ namespace this_file
             }
         }
 
-        virtual void_t on_graphics( motor::application::app::graphics_data_in_t gd ) noexcept 
-        {
-            if( !graphics_init ) 
-            {
-                // geometry configuration
-                {
-                    struct vertex { motor::math::vec4f_t pos ; motor::math::vec4f_t color ; } ;
-
-                    auto vb = motor::graphics::vertex_buffer_t()
-                        .add_layout_element( motor::graphics::vertex_attribute::position, motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
-                        .add_layout_element( motor::graphics::vertex_attribute::color0, motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
-                        .resize( 4 ).update<vertex>( [=] ( vertex* array, size_t const ne )
-                    {
-                        array[ 0 ].pos = motor::math::vec4f_t( -0.5f, -0.5f, 0.0f, 1.0f ) ;
-                        array[ 1 ].pos = motor::math::vec4f_t( -0.5f, +0.5f, 0.0f, 1.0f ) ;
-                        array[ 2 ].pos = motor::math::vec4f_t( +0.5f, +0.5f, 0.0f, 1.0f ) ;
-                        array[ 3 ].pos = motor::math::vec4f_t( +0.5f, -0.5f, 0.0f, 1.0f ) ;
-
-                        array[ 0 ].color = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
-                        array[ 1 ].color = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
-                        array[ 2 ].color = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
-                        array[ 3 ].color = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
-                    } );
-
-                    auto ib = motor::graphics::index_buffer_t().
-                        set_layout_element( motor::graphics::type::tuint ).resize( 6 ).
-                        update<uint_t>( [] ( uint_t* array, size_t const ne )
-                    {
-                        array[ 0 ] = 0 ;
-                        array[ 1 ] = 1 ;
-                        array[ 2 ] = 2 ;
-
-                        array[ 3 ] = 0 ;
-                        array[ 4 ] = 2 ;
-                        array[ 5 ] = 3 ;
-                    } ) ;
-
-                    quad_geo = motor::graphics::geometry_object_t( "quad",
-                        motor::graphics::primitive_type::triangles, std::move( vb ), std::move( ib ) ) ;
-                }
-
-                // geometry configuration
-                {
-                    struct vertex { motor::math::vec4f_t pos ; motor::math::vec4f_t color ; } ;
-
-                    auto vb = motor::graphics::vertex_buffer_t()
-                        .add_layout_element( motor::graphics::vertex_attribute::position, motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
-                        .add_layout_element( motor::graphics::vertex_attribute::color0, motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
-                        .resize( 4 ).update<vertex>( [=] ( vertex* array, size_t const ne )
-                    {
-                        array[ 0 ].pos = motor::math::vec4f_t( -0.5f, -0.5f, 0.0f, 1.0f ) ;
-                        array[ 1 ].pos = motor::math::vec4f_t( -0.5f, +0.5f, 0.0f, 1.0f ) ;
-                        array[ 2 ].pos = motor::math::vec4f_t( +0.5f, +0.5f, 0.0f, 1.0f ) ;
-                        array[ 3 ].pos = motor::math::vec4f_t( +0.5f, -0.5f, 0.0f, 1.0f ) ;
-
-                        array[ 0 ].color = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
-                        array[ 1 ].color = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
-                        array[ 2 ].color = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
-                        array[ 3 ].color = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
-                    } );
-
-                    points_geo = motor::graphics::geometry_object_t( "points",
-                        motor::graphics::primitive_type::points, std::move( vb ) ) ;
-                }
-
-                // stream out object configuration
-                {
-                    auto vb = motor::graphics::vertex_buffer_t()
-                        .add_layout_element( motor::graphics::vertex_attribute::position, motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
-                        .add_layout_element( motor::graphics::vertex_attribute::color0, motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 ) ;
-
-
-                    so_obj = motor::graphics::streamout_object_t( "compute", std::move( vb ) ).resize( 1000 ) ;
-                }
-
-                // render original
-                {
-                    motor::graphics::msl_object_t mslo("render_original") ;
-
-                    mslo.add( motor::graphics::msl_api_type::msl_4_0, R"(
-                    config render_original
-                    {
-                        vertex_shader
-                        {
-                            in vec4_t pos : position ;
-                            in vec4_t color : color ;
-
-                            out vec4_t pos : position ;
-                            out vec4_t color : color ;
-
-                            uint_t vid : vertex_id ;
-
-                            // will contain the transform feedback data
-                            data_buffer_t u_data ;
-
-                            void main()
-                            {
-                                int_t idx = vid / 4 ;
-                                vec4_t pos = fetch_data( u_data, (idx << 1) + 0 ) ; 
-                                vec4_t col = fetch_data( u_data, (idx << 1) + 1 ) ;
-
-                                pos = vec4_t( (pos + in.pos).xyz, 1.0 ) ;
-                                pos = pos ' vec4_t( 0.5, 0.5, 1.0, 1.0 ) ;
-                                out.color = ( vid < 2) ? in.color : col ;
-                                out.pos = pos ;
-                            }
-                        }
-
-                        pixel_shader
-                        {
-                            in vec4_t color : color ;
-                            out vec4_t color : color ;
-
-                            void main()
-                            {
-                                out.color = in.color ;
-                            }
-                        }
-                    })" ) ;
-
-                        
-                    mslo.link_geometry( {"quad"} ) ;
-
-                    // add variable set 0
-                    {
-                        motor::graphics::variable_set_t vars ;
-                        {
-                            auto* var = vars.array_variable_streamout( "u_data" ) ;
-                            var->set( "compute" ) ;
-                        }
-                        mslo.add_variable_set( motor::shared( std::move( vars ) ) ) ;
-                    }
-
-                    msl_orig_obj = std::move( mslo ) ;
-                }
-
-                // shader configuration
-                {
-                    motor::graphics::msl_object_t mslo("streamout") ;
-
-                    mslo.add( motor::graphics::msl_api_type::msl_4_0, R"(
-                    config stream_out
-                    {
-                        vertex_shader
-                        {
-                            in vec4_t pos : position ;
-                            in vec4_t color : color ;
-
-                            out vec4_t pos : position ;
-                            out vec4_t color : color ;
-
-                            float_t u_ani ;
-
-                            void main()
-                            {
-                                float_t t = u_ani * 3.14526 * 2.0 ;
-                                out.pos = in.pos + vec4_t( 0.02 * cos(t), 0.02 * sin(t), 0.0, 0.0 ) ;
-                                out.color = vec4_t( 1.0, 1.0, 0.0, 1.0 ) ' in.color ;
-                            }
-                        }
-
-                        // automatically enable streamout when no pixel shader is present.
-                    })" ) ;
-                        
-                    mslo.link_geometry( "points", "compute" ) ;
-
-                    // add variable set
-                    {
-                        motor::graphics::variable_set_t vars ;
-                        {}
-                        mslo.add_variable_set( motor::shared( std::move( vars ) ) ) ;
-                    }
-
-                    msl_so_obj = std::move( mslo ) ;
-                }
-            }
-
-            graphics_init = true ;
-        }
-
         virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
             motor::application::app::render_data_in_t rd ) noexcept 
         {            
-            if( !rnd_init[wid] )
+            if( rd.first_frame )
             {
-                rnd_init[wid] = true ;
-
                 fe->configure<motor::graphics::state_object_t>( &scene_so ) ;
                 fe->configure<motor::graphics::geometry_object_t>( &quad_geo ) ;
                 fe->configure<motor::graphics::geometry_object_t>( &points_geo ) ;

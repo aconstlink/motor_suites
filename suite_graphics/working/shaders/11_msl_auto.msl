@@ -27,7 +27,7 @@ config msl_quad
 
         void main()
         {
-            out.color = texture( u_tex, in.tx ) ' u_color  ;
+            out.color = texture( u_tex, in.tx )  ' u_color  ;
         }
-    }
+    } 
 }

@@ -23,8 +23,6 @@ namespace this_file
         motor::io::database db = motor::io::database( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
         motor::gfx::text_render_2d_t tr ;
 
-        motor::vector< bool_t > rnd_init ;
-
         //***************************************************************************************************
         virtual void_t on_init( void_t ) noexcept
         {
@@ -42,7 +40,6 @@ namespace this_file
                     wnd.send_message( motor::application::cursor_message_t( {false} ) ) ;
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
-                rnd_init.push_back( false ) ;
             }
 
             {
@@ -59,7 +56,6 @@ namespace this_file
                     wnd.send_message( motor::application::cursor_message_t( {false} ) ) ;
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
-                rnd_init.push_back( false ) ;
             }
 
             // import fonts and create text render
@@ -155,10 +151,9 @@ namespace this_file
         virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe, 
             motor::application::app::render_data_in_t rd ) noexcept 
         {
-            if( !rnd_init[ wid ] )
+            if( rd.first_frame )
             {
                 tr.configure( fe ) ;
-                rnd_init[ wid ] = true ;
             }
 
             // prepare and render layer 0 and 1
