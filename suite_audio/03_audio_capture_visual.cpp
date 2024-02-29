@@ -62,10 +62,6 @@ namespace this_file
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
-
-            // prepare audio object
-            {
-            }
         }
 
         virtual void_t on_audio( motor::audio::frontend_ptr_t fptr, audio_data_in_t ad ) noexcept
@@ -118,7 +114,6 @@ namespace this_file
                 }
             }
             ImGui::End() ;
-
 
             return true ; 
         }
