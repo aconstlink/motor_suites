@@ -2,6 +2,7 @@
 
 set( tests
     "00_format_load.cpp"
+    "01_sprite_sheet.cpp"
     )
 
 foreach( _test ${tests} )
