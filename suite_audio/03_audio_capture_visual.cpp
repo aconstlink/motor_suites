@@ -25,7 +25,6 @@ namespace this_file
     {
         motor_this_typedefs( my_app ) ;
 
-        bool_t did_init = false ;
         motor::audio::capture_object_t co ;
 
         motor::vector< float_t > captured_samples ;
@@ -69,11 +68,10 @@ namespace this_file
             }
         }
 
-        virtual void_t on_audio( motor::audio::frontend_ptr_t fptr, audio_data_in_t ) noexcept
+        virtual void_t on_audio( motor::audio::frontend_ptr_t fptr, audio_data_in_t ad ) noexcept
         {
-            if( !did_init )
+            if( ad.first_frame )
             {
-                did_init = true ;
                 fptr->configure( motor::audio::capture_type::what_u_hear, &co ) ;
             }
 
@@ -110,7 +108,7 @@ namespace this_file
                 // print frequencies
                 {
                     float_t max_value = std::numeric_limits<float_t>::min() ;
-                    for( size_t i = 5 ; i < captured_frequencies.size(); ++i )
+                    for( size_t i = 0 ; i < captured_frequencies.size(); ++i )
                         max_value = std::max( captured_frequencies[ i ], max_value ) ;
 
                     static float_t smax_value = 0.0f ;
