@@ -216,6 +216,41 @@ namespace this_file
 
             if( ani_time > sheets[sheet].objects[0].animations[ani].duration ) ani_time = 0 ;
 
+            
+            
+            ani_time += gd.micro_dt / 1000 ;
+
+            // animation driven
+            {
+                auto & s = sheets[0].objects[0].animations[0].sprites[0] ;
+                auto const & rect = sheets[sheet].rects[s.idx] ;
+                
+                float_t const rw = rect.rect.z() - rect.rect.x() ; 
+                static size_t r = 0 ;
+                size_t const w = 100 ;
+                size_t const h = 100 ;
+
+                r+=4 ;
+
+                if( r > w*h ) r = 0 ;
+
+                int_t const ne = 2000;
+                for( int_t i=0; i<ne; ++i )
+                {
+                    int_t r2 = std::max( int_t( r ) - (i*2), 0 );
+                    float_t const x = (float_t( r2 % w ) / float_t(w )) *2.0f -1.0f ;
+                    float_t const y = (float_t( r2 / w ) / float_t(h )) *2.0f -1.0f ;
+
+                    sr.draw( 0, 
+                        motor::math::vec2f_t( x, y ),
+                        motor::math::mat2f_t().identity(),
+                        motor::math::vec2f_t(5.0f),
+                        rect.rect,  
+                        sheet, rect.pivot, 
+                        motor::math::vec4f_t(1.0f) ) ;
+                }
+            }
+
             for( auto const & s : sheets[sheet].objects[0].animations[ani].sprites )
             {
                 if( ani_time >= s.begin && ani_time < s.end )
@@ -225,37 +260,12 @@ namespace this_file
                     sr.draw( 0, 
                         pos, 
                         motor::math::mat2f_t().identity(),
-                        motor::math::vec2f_t(5.0f),
+                        motor::math::vec2f_t(10.0f),
                         rect.rect,  
                         sheet, rect.pivot, 
-                        motor::math::vec4f_t(1.0f) ) ;
+                        motor::math::vec4f_t(1.0f, 0.5f, 0.25f, 0.5f ) ) ;
                     break ;
                 }
-            }
-            
-            ani_time += gd.micro_dt / 1000 ;
-
-            // animation driven
-            {
-                static float_t inter = 0.0f ;
-                float_t v = motor::math::interpolation<float_t>::linear( 0.0f, 1.0f, inter ) *2.0f-1.0f ;
-                v *= 1.0 ;
-
-                auto & s = sheets[0].objects[0].animations[0].sprites[0] ;
-
-                auto const & rect = sheets[sheet].rects[s.idx] ;
-                motor::math::vec2f_t pos( -0.0f, 0.0f ) ;
-                sr.draw( 0, 
-                    motor::math::vec2f_t( v, -0.5f ),
-                    motor::math::mat2f_t().identity(),
-                    motor::math::vec2f_t(5.0f),
-                    rect.rect,  
-                    sheet, rect.pivot, 
-                    motor::math::vec4f_t(1.0f) ) ;
-
-                inter += gd.sec_dt * 0.4f ;
-                //inter += 0.016f * 0.4f ;
-                if( inter > 1.0f ) inter = 0.0f ;
             }
 
             sr.prepare_for_rendering() ;

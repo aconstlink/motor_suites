@@ -5,7 +5,7 @@ set( tests
     "02_primitive_renderer_3d.cpp"
     "03_sprite_renderer.cpp"
     "04_sprite_sheet.cpp"
-    
+    "05_spline_rendering_3d.cpp"
     )
 
 foreach( _test ${tests} )

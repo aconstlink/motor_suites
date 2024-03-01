@@ -4,13 +4,11 @@
 #include <motor/gfx/primitive/primitive_render_3d.h>
 #include <motor/gfx/camera/pinhole_camera.h>
 
-#include <motor/format/global.h>
-#include <motor/format/future_items.hpp>
-#include <motor/property/property_sheet.hpp>
-
 #include <motor/math/utility/angle.hpp>
 #include <motor/math/utility/fn.hpp>
 #include <motor/math/interpolation/interpolate.hpp>
+#include <motor/math/spline/quadratic_bezier_spline.hpp>
+#include <motor/math/spline/linear_bezier_spline.hpp>
 
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
@@ -71,7 +69,7 @@ namespace this_file
             {
                 camera.perspective_fov( motor::math::angle<float_t>::degree_to_radian( 45.0f ) ) ;
                 camera.look_at( motor::math::vec3f_t( -200.0f, 0.0f, -50.0f ),
-                            motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 0.0f, 0.0f )) ;
+                            motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 500.0f, 0.0f )) ;
             }
 
             {
@@ -88,7 +86,7 @@ namespace this_file
                     rss.polygon_s.ss.ff = motor::graphics::front_face::clock_wise ;
                     rss.polygon_s.ss.cm = motor::graphics::cull_mode::back ;
                     rss.clear_s.do_change = true ;
-                    rss.clear_s.ss.clear_color = motor::math::vec4f_t(0.5f, 0.9f, 0.5f, 1.0f ) ;
+                    rss.clear_s.ss.clear_color = motor::math::vec4f_t(0.5f, 0.2f, 0.2f, 1.0f ) ;
                     rss.clear_s.ss.do_activate = true ;
                     rss.clear_s.ss.do_color_clear = true ;
                     rss.clear_s.ss.do_depth_clear = true ;
@@ -127,72 +125,92 @@ namespace this_file
                 float_t const t2 = motor::math::fn<float_t>::abs( t * 2.0f - 1.0f ) ;
 
                 motor::math::vec3f_t const pos = motor::math::interpolation<motor::math::vec3f_t>::linear(
-                    motor::math::vec3f_t(-500.0f,0.0f,-100.0f ), motor::math::vec3f_t(500.0,0.0f,-200.0f ), t2 ) ;
+                    motor::math::vec3f_t(-200.0f,0.0f,-600.0f ), motor::math::vec3f_t(200.0,0.0f,-600.0f ), t2 ) ;
 
-                camera.look_at( pos, motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 0.0f, 0.0f )) ;
+                camera.look_at( pos, motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 50.0f, 0.0f, 0.0f )) ;
             }
 
-            // draw some 3d lines
+            motor::math::vec3f_t off( 0.0f, 0.0f, 0.0f) ;
+
+            // draw splines #1
             {
-                size_t const ns = 10 ;
-                for( size_t i=0; i<ns; ++i )
-                {
-                    float_t const fac = (float_t( i ) / float_t( ns-1 )) ;
-                    float_t const part =  fac * 2.0f * motor::math::constants<float_t>::pi()  ;
-                    pr.draw_line( motor::math::vec3f_t(0.0f), 
-                        motor::math::vec3f_t( 100.0f * std::cos(part), 100.0f * std::sin(part), 10.0f ), 
-                        motor::math::vec4f_t( 1.0f )  ) ;
-                }
-            }
+                off += motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ;
 
-            // draw some triangles
-            {
-                {
-                    motor::math::vec3f_t pos ;
-                    pr.draw_tri( pos + motor::math::vec3f_t(-10.0f, -10.0f, 0.0f ), pos + motor::math::vec3f_t(0.0f,10.0f,0.0f),
-                            pos + motor::math::vec3f_t(10.0f, -10.0f, 0.0f ), motor::math::vec4f_t( 1.0f )  ) ;
-                }
+                typedef motor::math::quadratic_bezier_spline<motor::math::vec3f_t> spline_t ;
 
-                {
-                    float_t const t2 = motor::math::fn<float_t>::abs( t * 2.0f - 1.0f ) ;
+                spline_t s( {
+                    motor::math::vec3f_t(-50.0f, 0.0f, 0.0f) + off,
+                    motor::math::vec3f_t(-25.0f, 50.0f, 0.0f) + off,
+                    motor::math::vec3f_t(-0.0f, 50.0f, 0.0f) + off,
+                    motor::math::vec3f_t(50.0f, 0.0f, -0.0f) + off,
+                    motor::math::vec3f_t(100.0f, -50.0f, 0.0f) + off,
+                    motor::math::vec3f_t(150.0f, 0.0f, 0.0f) + off,
+                    motor::math::vec3f_t(200.0f, -100.0f, 0.0f) + off,
+                    motor::math::vec3f_t(250.0f, 0.0f, 0.0f) + off
+                }, spline_t::init_type::construct  ) ;
+                
+                
+                static size_t change_idx = 1 ;
 
-                    motor::math::vec3f_t pos = motor::math::vec3f_t( -200.0f, -50.0f, 100.0f ) ;
-                    size_t const ns = 10 ;
-                    for( size_t i=0; i<ns; ++i )
+                // change control point
+                {
+                    
+                    static float_t t2 = 0.0f ;
+                    t2 += gd.sec_dt * 0.5f  ;
+                    if( t2 > 1.0f ) 
                     {
-                        float_t const disp = motor::math::interpolation<float_t>::linear( 5.0f, 15.0f, t2 ) ;
+                        change_idx = ++change_idx < s.ncp() ? change_idx : 0 ;
+                        t2 = 0.0f ;
+                    }
 
-                        pos += motor::math::vec3f_t(40.0f, 0.0f, 0.0f ) ;
-                        pr.draw_tri( pos + motor::math::vec3f_t(-disp, -disp, 0.0f ), pos + motor::math::vec3f_t(0.0f,disp,0.0f),
-                            pos + motor::math::vec3f_t(disp, -disp, 0.0f ), motor::math::vec4f_t( float_t(i)/float_t(ns), 1.0f, float_t(i)/float_t(ns), 1.0f )  ) ;
+                    float_t f = t * motor::math::constants<float_t>::pix2() ;
+                    motor::math::vec3f_t dif( 
+                        motor::math::fn<float_t>::cos( f ), 
+                        motor::math::fn<float_t>::sin( f ) * motor::math::fn<float_t>::cos( f ), 
+                        motor::math::fn<float_t>::sin( f ) ) ;
+                    
+                    auto const cp = s.get_control_point( change_idx ) + dif * 30.0f ;
+                    s.change_point( change_idx, cp ) ;
+                }
+
+
+                motor::math::linear_bezier_spline<motor::math::vec3f_t> ls = s.control_points() ;
+
+                size_t const samples = 100 ;
+                for( size_t i=0; i<(samples>>1); ++i )
+                {
+                    float_t const frac0 = float_t((i<<1)+0) / float_t(samples-1) ;
+                    float_t const frac1 = float_t((i<<1)+1) / float_t(samples-1) ;
+
+                    {
+                        auto const p0 = s( frac0 ) ;
+                        auto const p1 = s( frac1 ) ;
+
+                        pr.draw_line( p0, p1, motor::math::vec4f_t( 1.0f, 1.0f, 0.4f, 1.0f )  ) ;
+                    }
+
+                    {
+                        auto const p0 = ls( frac0 ) ;
+                        auto const p1 = ls( frac1 ) ;
+
+                        pr.draw_line( p0, p1, motor::math::vec4f_t( 1.0f, 0.5f, 0.4f, 1.0f )  ) ;
                     }
                 }
-            }
 
-            // draw some circles
-            {
                 {
-                    motor::math::vec3f_t pos( 0.0f, 0.0f, 50.0f) ;
-                    pr.draw_circle( motor::math::mat3f_t::make_identity(), 
-                        pos, 30.0f, motor::math::vec4f_t( 0.5f, 0.5f, 0.5f, 1.0f ), motor::math::vec4f_t( 1.0f ), 20 ) ;
-                }
-
-                #if 0
-                {
-                    float_t const t2 = motor::math::fn<float_t>::abs( t * 2.0f - 1.0f ) ;
-
-                    motor::math::vec3f_t pos = motor::math::vec3f_t( -200.0f, -50.0f, 100.0f ) ;
-                    size_t const ns = 10 ;
-                    for( size_t i=0; i<ns; ++i )
+                    s.for_each_control_point( [&]( size_t const i, motor::math::vec3f_cref_t p )
                     {
-                        float_t const disp = motor::math::interpolation<float_t>::linear( 5.0f, 15.0f, t2 ) ;
+                        auto const r = motor::math::m3d::trafof_t::rotation_by_axis( motor::math::vec3f_t(1.0f,0.0f,0.0f), 
+                                motor::math::angle<float_t>::degree_to_radian(90.0f) ) ;
 
-                        pos += motor::math::vec3f_t(40.0f, 0.0f, 0.0f ) ;
-                        pr.draw_tri( pos + motor::math::vec3f_t(-disp, -disp, 0.0f ), pos + motor::math::vec3f_t(0.0f,disp,0.0f),
-                            pos + motor::math::vec3f_t(disp, -disp, 0.0f ), motor::math::vec4f_t( float_t(i)/float_t(ns), 1.0f, float_t(i)/float_t(ns), 1.0f )  ) ;
-                    }
+                        motor::math::vec4f_t color( 1.0f ) ;
+                        if( i == change_idx ) color = motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) ;
+
+                        pr.draw_circle( 
+                            ( camera.get_transformation() ).get_rotation_matrix(), p, 
+                            2.0f, color, color, 20 ) ;
+                    } ) ;
                 }
-                #endif
             }
 
             pr.set_view_proj( camera.mat_view(), camera.mat_proj() ) ;
@@ -231,7 +249,6 @@ int main( int argc, char ** argv )
     
     motor::memory::release_ptr( carrier ) ;
 
-    motor::io::global::deinit() ;
     motor::concurrent::global::deinit() ;
     motor::log::global::deinit() ;
     motor::memory::global::dump_to_std() ;
