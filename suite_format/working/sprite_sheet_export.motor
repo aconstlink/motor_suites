@@ -1,0 +1,284 @@
+<motor>
+    <sprite_sheets>
+        <sprite_sheet name="sprite_sheet_name.0">
+            <image src="images/a_img.0.png"/>
+            <sprites>
+                <sprite name="sprite.0">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.1">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.2">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.3">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.4">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.5">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.6">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.7">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.8">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.9">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+            </sprites>
+            <animations>
+                <animation name="animation.0">
+                    <frame sprite="sprite.0" duration="50"/>
+                    <frame sprite="sprite.1" duration="50"/>
+                    <frame sprite="sprite.2" duration="50"/>
+                    <frame sprite="sprite.3" duration="50"/>
+                    <frame sprite="sprite.4" duration="50"/>
+                    <frame sprite="sprite.5" duration="50"/>
+                    <frame sprite="sprite.6" duration="50"/>
+                    <frame sprite="sprite.7" duration="50"/>
+                    <frame sprite="sprite.8" duration="50"/>
+                    <frame sprite="sprite.9" duration="50"/>
+                </animation>
+                <animation name="animation.1">
+                    <frame sprite="sprite.0" duration="50"/>
+                    <frame sprite="sprite.1" duration="50"/>
+                    <frame sprite="sprite.2" duration="50"/>
+                    <frame sprite="sprite.3" duration="50"/>
+                    <frame sprite="sprite.4" duration="50"/>
+                    <frame sprite="sprite.5" duration="50"/>
+                    <frame sprite="sprite.6" duration="50"/>
+                    <frame sprite="sprite.7" duration="50"/>
+                    <frame sprite="sprite.8" duration="50"/>
+                    <frame sprite="sprite.9" duration="50"/>
+                </animation>
+                <animation name="animation.2">
+                    <frame sprite="sprite.0" duration="50"/>
+                    <frame sprite="sprite.1" duration="50"/>
+                    <frame sprite="sprite.2" duration="50"/>
+                    <frame sprite="sprite.3" duration="50"/>
+                    <frame sprite="sprite.4" duration="50"/>
+                    <frame sprite="sprite.5" duration="50"/>
+                    <frame sprite="sprite.6" duration="50"/>
+                    <frame sprite="sprite.7" duration="50"/>
+                    <frame sprite="sprite.8" duration="50"/>
+                    <frame sprite="sprite.9" duration="50"/>
+                </animation>
+            </animations>
+        </sprite_sheet>
+        <sprite_sheet name="sprite_sheet_name.1">
+            <image src="images/a_img.1.png"/>
+            <sprites>
+                <sprite name="sprite.0">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.1">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.2">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.3">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.4">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.5">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.6">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.7">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.8">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.9">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+            </sprites>
+            <animations>
+                <animation name="animation.0">
+                    <frame sprite="sprite.0" duration="50"/>
+                    <frame sprite="sprite.1" duration="50"/>
+                    <frame sprite="sprite.2" duration="50"/>
+                    <frame sprite="sprite.3" duration="50"/>
+                    <frame sprite="sprite.4" duration="50"/>
+                    <frame sprite="sprite.5" duration="50"/>
+                    <frame sprite="sprite.6" duration="50"/>
+                    <frame sprite="sprite.7" duration="50"/>
+                    <frame sprite="sprite.8" duration="50"/>
+                    <frame sprite="sprite.9" duration="50"/>
+                </animation>
+                <animation name="animation.1">
+                    <frame sprite="sprite.0" duration="50"/>
+                    <frame sprite="sprite.1" duration="50"/>
+                    <frame sprite="sprite.2" duration="50"/>
+                    <frame sprite="sprite.3" duration="50"/>
+                    <frame sprite="sprite.4" duration="50"/>
+                    <frame sprite="sprite.5" duration="50"/>
+                    <frame sprite="sprite.6" duration="50"/>
+                    <frame sprite="sprite.7" duration="50"/>
+                    <frame sprite="sprite.8" duration="50"/>
+                    <frame sprite="sprite.9" duration="50"/>
+                </animation>
+                <animation name="animation.2">
+                    <frame sprite="sprite.0" duration="50"/>
+                    <frame sprite="sprite.1" duration="50"/>
+                    <frame sprite="sprite.2" duration="50"/>
+                    <frame sprite="sprite.3" duration="50"/>
+                    <frame sprite="sprite.4" duration="50"/>
+                    <frame sprite="sprite.5" duration="50"/>
+                    <frame sprite="sprite.6" duration="50"/>
+                    <frame sprite="sprite.7" duration="50"/>
+                    <frame sprite="sprite.8" duration="50"/>
+                    <frame sprite="sprite.9" duration="50"/>
+                </animation>
+            </animations>
+        </sprite_sheet>
+        <sprite_sheet name="sprite_sheet_name.2">
+            <image src="images/a_img.2.png"/>
+            <sprites>
+                <sprite name="sprite.0">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.1">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.2">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.3">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.4">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.5">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.6">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.7">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.8">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+                <sprite name="sprite.9">
+                    <animation rect="0 0 0 0" pivot="0 0"/>
+                    <collision rect="0 0 0 0"/>
+                    <hits/>
+                </sprite>
+            </sprites>
+            <animations>
+                <animation name="animation.0">
+                    <frame sprite="sprite.0" duration="50"/>
+                    <frame sprite="sprite.1" duration="50"/>
+                    <frame sprite="sprite.2" duration="50"/>
+                    <frame sprite="sprite.3" duration="50"/>
+                    <frame sprite="sprite.4" duration="50"/>
+                    <frame sprite="sprite.5" duration="50"/>
+                    <frame sprite="sprite.6" duration="50"/>
+                    <frame sprite="sprite.7" duration="50"/>
+                    <frame sprite="sprite.8" duration="50"/>
+                    <frame sprite="sprite.9" duration="50"/>
+                </animation>
+                <animation name="animation.1">
+                    <frame sprite="sprite.0" duration="50"/>
+                    <frame sprite="sprite.1" duration="50"/>
+                    <frame sprite="sprite.2" duration="50"/>
+                    <frame sprite="sprite.3" duration="50"/>
+                    <frame sprite="sprite.4" duration="50"/>
+                    <frame sprite="sprite.5" duration="50"/>
+                    <frame sprite="sprite.6" duration="50"/>
+                    <frame sprite="sprite.7" duration="50"/>
+                    <frame sprite="sprite.8" duration="50"/>
+                    <frame sprite="sprite.9" duration="50"/>
+                </animation>
+                <animation name="animation.2">
+                    <frame sprite="sprite.0" duration="50"/>
+                    <frame sprite="sprite.1" duration="50"/>
+                    <frame sprite="sprite.2" duration="50"/>
+                    <frame sprite="sprite.3" duration="50"/>
+                    <frame sprite="sprite.4" duration="50"/>
+                    <frame sprite="sprite.5" duration="50"/>
+                    <frame sprite="sprite.6" duration="50"/>
+                    <frame sprite="sprite.7" duration="50"/>
+                    <frame sprite="sprite.8" duration="50"/>
+                    <frame sprite="sprite.9" duration="50"/>
+                </animation>
+            </animations>
+        </sprite_sheet>
+    </sprite_sheets>
+</motor>
+
