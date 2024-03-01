@@ -25,7 +25,6 @@ namespace this_file
             };
             size_t duration ;
             motor::vector< sprite > sprites ;
-
         };
         motor::vector< animation > animations ;
 
@@ -43,14 +42,15 @@ int main( int argc, char ** argv )
 {
     motor::vector< this_file::sprite_sheet > sheets ;
 
-    motor::io::database_mtr_t db = motor::shared( motor::io::database_t( motor::io::path_t( DATAPATH ), "./working", "data" ) ) ;
-
     motor::format::module_registry_mtr_t mod_reg = motor::format::global::register_default_modules( 
         motor::shared( motor::format::module_registry_t(), "mod registry"  ) ) ;
     
+
     // import motor file
     {
-        auto item = mod_reg->import_from( motor::io::location_t( "sprite_sheet.motor" ), db ) ;
+        motor::io::database_t db = motor::io::database_t( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
+        
+        auto item = mod_reg->import_from( motor::io::location_t( "sprite_sheet.motor" ), &db ) ;
         
         if( auto * ni = dynamic_cast<motor::format::motor_item_mtr_t>( item.get() ); ni != nullptr )
         {
@@ -65,7 +65,7 @@ int main( int argc, char ** argv )
                 for( auto const & ss : doc.sprite_sheets )
                 {
                     auto const l = motor::io::location_t::from_path( motor::io::path_t(ss.image.src) ) ;
-                    futures.emplace_back( mod_reg->import_from( l, db ) ) ;
+                    futures.emplace_back( mod_reg->import_from( l, &db ) ) ;
                 }
 
                 for( size_t i=0; i<doc.sprite_sheets.size(); ++i )
@@ -73,13 +73,20 @@ int main( int argc, char ** argv )
                     if( auto * ii = dynamic_cast<motor::format::image_item_mtr_t>( futures[i].get() ) ; ii != nullptr )
                     {
                         imgs.append( *ii->img ) ;
+                        motor::memory::release_ptr( ii->img ) ;
+                        motor::memory::release_ptr( ii ) ;
+                    }
+                    else
+                    {
+                        motor::memory::release_ptr( ii ) ;
+                        std::exit( 1 ) ;
                     }
 
                     this_file::sprite_sheet ss ;
                     sheets.emplace_back( ss ) ;
                 }
             }
-
+            
             // make sprite animation infos
             {
                 // as an image array is used, the max dims need to be
@@ -136,11 +143,15 @@ int main( int argc, char ** argv )
                     }
                 }
             }
+
+            motor::memory::release_ptr( ni ) ;
         }
     }
-
+    
     // export 
     {
+        motor::io::database_t db = motor::io::database_t( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
+
         motor::format::motor_document doc ;
         
         for( size_t no = 0; no < 3; ++no )
@@ -183,35 +194,41 @@ int main( int argc, char ** argv )
             doc.sprite_sheets.emplace_back( ss ) ;
         }
         
-        auto item = mod_reg->export_to( motor::io::location_t( "sprite_sheet_motor.motor" ), db, 
+        auto item = mod_reg->export_to( motor::io::location_t( "sprite_sheet_export.motor" ), &db, 
             motor::shared( motor::format::motor_item_t( std::move( doc ) ) ) ) ;
 
         if( auto * si = dynamic_cast<motor::format::status_item_mtr_t>(item.get()); si != nullptr )
         {
             motor::log::global_t::status( si->msg ) ;
+            motor::memory::release_ptr( si ) ;
         }
     }
 
     // import export the same file
     {
-        auto im_item = mod_reg->import_from( motor::io::location_t( "sprite_sheet.motor" ), db ) ;
+        motor::io::database_t db = motor::io::database_t( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
 
+        auto im_item = mod_reg->import_from( motor::io::location_t( "sprite_sheet.motor" ), &db ) ;
         
         if( auto * ni = dynamic_cast<motor::format::motor_item_mtr_t>( im_item.get() ); ni != nullptr )
         {
             motor::format::motor_document_t doc = std::move( ni->doc ) ;
-            auto ex_item = mod_reg->export_to( motor::io::location_t( "imported_one.motor" ), db, 
+            auto ex_item = mod_reg->export_to( motor::io::location_t( "imported_one.motor" ), &db, 
                 motor::shared( motor::format::motor_item_t( std::move( doc ) ) ) ) ;
 
             if( auto * si = dynamic_cast<motor::format::status_item_mtr_t>(ex_item.get()); si != nullptr )
             {
                 motor::log::global_t::status( si->msg ) ;
+                motor::memory::release_ptr( si ) ;
             }
+
+            motor::memory::release_ptr( ni ) ;
         }
     }
 
+    sheets.~vector() ;
+
     motor::memory::release_ptr( mod_reg ) ;
-    motor::memory::release_ptr( db ) ;
 
     motor::io::global_t::deinit() ;
     motor::log::global_t::deinit() ;
