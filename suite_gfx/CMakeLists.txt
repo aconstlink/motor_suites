@@ -1,9 +1,11 @@
 
 set( tests
     "00_text_renderer.cpp"
-    "01_primitive_renderer.cpp"
-    "02_sprite_renderer.cpp"
-    "03_sprite_sheet.cpp"
+    "01_primitive_renderer_2d.cpp"
+    "02_primitive_renderer_3d.cpp"
+    "03_sprite_renderer.cpp"
+    "04_sprite_sheet.cpp"
+    
     )
 
 foreach( _test ${tests} )
