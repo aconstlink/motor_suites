@@ -181,7 +181,7 @@ namespace this_file
                                     out_color = u_color * texture( u_tex, var_tx0 ) ;
                                 } )" ) ) ;
                     
-                        shader_obj.insert( motor::graphics::shader_api_type::glsl_1_4, std::move(ss) ) ;
+                        shader_obj.insert( motor::graphics::shader_api_type::glsl_4_0, std::move(ss) ) ;
                     }
 
                     // shaders : es 3.0
