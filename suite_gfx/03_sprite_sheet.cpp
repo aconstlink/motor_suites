@@ -186,6 +186,7 @@ namespace this_file
                         .set_filter( motor::graphics::texture_filter_mode::min_filter, motor::graphics::texture_filter_type::nearest )
                         .set_filter( motor::graphics::texture_filter_mode::mag_filter, motor::graphics::texture_filter_type::nearest );
 
+                    motor::memory::release_ptr( ni ) ;
                     motor::memory::release_ptr( mod_reg ) ;
                 }
             }
