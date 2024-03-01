@@ -26,6 +26,8 @@ namespace this_file
     {
         motor_this_typedefs( my_app ) ;
 
+        motor::graphics::state_object_t rs ;
+
         motor::gfx::primitive_render_3d_t pr ;
         motor::gfx::pinhole_camera_t camera ;
 
@@ -71,6 +73,33 @@ namespace this_file
                 camera.look_at( motor::math::vec3f_t( -200.0f, 0.0f, -50.0f ),
                             motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 0.0f, 0.0f )) ;
             }
+
+            {
+                motor::graphics::state_object_t so = motor::graphics::state_object_t(
+                    "root_render_states" ) ;
+
+                {
+                    motor::graphics::render_state_sets_t rss ;
+                    rss.depth_s.do_change = true ;
+                    rss.depth_s.ss.do_activate = true ;
+                    rss.depth_s.ss.do_depth_write = true ;
+                    rss.polygon_s.do_change = true ;
+                    rss.polygon_s.ss.do_activate = true ;
+                    rss.polygon_s.ss.ff = motor::graphics::front_face::clock_wise ;
+                    rss.polygon_s.ss.cm = motor::graphics::cull_mode::back ;
+                    rss.clear_s.do_change = true ;
+                    rss.clear_s.ss.clear_color = motor::math::vec4f_t(0.5f, 0.9f, 0.5f, 1.0f ) ;
+                    rss.clear_s.ss.do_activate = true ;
+                    rss.clear_s.ss.do_color_clear = true ;
+                    rss.clear_s.ss.do_depth_clear = true ;
+                    rss.view_s.do_change = false ;
+                    rss.view_s.ss.do_activate = false ;
+                    rss.view_s.ss.vp = motor::math::vec4ui_t( 0, 0, 500, 500 ) ;
+                    so.add_render_state_set( rss ) ;
+                }
+
+                rs = std::move( so ) ; 
+            }
         }
 
         virtual void_t on_event( window_id_t const wid, 
@@ -97,7 +126,7 @@ namespace this_file
                 float_t const t2 = motor::math::fn<float_t>::abs( t * 2.0f - 1.0f ) ;
 
                 motor::math::vec3f_t const pos = motor::math::interpolation<motor::math::vec3f_t>::linear(
-                    motor::math::vec3f_t(-200.0f,0.0f,-100.0f ), motor::math::vec3f_t(500.0,0.0f,-200.0f ), t2 ) ;
+                    motor::math::vec3f_t(-500.0f,0.0f,-100.0f ), motor::math::vec3f_t(500.0,0.0f,-200.0f ), t2 ) ;
 
                 camera.look_at( pos, motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 0.0f, 0.0f )) ;
             }
@@ -115,6 +144,56 @@ namespace this_file
                 }
             }
 
+            // draw some triangles
+            {
+                {
+                    motor::math::vec3f_t pos ;
+                    pr.draw_tri( pos + motor::math::vec3f_t(-10.0f, -10.0f, 0.0f ), pos + motor::math::vec3f_t(0.0f,10.0f,0.0f),
+                            pos + motor::math::vec3f_t(10.0f, -10.0f, 0.0f ), motor::math::vec4f_t( 1.0f )  ) ;
+                }
+
+                {
+                    float_t const t2 = motor::math::fn<float_t>::abs( t * 2.0f - 1.0f ) ;
+
+                    motor::math::vec3f_t pos = motor::math::vec3f_t( -200.0f, -50.0f, 100.0f ) ;
+                    size_t const ns = 10 ;
+                    for( size_t i=0; i<ns; ++i )
+                    {
+                        float_t const disp = motor::math::interpolation<float_t>::linear( 5.0f, 15.0f, t2 ) ;
+
+                        pos += motor::math::vec3f_t(40.0f, 0.0f, 0.0f ) ;
+                        pr.draw_tri( pos + motor::math::vec3f_t(-disp, -disp, 0.0f ), pos + motor::math::vec3f_t(0.0f,disp,0.0f),
+                            pos + motor::math::vec3f_t(disp, -disp, 0.0f ), motor::math::vec4f_t( float_t(i)/float_t(ns), 1.0f, float_t(i)/float_t(ns), 1.0f )  ) ;
+                    }
+                }
+            }
+
+            // draw some circles
+            {
+                {
+                    motor::math::vec3f_t pos( 0.0f, 0.0f, 50.0f) ;
+                    pr.draw_circle( motor::math::mat3f_t::make_identity(), 
+                        pos, 30.0f, motor::math::vec4f_t( 0.5f, 0.5f, 0.5f, 1.0f ), motor::math::vec4f_t( 1.0f ), 20 ) ;
+                }
+
+                #if 0
+                {
+                    float_t const t2 = motor::math::fn<float_t>::abs( t * 2.0f - 1.0f ) ;
+
+                    motor::math::vec3f_t pos = motor::math::vec3f_t( -200.0f, -50.0f, 100.0f ) ;
+                    size_t const ns = 10 ;
+                    for( size_t i=0; i<ns; ++i )
+                    {
+                        float_t const disp = motor::math::interpolation<float_t>::linear( 5.0f, 15.0f, t2 ) ;
+
+                        pos += motor::math::vec3f_t(40.0f, 0.0f, 0.0f ) ;
+                        pr.draw_tri( pos + motor::math::vec3f_t(-disp, -disp, 0.0f ), pos + motor::math::vec3f_t(0.0f,disp,0.0f),
+                            pos + motor::math::vec3f_t(disp, -disp, 0.0f ), motor::math::vec4f_t( float_t(i)/float_t(ns), 1.0f, float_t(i)/float_t(ns), 1.0f )  ) ;
+                    }
+                }
+                #endif
+            }
+
             pr.set_view_proj( camera.mat_view(), camera.mat_proj() ) ;
 
             pr.prepare_for_rendering() ;
@@ -125,14 +204,16 @@ namespace this_file
         {
             if( rd.first_frame )
             {
+                fe->configure< motor::graphics::state_object_t>( &rs ) ;
                 pr.configure( fe ) ;
             }
 
             // render text layer 0 to screen
             {
                 pr.prepare_for_rendering( fe ) ;
+                fe->push( &rs ) ;
                 pr.render( fe ) ;
-                pr.render( fe ) ;
+                fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ;
             }
         }
     };
