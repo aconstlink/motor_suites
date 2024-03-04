@@ -24,3 +24,7 @@ Shows how to use the engines' sprite renderer 2d along with a motor engine sprit
 ## 05_spline_rendering_3d
 Renders splines into 3d space.
 ![05_spline_rendering_3d]( readme_images/05_spline_rendering_3d.jpg )
+
+## 06_keyframes_3d
+Renders some primitives into 3d space and does keyframe animation.
+![06_keyframes_3d]( readme_images/06_keyframes_3d.jpg )
