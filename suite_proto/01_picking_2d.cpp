@@ -3,14 +3,10 @@
 #include <motor/platform/global.h>
 
 #include <motor/gfx/camera/pinhole_camera.h>
-#include <motor/gfx/font/text_render_2d.h>
 #include <motor/gfx/primitive/primitive_render_2d.h>
 
-#include <motor/format/global.h>
-#include <motor/format/future_items.hpp>
-#include <motor/property/property_sheet.hpp>
-
 #include <motor/math/utility/angle.hpp>
+#include <motor/math/interpolation/interpolate.hpp>
 
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
@@ -25,8 +21,6 @@ namespace this_file
     class my_app : public motor::application::app
     {
         motor_this_typedefs( my_app ) ;
-
-        motor::io::database db = motor::io::database( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
 
         motor::gfx::pinhole_camera_t camera ;
         motor::gfx::primitive_render_2d_t pr ;
@@ -114,7 +108,7 @@ namespace this_file
             if( sv.resize_changed )
             {
                 _extend = motor::math::vec2ui_t( uint_t(sv.resize_msg.w), uint_t( sv.resize_msg.h ) ) ;
-                camera.set_dims( float_t(_extend.x()), float_t(_extend.y()), 1.0f, 1000.0f ) ;
+                camera.set_dims( float_t(_extend.x()), float_t(_extend.y()), 1.0f, 5000.0f ) ;
                 camera.orthographic() ;
             }
         }
@@ -127,8 +121,25 @@ namespace this_file
         }
 
         //***************************************************************************************************
-        virtual void_t on_graphics( motor::application::app::graphics_data_in_t ) noexcept 
+        virtual void_t on_graphics( motor::application::app::graphics_data_in_t gd ) noexcept 
         {
+            // change camera position
+            {
+                static float_t t = 0.0f ;
+                t += gd.sec_dt *0.15f ;
+                if( t > 1.0f ) t = 0.0f ;
+
+                
+                {
+                    float_t const t2 = motor::math::fn<float_t>::abs( t * 2.0f - 1.0f ) ;
+
+                    motor::math::vec3f_t const pos = motor::math::interpolation<motor::math::vec3f_t>::linear(
+                        motor::math::vec3f_t(-300.0f,0.0f,-600.0f ), motor::math::vec3f_t(300.0,0.0f,-800.0f ), t2 ) ;
+
+                    camera.look_at( pos, motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 50.0f, 0.0f, 0.0f )) ;
+                }
+            }
+
             float_t const radius = 3.0f ;
 
             // draw points
@@ -201,7 +212,6 @@ int main( int argc, char ** argv )
     
     motor::memory::release_ptr( carrier ) ;
 
-    motor::io::global::deinit() ;
     motor::concurrent::global::deinit() ;
     motor::log::global::deinit() ;
     motor::memory::global::dump_to_std() ;
