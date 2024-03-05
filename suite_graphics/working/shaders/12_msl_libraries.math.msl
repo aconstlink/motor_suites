@@ -1,0 +1,15 @@
+
+library math
+{
+    vec2_t xyz( in vec2_t vin ) {
+        return vin ;
+    }
+
+    vec3_t xyz( in vec3_t vin ) {
+        return vin ;
+    }
+
+    vec4_t to_vec4( in vec3_t vin ) {
+        return vec4_t( msl.math.xyz( vin ), 1.0 ) ;
+    }
+}

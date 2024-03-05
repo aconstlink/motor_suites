@@ -18,6 +18,7 @@ set( tests
     "10_02_gs_generate.cpp"
     "10_03_gs_streamout.cpp"
     "11_msl_auto.cpp"
+    "12_msl_libraries.cpp"
     )
 
 foreach( _test ${tests} )
