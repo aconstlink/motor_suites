@@ -6,6 +6,7 @@ set( 00_world_2d_additions
 set( tests
     "00_world_2d.cpp"
     "01_picking_2d.cpp"
+    "02_branching_spline.cpp"
     )
 
 foreach( _test ${tests} )
