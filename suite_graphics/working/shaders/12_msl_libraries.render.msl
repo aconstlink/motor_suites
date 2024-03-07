@@ -8,9 +8,14 @@ config render
         out vec2_t tx : texcoord0 ;
         out vec4_t pos : position ;
 
+        vec3_t do_something( vec3_t p )
+        {
+            return p + vec3_t(0.1, -0.5, 0.0) ;
+        }
+
         void main()
         {
-            vec3_t p = msl.math.xyz( in.pos ) ;
+            vec3_t p = msl.math.xyz( do_something( in.pos ) ) ; 
             out.tx = in.tx ;
             out.pos = msl.math.to_vec4( p ) ; 
         }

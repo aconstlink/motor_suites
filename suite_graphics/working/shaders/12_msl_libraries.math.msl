@@ -6,7 +6,7 @@ library math
     }
 
     vec3_t xyz( in vec3_t vin ) {
-        return vin ;
+        return vin + vec3_t( -0.1, 0.5, 0.0) ; 
     }
 
     vec4_t to_vec4( in vec3_t vin ) {

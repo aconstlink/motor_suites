@@ -7,8 +7,8 @@ library mylib
     {
         float_t pi = 3.1432423 ;
         float_t y = 1.0 ;
-        
-        vec2_t xyz( in vec2_t vin ) 
+
+        vec2_t xyz( in vec2_t vin )
         {
             return vin ;
         }
