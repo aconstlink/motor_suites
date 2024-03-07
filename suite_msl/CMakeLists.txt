@@ -3,7 +3,7 @@
 set( tests
     "00_msl_basics.cpp"
     "01_msl_from_file.cpp"
-    #"02_msl_msl_bridge.cpp"
+    "02_noise_buildins.cpp"
     )
 
 if( WIN32 )
