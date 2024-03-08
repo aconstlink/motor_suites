@@ -2,11 +2,10 @@
 
 #include <motor/msl/symbol.hpp>
 #include <motor/msl/database.hpp>
-#include <motor/msl/generator.h>
+#include <motor/msl/generators/generator.h>
 #include <motor/msl/dependency_resolver.hpp>
-
-//#include <motor/format/global.h>
-//#include <motor/format/nsl/nsl_module.h>
+#include <motor/msl/generators/hlsl5_generator.h>
+#include <motor/msl/generators/glsl4_generator.h>
 #include <motor/msl/parser.h>
 
 #include <motor/log/global.h>

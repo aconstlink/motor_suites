@@ -2,17 +2,16 @@
 
 #include <motor/msl/symbol.hpp>
 #include <motor/msl/database.hpp>
-#include <motor/msl/generator.h>
 #include <motor/msl/dependency_resolver.hpp>
+#include <motor/msl/generators/generator.h>
+#include <motor/msl/generators/hlsl5_generator.h>
+#include <motor/msl/generators/glsl4_generator.h>
 
 #include <motor/msl/parser.h>
 
 #include <motor/concurrent/global.h>
 #include <motor/io/database.h>
 #include <motor/log/global.h>
-
-#include <regex>
-#include <iostream>
 
 using namespace motor::core::types ;
 
@@ -62,12 +61,12 @@ void_t test_1( motor::io::database_mtr_t db ) noexcept
         motor::msl::generator_t gen( std::move( res ) ) ;
 
         {
-            auto gcode = gen.generate<motor::msl::glsl::generator_t>() ;
+            auto gcode = gen.generate<motor::msl::glsl::glsl4_generator_t>() ;
             int const bp = 0 ;
         }
 
         {
-            auto gcode = gen.generate<motor::msl::hlsl::generator_t>() ;
+            auto gcode = gen.generate<motor::msl::hlsl::hlsl5_generator_t>() ;
             int const bp = 0 ;
         }
     }

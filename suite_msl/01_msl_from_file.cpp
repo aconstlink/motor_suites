@@ -2,11 +2,11 @@
 
 #include <motor/msl/symbol.hpp>
 #include <motor/msl/database.hpp>
-#include <motor/msl/generator.h>
+#include <motor/msl/generators/generator.h>
 #include <motor/msl/dependency_resolver.hpp>
+#include <motor/msl/generators/hlsl5_generator.h>
+#include <motor/msl/generators/glsl4_generator.h>
 
-//#include <motor/format/global.h>
-//#include <motor/format/nsl/nsl_module.h>
 #include <motor/msl/parser.h>
 
 #include <motor/concurrent/global.h>
@@ -58,12 +58,12 @@ void_t test_1( motor::io::database_mtr_t db )
         motor::msl::generator_t gen( std::move( res ) ) ;
 
         {
-            auto code = gen.generate<motor::msl::glsl::generator_t>() ;
+            auto code = gen.generate<motor::msl::glsl::glsl4_generator_t>() ;
             int const bp = 0 ;
         }
 
         {
-            auto code = gen.generate<motor::msl::hlsl::generator_t>() ;
+            auto code = gen.generate<motor::msl::hlsl::hlsl5_generator_t>() ;
             int const bp = 0 ;
         }
     }
@@ -103,12 +103,12 @@ void_t test_2( motor::io::database_mtr_t db )
         }
 
         {
-            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::glsl::generator_t>() ;
+            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::glsl::glsl4_generator_t>() ;
             int const bp = 0 ;
         }
 
         {
-            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::hlsl::generator_t>() ;
+            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::hlsl::hlsl5_generator_t>() ;
             int const bp = 0 ;
         }
     }
@@ -148,12 +148,12 @@ void_t test_3( motor::io::database_mtr_t db )
         }
 
         {
-            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::glsl::generator_t>() ;
+            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::glsl::glsl4_generator_t>() ;
             int const bp = 0 ;
         }
 
         {
-            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::hlsl::generator_t>() ;
+            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::hlsl::hlsl5_generator_t>() ;
             int const bp = 0 ;
         }
     }
@@ -191,12 +191,12 @@ void_t test_4( motor::io::database_mtr_t db )
         }
 
         {
-            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::glsl::generator_t>() ;
+            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::glsl::glsl4_generator_t>() ;
             int const bp = 0 ;
         }
 
         {
-            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::hlsl::generator_t>() ;
+            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::hlsl::hlsl5_generator_t>() ;
             int const bp = 0 ;
         }
     }
@@ -235,12 +235,12 @@ void_t test_5( motor::io::database_mtr_t db )
         }
 
         {
-            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::glsl::generator_t>() ;
+            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::glsl::glsl4_generator_t>() ;
             int const bp = 0 ;
         }
 
         {
-            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::hlsl::generator_t>() ;
+            auto code = motor::msl::generator_t( std::move( res ) ).generate<motor::msl::hlsl::hlsl5_generator_t>() ;
             int const bp = 0 ;
         }
     }
