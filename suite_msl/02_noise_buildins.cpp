@@ -6,6 +6,7 @@
 #include <motor/msl/generators/generator.h>
 #include <motor/msl/generators/hlsl5_generator.h>
 #include <motor/msl/generators/glsl4_generator.h>
+#include <motor/msl/generators/essl3_generator.h>
 
 #include <motor/msl/parser.h>
 
@@ -27,13 +28,27 @@ void_t test_1( motor::io::database_mtr_t db ) noexcept
         {
             float_t some_other_function( float_t y )
             {
-                return noise1( y ) ;
+                return noise_1d( y ) ;
             }
 
             void main()
             {
-                float a = fract( 1.9 ) ;
-                float_t r2 = noise1( 1.0 ) * some_other_function( a ) ;
+                float_t a = fract( 1.9 ) ;
+                float_t r2 = noise_1d( 1.0 ) * some_other_function( a ) ;
+            }
+        }
+    
+        pixel_shader
+        {
+            float_t some_other_function( float_t y )
+            {
+                return noise_1d( y ) ;
+            }
+
+            void main()
+            {
+                float_t a = fract( 1.9 ) ;
+                float_t some_noise = noise_1d( vec3_t(1.0, 2.0, 4.0) ) * some_other_function( a ) ;
             }
         }
 
@@ -67,6 +82,11 @@ void_t test_1( motor::io::database_mtr_t db ) noexcept
 
         {
             auto gcode = gen.generate<motor::msl::hlsl::hlsl5_generator_t>() ;
+            int const bp = 0 ;
+        }
+
+        {
+            auto gcode = gen.generate<motor::msl::essl::essl3_generator_t>() ;
             int const bp = 0 ;
         }
     }
