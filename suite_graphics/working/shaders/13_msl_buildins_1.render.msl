@@ -12,7 +12,7 @@ config render
         {
             vec3_t p = in.pos ;
             out.tx = in.tx ;
-            out.pos = vec4_t( p, 1.0 ) ;  
+            out.pos = vec4_t( sign(p), 1.0 ) ;  
         }
     }
 
@@ -28,17 +28,117 @@ config render
         float_t u_mult ;
         float_t u_layer ;
 
+        vec4_t permute( vec4_t x ) 
+        {
+            return mod(((x*34.0)+1.0)'x, as_vec4( 132.0 ));
+        }
+
+        vec2_t fade( vec2_t t )
+        {
+            return t't't'(t'(t'6.0-15.0)+10.0);
+        }
+
+        float_t my_perlin_2d( vec2_t P )
+        {
+            vec4_t Pi = floor(P.xyxy) + vec4_t(0.0, 0.0, 1.0, 1.0);
+            vec4_t Pf = fract(P.xyxy) - vec4_t(0.0, 0.0, 1.0, 1.0);
+            Pi = mod(Pi, 289.0);
+            vec4_t ix = Pi.xzxz;
+            vec4_t iy = Pi.yyww;
+            vec4_t fx = Pf.xzxz;
+            vec4_t fy = Pf.yyww;
+            vec4_t i = permute(iy)+permute(ix);
+            //return i.y / 289 ;
+            vec4_t gx = 2.0 * fract(i * 0.0243902439) - 1.0;
+            vec4_t gy = abs(gx) - 0.5;
+            vec4_t tx = floor(gx + 0.5);
+            gx = gx - tx;
+            vec2_t g00 = vec2_t(gx.x,gy.x);
+            vec2_t g10 = vec2_t(gx.y,gy.y);
+            vec2_t g01 = vec2_t(gx.z,gy.z);
+            vec2_t g11 = vec2_t(gx.w,gy.w);
+            vec4_t norm = 1.79284291400159 - 0.85373472095314 *
+            vec4_t(dot(g00, g00), dot(g01, g01), dot(g10, g10), dot(g11, g11));
+            g00 *= norm.x;
+            g01 *= norm.y;
+            g10 *= norm.z;
+            g11 *= norm.w;
+            float n00 = dot(g00, vec2_t(fx.x, fy.x));
+            float n10 = dot(g10, vec2_t(fx.y, fy.y));
+            float n01 = dot(g01, vec2_t(fx.z, fy.z));
+            float n11 = dot(g11, vec2_t(fx.w, fy.w));
+            //return Pi.z / 289.0 ;
+            vec2_t fade_xy = fade(Pf.xy);
+            vec2_t n_x = mix(vec2_t(n00, n01), vec2_t(n10, n11), fade_xy.x);
+            float n_xy = mix(n_x.x, n_x.y, fade_xy.y);
+            return 2.3 * n_xy;
+        }
+
+        float_t rand( vec4_t x )
+        {
+            return fract( sin( dot( x, vec4_t(12.48573, 74.2348, 2.9384, 9.23461) ) ) * 45945.47363) ;
+        }
+
         void main()
         {
             // white output
             out.color = vec4_t( 1.0, 1.0, 1.0, 1.0 ) ;
 
             // test noise_1d( vec2 )
-            out.color = vec4_t( noise_1d( in.tx'5.0+vec2_t(2.0*u_mult,0.0) ), 0.0, 0.0, 1.0 ) ; 
+            //out.color = vec4_t( noise_1d( in.tx'5.0+vec2_t(2.0*u_mult,0.0) ), 0.0, 0.0, 1.0 ) ; 
 
             // test noise_1d( vec3 )
-            vec3_t p = vec3_t( in.tx ' 5.0 + vec2_t(2.0*u_mult,0.0), u_layer ) ;
-            out.color = vec4_t( noise_1d( p ), 0.0, 0.0, 1.0 ) ; 
+            //vec3_t p = vec3_t( in.tx ' 5.0 + vec2_t(2.0*u_mult,0.0), u_layer ) ;
+            //out.color = vec4_t( noise_1d( p ), 0.0, 0.0, 1.0 ) ;   
+
+            // test perlin_1d( vec2 )
+            //vec2_t p = vec2_t( in.tx ' 15.0 + vec2_t(2.0*u_mult,u_layer) ) ;
+            //float_t perl = perlin_1d( p, 1 ) ;
+            //out.color = vec4_t( perl, perl, perl, 1.0 ) ; 
+
+            // test perlin_2d
+            //vec2_t p = vec2_t( in.tx * 3.0 ) + vec2_t(2.0*u_mult,u_layer);
+            //float_t perl = perlin_2d( p ) ; 
+            //out.color = vec4_t( perl, perl, perl, 1.0 ) ;
+            //out.color = vec4_t( mod(in.tx*15.0, 2.0), 0.0, 1.0 ) ;
+            //out.color = vec4_t( mod( vec2_t(2.0*u_mult,u_layer), 1.0), 0.0, 1.0 ) ;
+
+            // test perlin_3d
+            vec3_t p = vec3_t( in.tx ' u_mult, u_layer  ) ;
+            float_t perl = perlin_3d( p ) * 0.5 +0.5;
+            out.color = vec4_t( perl, perl, perl, 1.0 ) ; 
+
+            //vec2_t m = mod( in.tx * 3.0+ vec2_t(2.0*u_mult,u_layer), 2.0 ) ;
+            //out.color = vec4_t( m, 0.0, 1.0 ) ;
+
+            //vec2_t p = vec2_t( in.tx * 10.0 ) + vec2_t(2.0*u_mult,u_layer);
+            //float_t perl = my_perlin_2d( p ) ; 
+            //out.color = vec4_t( perl, perl, perl, 1.0 ) ;
+
+            vec3_t P = vec3_t( (in.tx*2.0-1.0) ' u_mult, 0.0 ) ;
+            vec3_t Pi0 = sign(P)'floor( P );
+            vec3_t Pi1 = Pi0 + vec3_t(1.0, 1.0, 1.0);
+            Pi0 = mod( Pi0, as_vec3(132.0) ) ;
+            Pi1 = mod( Pi1, as_vec3(132.0) ) ;
+            vec4_t ix = vec4_t(Pi0.x, Pi1.x, Pi0.x, Pi1.x);
+            vec4_t iy = vec4_t(Pi0.yy, Pi1.yy);
+            vec4_t iz0 = Pi0.zzzz;
+            vec4_t iz1 = Pi1.zzzz;
+            vec4_t ixy = permute( iy ) + permute( ix );
+            vec4_t ixy0 = permute( ixy+iz0) ;
+            vec4_t ixy1 = permute( ixy+iz1) ;
+            //out.color = vec4_t( (ixy1.xyz)/289, 1.0 ) ;
+
+
+            //vec4_t p2 = vec4_t( permute(vec4_t( in.tx ' u_mult, u_layer, 1.0 )).xyz, 1.0 ) ;
+            //p2 = permute( p2 ) ;
+            //out.color = vec4_t( p2.xyz/289, 1.0 ) ;
+
+            //vec4_t r = rand_4d( vec4_t( floor((in.tx*2.0-1.0)'u_mult) , u_layer, 0.0 )) ;
+            //out.color = vec4_t( r.xyz, 1.0 ) ;
+
+            float_t r = rand_1d( floor((in.tx*2.0-1.0)'u_mult ) );
+            //out.color = vec4_t( as_vec3(r), 1.0 ) ;
         }
-    } 
+    }
 }

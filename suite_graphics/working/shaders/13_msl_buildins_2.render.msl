@@ -1,0 +1,130 @@
+config render
+{
+    vertex_shader
+    {
+        in vec3_t pos : position ;
+        in vec2_t tx : texcoord0 ;
+
+        out vec2_t tx : texcoord0 ;
+        out vec4_t pos : position ;
+
+        void main()
+        {
+            vec3_t p = in.pos ;
+            out.tx = in.tx ;
+            out.pos = vec4_t( sign(p), 1.0 ) ;  
+        }
+    }
+
+    pixel_shader  
+    {
+        tex2d_t u_tex ;
+
+        in vec2_t tx : texcoord0 ;
+        out vec4_t color : color ;
+
+        vec4_t u_color ;
+
+        float_t u_mult ;
+        float_t u_layer ;
+        vec2_t u_uv ;
+
+        // test noise_1d( vec2 )
+        vec4_t test1_noise_1d( vec2_t x ) 
+        {
+            vec2_t p = x'5.0+vec2_t(2.0*u_mult,0.0) ;
+            return vec4_t( noise_1d(p), 0.0, 0.0, 1.0 ) ; 
+        }
+
+        // test noise_1d( vec3 )
+        vec4_t test2_noise_1d( vec2_t x ) 
+        {
+            vec3_t p = vec3_t( x ' 5.0 + vec2_t(2.0*u_mult,0.0), u_layer ) ;
+            return vec4_t( noise_1d(p), 0.0, 0.0, 1.0 ) ; 
+        }
+
+        // test perlin_1d( vec2 )
+        vec4_t test3_perlin_1d( vec2_t x ) 
+        {
+            vec2_t p = vec2_t( x ' u_mult * 10) + vec2_t(0.0,u_layer)  ;
+            float_t perl = perlin_1d( p, 2 ) ;
+            return vec4_t( perl, perl, perl, 1.0 ) ;
+        }
+
+        // test perlin_2d( vec2 )
+        vec4_t test4_perlin_2d( vec2_t x )  
+        {
+            vec2_t p = vec2_t( x 'u_mult  ) + vec2_t(0.0,u_layer)  ;
+            float_t perl = perlin_2d( p ) *0.5 +0.5;
+            return vec4_t( perl, perl, perl, 1.0 ) ;
+        }
+
+
+        // test perlin_3d( vec3 )
+        vec4_t test5_perlin_3d( vec2_t x )  
+        {
+            vec3_t p = vec3_t( x ' u_mult, u_layer  ) ;
+            float_t perl = perlin_3d( p ) *0.5 +0.5;
+            return vec4_t( perl, perl, perl, 1.0 ) ;
+        }
+
+        // test snoise_2d( vec2 )
+        vec4_t test6_snoise_2d( vec2_t x )  
+        {
+            vec2_t p = vec2_t( x 'u_mult*15.0  ) + vec2_t(0.0,u_layer)  ;
+            float_t perl = snoise_2d( p ) *0.5 +0.5;
+            return vec4_t( perl, perl, perl, 1.0 ) ;
+        }
+
+        // test snoise_3d( vec2 )
+        vec4_t test7_snoise_3d( vec2_t x )  
+        {
+            vec3_t p = vec3_t( x ' u_mult, u_layer  ) ;
+            float_t perl = snoise_3d( p ) *0.5 +0.5;
+            return vec4_t( perl, perl, perl, 1.0 ) ;
+        }
+
+        // test iqnoise( vec2, float, float )
+        vec4_t test8_iqnoise( vec2_t x )  
+        {
+            vec2_t p = vec2_t( x 'u_mult*3  ) ;
+            float_t n = iqnoise( p, u_uv.x, u_uv.y );
+            return vec4_t( as_vec3(n), 1.0 ) ;
+        }
+
+        // test fbm_1d( float, int ) and
+        // test fbm_1d( vec2, int )
+        vec4_t test9_fbm( vec2_t x )  
+        {
+            vec2_t p = vec2_t( x 'u_mult*3  ) ;
+            float_t n = fbm_1d( p, int(u_layer) );
+            return vec4_t( as_vec3(n), 1.0 ) ;
+        }
+
+        // test fbm_1d( vec3 ) and
+        vec4_t test10_fbm( vec2_t x )  
+        {
+            vec3_t p = vec3_t( x ' u_mult, u_layer*0.15  ) ;
+            float_t n = fbm_1d( p );
+            return vec4_t( as_vec3(n), 1.0 ) ;
+        }
+
+        void main()
+        {
+            // white output
+            out.color = vec4_t( 1.0, 1.0, 1.0, 1.0 ) ;
+
+            //out.color = test1_noise_1d( in.tx ) ;
+            //out.color = test2_noise_1d( in.tx ) ;
+            //out.color = test3_perlin_1d( in.tx ) ;
+            //out.color = test4_perlin_2d( in.tx ) ;
+            out.color = test5_perlin_3d( in.tx ) ;
+            //out.color = test6_snoise_2d( in.tx ) ;
+            //out.color = test7_snoise_3d( in.tx ) ;
+            //out.color = test8_iqnoise( in.tx ) ; 
+            //out.color = test9_fbm( in.tx ) ;
+            //out.color = test10_fbm( in.tx ) ;
+            
+        }
+    }
+}

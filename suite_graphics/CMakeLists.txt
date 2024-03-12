@@ -20,6 +20,7 @@ set( tests
     "11_msl_auto.cpp"
     "12_msl_libraries.cpp"
     "13_msl_buildins_1.cpp"
+    "13_msl_buildins_2.cpp"
     )
 
 foreach( _test ${tests} )

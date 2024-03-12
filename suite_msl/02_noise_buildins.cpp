@@ -92,6 +92,82 @@ void_t test_1( motor::io::database_mtr_t db ) noexcept
     }
 }
 
+//*******************************************************************************
+void_t test_2( motor::io::database_mtr_t db ) noexcept
+{
+    motor::msl::database_t ndb = motor::msl::database_t() ;
+
+    motor::string_t code = R"(
+    config some_config
+    {
+        vertex_shader
+        {
+            float_t some_other_function( float_t y )
+            {
+                return noise_1d( y ) ;
+            }
+
+            void main()
+            {
+                float_t a = fract( 1.9 ) ;
+                float_t r2 = noise_1d( 1.0 ) * some_other_function( a ) ;
+            }
+        }
+    
+        pixel_shader
+        {
+            float_t some_other_function( float_t y )
+            {
+                return noise_1d( y ) ;
+            }
+
+            void main()
+            {
+                float_t a = fract( 1.9 ) ;
+                float_t some_noise = perlin_1d( vec3_t(1.0, 2.0, 4.0) ) * some_other_function( a ) ;
+            }
+        }
+
+    })" ;
+
+    motor::msl::post_parse::document_t doc = 
+        motor::msl::parser_t( "my_parser" ).process( std::move( code ) ) ;
+
+    motor::vector< motor::msl::symbol_t > config_symbols ;
+
+    ndb.insert( std::move( doc ), config_symbols ) ;    
+
+    for( auto const & c : config_symbols )
+    {
+        motor::msl::generatable_t res = motor::msl::dependency_resolver_t().resolve( &ndb, c ) ;
+        if( res.missing.size() != 0 )
+        {
+            motor::log::global_t::warning( "We have missing symbols." ) ;
+            for( auto const& s : res.missing )
+            {
+                motor::log::global_t::status( s.expand() ) ;
+            }
+        }
+
+        motor::msl::generator_t gen( std::move( res ) ) ;
+
+        {
+            auto gcode = gen.generate<motor::msl::glsl::glsl4_generator_t>() ;
+            int const bp = 0 ;
+        }
+
+        {
+            auto gcode = gen.generate<motor::msl::hlsl::hlsl5_generator_t>() ;
+            int const bp = 0 ;
+        }
+
+        {
+            auto gcode = gen.generate<motor::msl::essl::essl3_generator_t>() ;
+            int const bp = 0 ;
+        }
+    }
+}
+
 #if 0
 //*******************************************************************************
 void_t test_1( motor::io::database_mtr_t db ) noexcept
@@ -357,7 +433,7 @@ int main( int argc, char ** argv )
 
     
     test_1( db ) ;
-    //test_2( db ) ;
+    test_2( db ) ;
     //test_3( db ) ;
 
     //test_4( db ) ;
