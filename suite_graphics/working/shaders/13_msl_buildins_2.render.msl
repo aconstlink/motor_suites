@@ -40,7 +40,7 @@ config render
         vec4_t test2_noise_1d( vec2_t x ) 
         {
             vec3_t p = vec3_t( x ' 5.0 + vec2_t(2.0*u_mult,0.0), u_layer ) ;
-            return vec4_t( noise_1d(p), 0.0, 0.0, 1.0 ) ; 
+            return vec4_t( as_vec3( noise_1d(p) ), 1.0 ) ; 
         }
 
         // test perlin_1d( vec2 )
@@ -92,7 +92,7 @@ config render
             return vec4_t( as_vec3(n), 1.0 ) ;
         }
 
-        // test fbm_1d( float, int ) and
+        // test fbm_1d( float, int ) and 
         // test fbm_1d( vec2, int )
         vec4_t test9_fbm( vec2_t x )  
         {
@@ -104,7 +104,7 @@ config render
         // test fbm_1d( vec3 ) and
         vec4_t test10_fbm( vec2_t x )  
         {
-            vec3_t p = vec3_t( x ' u_mult, u_layer*0.15  ) ;
+            vec3_t p = vec3_t( x ' u_mult, u_layer*0.15  ) ; 
             float_t n = fbm_1d( p );
             return vec4_t( as_vec3(n), 1.0 ) ;
         }
@@ -115,13 +115,13 @@ config render
             out.color = vec4_t( 1.0, 1.0, 1.0, 1.0 ) ;
 
             //out.color = test1_noise_1d( in.tx ) ;
-            //out.color = test2_noise_1d( in.tx ) ;
+            out.color = test2_noise_1d( in.tx ) ; 
             //out.color = test3_perlin_1d( in.tx ) ;
             //out.color = test4_perlin_2d( in.tx ) ;
             //out.color = test5_perlin_3d( in.tx ) ;
             //out.color = test6_snoise_2d( in.tx ) ;
             //out.color = test7_snoise_3d( in.tx ) ;
-            out.color = test8_iqnoise( in.tx ) ; 
+            //out.color = test8_iqnoise( in.tx ) ;  
             //out.color = test9_fbm( in.tx ) ;
             //out.color = test10_fbm( in.tx ) ;
             

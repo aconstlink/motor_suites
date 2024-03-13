@@ -201,7 +201,7 @@ namespace this_file
                             var->set( "checker_board" ) ;
                         }
 
-                        mslo.add_variable_set( motor::memory::create_ptr( std::move( vars ), "a variable set" ) ) ;
+                        mslo.add_variable_set( motor::memory::create_ptr( std::move( vars ), "a variable set from app" ) ) ;
                     }
 
                     msl_obj = std::move( mslo ) ;
