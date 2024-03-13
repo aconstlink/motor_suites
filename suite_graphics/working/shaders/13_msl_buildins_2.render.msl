@@ -71,7 +71,7 @@ config render
         // test snoise_2d( vec2 )
         vec4_t test6_snoise_2d( vec2_t x )  
         {
-            vec2_t p = vec2_t( x 'u_mult*15.0  ) + vec2_t(0.0,u_layer)  ;
+            vec2_t p = vec2_t( x 'u_mult*2.0  ) + vec2_t(0.0,u_layer)  ;
             float_t perl = snoise_2d( p ) *0.5 +0.5;
             return vec4_t( perl, perl, perl, 1.0 ) ;
         }
@@ -118,10 +118,10 @@ config render
             //out.color = test2_noise_1d( in.tx ) ;
             //out.color = test3_perlin_1d( in.tx ) ;
             //out.color = test4_perlin_2d( in.tx ) ;
-            out.color = test5_perlin_3d( in.tx ) ;
+            //out.color = test5_perlin_3d( in.tx ) ;
             //out.color = test6_snoise_2d( in.tx ) ;
             //out.color = test7_snoise_3d( in.tx ) ;
-            //out.color = test8_iqnoise( in.tx ) ; 
+            out.color = test8_iqnoise( in.tx ) ; 
             //out.color = test9_fbm( in.tx ) ;
             //out.color = test10_fbm( in.tx ) ;
             
