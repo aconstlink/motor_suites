@@ -6,6 +6,7 @@ set( tests
 
     "04_window_and_device.cpp"
     "05_window_and_gamepad.cpp"
+    "06_midi_device.cpp"
     )
 
 if( WIN32 )
