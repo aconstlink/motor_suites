@@ -171,14 +171,14 @@ namespace this_file
         //***************************************************************************************************
         virtual void_t on_device( device_data_in_t dd ) noexcept 
         {
-            motor::device::layouts::three_mouse mouse( dd.mouse ) ;
+            motor::controls::layouts::three_mouse mouse( dd.mouse ) ;
             _cur_mouse = mouse.get_local() * motor::math::vec2f_t( 2.0f ) - motor::math::vec2f_t( 1.0f ) ;
             _cur_mouse = _cur_mouse * (_extend * motor::math::vec2f_t(0.5f) );
 
             static motor::math::vec2f_t old = mouse.get_global() * motor::math::vec2f_t( 2.0f ) - motor::math::vec2f_t( 1.0f ) ;
             motor::math::vec2f_t const dif = (mouse.get_global()* motor::math::vec2f_t( 2.0f ) - motor::math::vec2f_t( 1.0f )) - old ;
 
-            if( mouse.is_pressing(motor::device::layouts::three_mouse::button::right ) )
+            if( mouse.is_pressing(motor::controls::layouts::three_mouse::button::right ) )
             {
                 auto old2 = camera.get_transformation() ;
                 auto trafo = old2.translate_fl( motor::math::vec3f_t( -dif.x()*200.0f, -dif.y()*200.0f, 0.0f ) ) ;

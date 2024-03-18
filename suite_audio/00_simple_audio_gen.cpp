@@ -1,8 +1,8 @@
 
 #include <motor/platform/global.h>
 
-#include <motor/device/layouts/ascii_keyboard.hpp>
-#include <motor/device/layouts/three_mouse.hpp>
+#include <motor/controls/layouts/ascii_keyboard.hpp>
+#include <motor/controls/layouts/three_mouse.hpp>
 
 #include <motor/tool/structs.h>
 #include <motor/tool/imgui/player_controller.h>

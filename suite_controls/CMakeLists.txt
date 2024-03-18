@@ -26,7 +26,7 @@ foreach( _test ${tests} )
 
     add_executable( ${app_name} ${_test} ) 
     target_link_libraries( ${app_name} 
-      PRIVATE motor::device
+      PRIVATE motor::controls
       PRIVATE motor::application
       PRIVATE motor::platform )
 
