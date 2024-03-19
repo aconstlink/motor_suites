@@ -9,6 +9,9 @@
 #include <motor/controls/system.h>
 #include <motor/controls/midi_observer.hpp>
 #include <motor/controls/layouts/midi_controller.hpp>
+#include <motor/controls/components/button.hpp>
+#include <motor/controls/components/slider.hpp>
+#include <motor/controls/components/knob.hpp>
 
 #include <motor/log/global.h>
 
@@ -28,7 +31,37 @@ namespace this_file
 }
 void_t test_device( motor::controls::midi_device_mtr_t dev ) 
 {
+    for( size_t id=0; id<100; ++id )
+    {
+        motor::string_t name = "[id " + motor::to_string( id )+"]" ;
 
+        {
+            auto ptr = dynamic_cast< motor::controls::components::button_ptr_t>( dev->get_in_component( id ) ) ;
+            if( ptr != nullptr && ptr->state() != motor::controls::components::button_state::none )
+            {
+                motor::log::global_t::status( "button : " + name + " is " + motor::controls::components::to_string(ptr->state() ) ) ;
+                continue ;
+            }
+        }
+            
+        {
+            auto ptr = dynamic_cast< motor::controls::components::slider_ptr_t>( dev->get_in_component( id ) ) ;
+            if( ptr != nullptr && ptr->has_changed() )
+            {
+                motor::log::global_t::status( "slider: " + name + " is " + motor::to_string( ptr->value()  ) ) ;
+                continue ;
+            }
+        }
+
+        {
+            auto ptr = dynamic_cast< motor::controls::components::knob_ptr_t>( dev->get_in_component( id ) ) ;
+            if( ptr != nullptr && ptr->has_changed() )
+            {
+                motor::log::global_t::status( "knob: " + name + " is " + motor::to_string( ptr->value()  ) ) ;
+                continue ;
+            }
+        }
+    }
 }
 
 int main( int argc, char ** argv )
@@ -38,7 +71,7 @@ int main( int argc, char ** argv )
     motor::application::carrier_mtr_t carrier = motor::platform::global_t::create_carrier() ;
 
     this_file::my_observer * obs = motor::memory::create_ptr<this_file::my_observer>() ;
-    carrier->device_system()->install( obs ) ;
+    //carrier->device_system()->install( obs ) ;
 
     size_t i=0;
     while( i++ < 5000 )
@@ -49,6 +82,10 @@ int main( int argc, char ** argv )
         {
             if( auto * ptr1 = dynamic_cast<motor::controls::midi_device_ptr_t>(dev_in); ptr1 != nullptr )
             {
+                if( ptr1->name() == "MIDI Mix" )
+                {
+                    int bp = 0 ;
+                }
                 // just take the first one
                 // or test for the name ptr1->name()
                 dev = ptr1 ;
@@ -57,7 +94,7 @@ int main( int argc, char ** argv )
 
         carrier->device_system()->update() ;
 
-        test_device( dev ) ;
+        if( dev != nullptr ) test_device( dev ) ;
     }
 
     motor::memory::release_ptr( obs ) ;
