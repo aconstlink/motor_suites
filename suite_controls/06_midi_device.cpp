@@ -8,7 +8,7 @@
 
 #include <motor/controls/system.h>
 #include <motor/controls/midi/midi_observer.hpp>
-#include <motor/controls/layouts/midi_controller.hpp>
+#include <motor/controls/types/midi_controller.hpp>
 #include <motor/controls/components/button.hpp>
 #include <motor/controls/components/slider.hpp>
 #include <motor/controls/components/knob.hpp>

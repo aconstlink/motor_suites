@@ -4,8 +4,8 @@
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
 
-#include <motor/controls/layouts/ascii_keyboard.hpp>
-#include <motor/controls/layouts/three_mouse.hpp>
+#include <motor/controls/types/ascii_keyboard.hpp>
+#include <motor/controls/types/three_mouse.hpp>
 
 #include <future>
 
@@ -70,37 +70,37 @@ int main( int argc, char ** argv )
                     {
                         // test buttons
                         {
-                            motor::controls::layouts::three_mouse_t mouse( mouse_dev ) ;
+                            motor::controls::types::three_mouse_t mouse( mouse_dev ) ;
 
-                            auto button_funk = [&] ( motor::controls::layouts::three_mouse_t::button const button )
+                            auto button_funk = [&] ( motor::controls::types::three_mouse_t::button const button )
                             {
                                 if( mouse.is_pressed( button ) )
                                 {
-                                    motor::log::global_t::status( "button pressed: " + motor::controls::layouts::three_mouse_t::to_string( button ) ) ;
+                                    motor::log::global_t::status( "button pressed: " + motor::controls::types::three_mouse_t::to_string( button ) ) ;
                                     return true ;
                                 }
                                 else if( mouse.is_pressing( button ) )
                                 {
-                                    motor::log::global_t::status( "button pressing: " + motor::controls::layouts::three_mouse_t::to_string( button ) ) ;
+                                    motor::log::global_t::status( "button pressing: " + motor::controls::types::three_mouse_t::to_string( button ) ) ;
                                     return true ;
                                 }
                                 else if( mouse.is_released( button ) )
                                 {
-                                    motor::log::global_t::status( "button released: " + motor::controls::layouts::three_mouse_t::to_string( button ) ) ;
+                                    motor::log::global_t::status( "button released: " + motor::controls::types::three_mouse_t::to_string( button ) ) ;
                                 }
                                 return false ;
                             } ;
 
                             
                             {
-                                auto const l = button_funk( motor::controls::layouts::three_mouse_t::button::left ) ;
-                                auto const r = button_funk( motor::controls::layouts::three_mouse_t::button::right ) ;
-                                button_funk( motor::controls::layouts::three_mouse_t::button::middle ) ;
+                                auto const l = button_funk( motor::controls::types::three_mouse_t::button::left ) ;
+                                auto const r = button_funk( motor::controls::types::three_mouse_t::button::right ) ;
+                                button_funk( motor::controls::types::three_mouse_t::button::middle ) ;
 
                                 // test coords
                                 {
                                     static bool_t show_coords = false ;
-                                    if( mouse.is_released( motor::controls::layouts::three_mouse_t::button::right ) )
+                                    if( mouse.is_released( motor::controls::types::three_mouse_t::button::right ) )
                                     {
                                         show_coords = !show_coords ;
                                     }
@@ -137,9 +137,9 @@ int main( int argc, char ** argv )
                     if( ascii_dev != nullptr )
                     {
                         {
-                            motor::controls::layouts::ascii_keyboard_t keyboard( ascii_dev ) ;
+                            motor::controls::types::ascii_keyboard_t keyboard( ascii_dev ) ;
             
-                            using layout_t = motor::controls::layouts::ascii_keyboard_t ;
+                            using layout_t = motor::controls::types::ascii_keyboard_t ;
                             using key_t = layout_t::ascii_key ;
             
                             for( size_t i=0; i<size_t(key_t::num_keys); ++i )

@@ -3,8 +3,8 @@
 
 #include <motor/platform/global.h>
 
-#include <motor/controls/layouts/ascii_keyboard.hpp>
-#include <motor/controls/layouts/three_mouse.hpp>
+#include <motor/controls/types/ascii_keyboard.hpp>
+#include <motor/controls/types/three_mouse.hpp>
 
 #include <motor/tool/imgui/custom_widgets.h>
 #include <motor/tool/imgui/timeline.h>

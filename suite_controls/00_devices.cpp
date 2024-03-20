@@ -1,8 +1,8 @@
 
 #include <motor/controls/system.h>
 #include <motor/controls/imodule.h>
-#include <motor/controls/layouts/three_mouse.hpp>
-#include <motor/controls/layouts/ascii_keyboard.hpp>
+#include <motor/controls/types/three_mouse.hpp>
+#include <motor/controls/types/ascii_keyboard.hpp>
 
 #include <motor/math/vector/vector2.hpp>
 #include <motor/math/interpolation/interpolate.hpp>
@@ -87,10 +87,10 @@ namespace this_file
             // 0 - 2 seconds do...
             if( dur2 > std::chrono::seconds( 0 ) && dur2 < std::chrono::seconds( 2 ) )
             {
-                motor::controls::layouts::three_mouse_t tm( mouse_dev ) ;
+                motor::controls::types::three_mouse_t tm( mouse_dev ) ;
 
                 {
-                    if( auto * comp = tm.get_component( motor::controls::layouts::three_mouse_t::button::right ) ; comp != nullptr )
+                    if( auto * comp = tm.get_component( motor::controls::types::three_mouse_t::button::right ) ; comp != nullptr )
                     {
                         *comp = motor::controls::components::button_state::pressed ;
                     }
@@ -100,8 +100,8 @@ namespace this_file
             // disable mouse state
             if( dur2 > std::chrono::seconds( 2 ) )
             {
-                motor::controls::layouts::three_mouse_t tm( mouse_dev ) ;
-                if( auto * comp = tm.get_component( motor::controls::layouts::three_mouse_t::button::right ) ; comp != nullptr )
+                motor::controls::types::three_mouse_t tm( mouse_dev ) ;
+                if( auto * comp = tm.get_component( motor::controls::types::three_mouse_t::button::right ) ; comp != nullptr )
                 {
                     if( comp->state() == motor::controls::components::button_state::pressed ||
                         comp->state() == motor::controls::components::button_state::pressing )
@@ -114,7 +114,7 @@ namespace this_file
             // 2 - 4 seconds do...
             if( dur2 > std::chrono::seconds( 2 ) && dur2 < std::chrono::seconds( 4 ) ) 
             {
-                motor::controls::layouts::three_mouse_t tm( mouse_dev ) ;
+                motor::controls::types::three_mouse_t tm( mouse_dev ) ;
 
                 // change global coord
                 {
@@ -143,15 +143,15 @@ namespace this_file
             // send mouse exit button press combo
             if( dur2 > std::chrono::seconds( 4 ) )
             {
-                motor::controls::layouts::three_mouse_t tm( mouse_dev ) ;
+                motor::controls::types::three_mouse_t tm( mouse_dev ) ;
 
                 {
-                    if( auto * comp = tm.get_component( motor::controls::layouts::three_mouse_t::button::left ) ; comp != nullptr )
+                    if( auto * comp = tm.get_component( motor::controls::types::three_mouse_t::button::left ) ; comp != nullptr )
                     {
                         *comp = motor::controls::components::button_state::pressed ;
                     }
 
-                    if( auto * comp = tm.get_component( motor::controls::layouts::three_mouse_t::button::right ) ; comp != nullptr )
+                    if( auto * comp = tm.get_component( motor::controls::types::three_mouse_t::button::right ) ; comp != nullptr )
                     {
                         *comp = motor::controls::components::button_state::pressed ;
                     }
@@ -212,23 +212,23 @@ int main( int argc, char ** argv )
         // test buttons
         if( mouse_dev != nullptr )
         {
-            motor::controls::layouts::three_mouse_t mouse( mouse_dev ) ;
+            motor::controls::types::three_mouse_t mouse( mouse_dev ) ;
 
-            auto button_funk = [&] ( motor::controls::layouts::three_mouse_t::button const button )
+            auto button_funk = [&] ( motor::controls::types::three_mouse_t::button const button )
             {
                 if( mouse.is_pressed( button ) )
                 {
-                    motor::log::global_t::status( "button pressed: " + motor::controls::layouts::three_mouse_t::to_string( button ) ) ;
+                    motor::log::global_t::status( "button pressed: " + motor::controls::types::three_mouse_t::to_string( button ) ) ;
                     return true ;
                 }
                 else if( mouse.is_pressing( button ) )
                 {
-                    motor::log::global_t::status( "button pressing: " + motor::controls::layouts::three_mouse_t::to_string( button ) ) ;
+                    motor::log::global_t::status( "button pressing: " + motor::controls::types::three_mouse_t::to_string( button ) ) ;
                     return true ;
                 }
                 else if( mouse.is_released( button ) )
                 {
-                    motor::log::global_t::status( "button released: " + motor::controls::layouts::three_mouse_t::to_string( button ) ) ;
+                    motor::log::global_t::status( "button released: " + motor::controls::types::three_mouse_t::to_string( button ) ) ;
                 }
                 return false ;
             } ;
@@ -237,9 +237,9 @@ int main( int argc, char ** argv )
             {
                 motor::controls::global_t::system()->update() ;
 
-                auto const l = button_funk( motor::controls::layouts::three_mouse_t::button::left ) ;
-                auto const r = button_funk( motor::controls::layouts::three_mouse_t::button::right ) ;
-                button_funk( motor::controls::layouts::three_mouse_t::button::middle ) ;
+                auto const l = button_funk( motor::controls::types::three_mouse_t::button::left ) ;
+                auto const r = button_funk( motor::controls::types::three_mouse_t::button::right ) ;
+                button_funk( motor::controls::types::three_mouse_t::button::middle ) ;
 
                 // exit if left AND right are pressed
                 exit = l && r ;
@@ -247,7 +247,7 @@ int main( int argc, char ** argv )
                 // test coords
                 {
                     static bool_t show_coords = false ;
-                    if( mouse.is_released( motor::controls::layouts::three_mouse_t::button::right ) )
+                    if( mouse.is_released( motor::controls::types::three_mouse_t::button::right ) )
                     {
                         show_coords = !show_coords ;
                     }
@@ -286,9 +286,9 @@ int main( int argc, char ** argv )
     {
         if( ascii_dev != nullptr )
         {
-            motor::controls::layouts::ascii_keyboard_t keyboard( ascii_dev ) ;
+            motor::controls::types::ascii_keyboard_t keyboard( ascii_dev ) ;
             
-            using layout_t = motor::controls::layouts::ascii_keyboard_t ;
+            using layout_t = motor::controls::types::ascii_keyboard_t ;
             using key_t = layout_t::ascii_key ;
             
             for( size_t i=0; i<size_t(key_t::num_keys); ++i )

@@ -104,12 +104,12 @@ namespace this_file
         //***************************************************************************************************
         virtual void_t on_device( device_data_in_t dd ) noexcept 
         {
-            motor::controls::layouts::three_mouse mouse( dd.mouse ) ;
+            motor::controls::types::three_mouse mouse( dd.mouse ) ;
             _cur_mouse_dif = _cur_mouse ;
             _cur_mouse = mouse.get_local() * motor::math::vec2f_t( 2.0f ) - motor::math::vec2f_t( 1.0f ) ;
             _cur_mouse_dif = _cur_mouse - _cur_mouse_dif ;
 
-            _left_down = mouse.is_pressing( motor::controls::layouts::three_mouse::button::left ) ;
+            _left_down = mouse.is_pressing( motor::controls::types::three_mouse::button::left ) ;
         }
 
         //***************************************************************************************************
