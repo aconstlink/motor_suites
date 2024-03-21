@@ -21,6 +21,7 @@ set( tests
     "12_msl_libraries.cpp"
     "13_msl_buildins_1.cpp"
     "13_msl_buildins_2.cpp"
+    "14_noise_texture.cpp"
     )
 
 foreach( _test ${tests} )
@@ -36,6 +37,7 @@ foreach( _test ${tests} )
 
     add_executable( ${app_name} ${_test} ) 
     target_link_libraries( ${app_name} 
+      PRIVATE motor::noise 
       PRIVATE motor::io 
       PRIVATE motor::concurrent 
       PRIVATE motor::memory
