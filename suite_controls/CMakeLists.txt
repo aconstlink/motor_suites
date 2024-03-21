@@ -6,7 +6,9 @@ set( tests
 
     "04_window_and_device.cpp"
     "05_window_and_gamepad.cpp"
-    "06_midi_device.cpp"
+    "06_00_midi_observer.cpp"
+    "06_01_midi_akai.cpp"
+    "06_02_midi_korg.cpp"
     )
 
 if( WIN32 )

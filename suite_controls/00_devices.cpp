@@ -70,8 +70,8 @@ namespace this_file
             // the event might be consumed by some
             // device/component logic.
             {
-                mouse_dev->update() ;
-                ascii_dev->update() ;
+                mouse_dev->update_all() ;
+                ascii_dev->update_all() ;
             }
 
             auto tp = clock_t::now() ;
