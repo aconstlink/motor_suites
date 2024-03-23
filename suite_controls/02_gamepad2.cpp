@@ -31,9 +31,9 @@ namespace this_file
         app::window_async_t _wid_async ;
         
         // always exists! We just need some mappings.
-        motor::device::game_device_res_t _game_dev ;
+        motor::controls::game_device_res_t _game_dev ;
 
-        motor::vector< motor::device::imapping_res_t > _mappings ;
+        motor::vector< motor::controls::imapping_res_t > _mappings ;
 
     public:
 
@@ -56,9 +56,9 @@ namespace this_file
 
         virtual motor::application::result on_init( void_t ) noexcept
         { 
-            motor::device::global_t::system()->search( [&] ( motor::device::idevice_res_t dev_in )
+            motor::controls::global_t::system()->search( [&] ( motor::controls::idevice_res_t dev_in )
             {
-                if( motor::device::game_device_res_t::castable( dev_in ) )
+                if( motor::controls::game_device_res_t::castable( dev_in ) )
                 {
                     if( _game_dev.is_valid() ) return ;
 
@@ -69,23 +69,23 @@ namespace this_file
             return motor::application::result::ok ; 
         }
 
-        void_t test_button( motor::device::layouts::game_controller_t::button const btn )
+        void_t test_button( motor::controls::types::game_controller_t::button const btn )
         {
-            using ctrl_t = motor::device::layouts::game_controller_t ;
+            using ctrl_t = motor::controls::types::game_controller_t ;
             ctrl_t ctrl( _game_dev ) ;
 
             float_t value = 0.0f ;
-            if( ctrl.is( btn, motor::device::components::button_state::pressed, value ) )
+            if( ctrl.is( btn, motor::controls::components::button_state::pressed, value ) )
             {
                 motor::log::global_t::status( "pressed: " + ctrl_t::to_string( btn ) +
                     " [" + std::to_string( value ) + "]" ) ;
             }
-            else if( ctrl.is( btn, motor::device::components::button_state::pressing, value ) )
+            else if( ctrl.is( btn, motor::controls::components::button_state::pressing, value ) )
             {
                 motor::log::global_t::status( "pressing: " + ctrl_t::to_string( btn ) +
                     " [" + std::to_string( value ) + "]" ) ;
             }
-            else if( ctrl.is( btn, motor::device::components::button_state::released, value ) )
+            else if( ctrl.is( btn, motor::controls::components::button_state::released, value ) )
             {
                 motor::log::global_t::status( "released: " + ctrl_t::to_string( btn ) +
                     " [" + std::to_string( value ) + "]" ) ;
@@ -95,7 +95,7 @@ namespace this_file
         void_t test_device( void_t ) 
         {
 
-            using ctrl_t = motor::device::layouts::game_controller_t ;
+            using ctrl_t = motor::controls::types::game_controller_t ;
             for( size_t i=0; i<size_t(ctrl_t::button::num_buttons); ++i )
             {
                 this_t::test_button( ctrl_t::button(i) ) ;
@@ -104,12 +104,12 @@ namespace this_file
             ctrl_t ctrl( _game_dev ) ;
 
             motor::math::vec2f_t value ;
-            if( ctrl.is( ctrl_t::directional::aim, motor::device::components::stick_state::tilting, value ) )
+            if( ctrl.is( ctrl_t::directional::aim, motor::controls::components::stick_state::tilting, value ) )
             {
                 motor::log::global_t::status( "aiming: [" + std::to_string( value.x() ) + "," + std::to_string( value.y() ) + "]" ) ;
             }
 
-            if( ctrl.is( ctrl_t::directional::movement, motor::device::components::stick_state::tilting, value ) )
+            if( ctrl.is( ctrl_t::directional::movement, motor::controls::components::stick_state::tilting, value ) )
             {
                 motor::log::global_t::status( "movement: [" + std::to_string( value.x() ) + "," + std::to_string( value.y() ) + "]" ) ;
             }
