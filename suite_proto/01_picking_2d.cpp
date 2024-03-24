@@ -116,7 +116,7 @@ namespace this_file
         //***************************************************************************************************
         virtual void_t on_device( device_data_in_t dd ) noexcept 
         {
-            motor::device::layouts::three_mouse mouse( dd.mouse ) ;
+            motor::controls::types::three_mouse mouse( dd.mouse ) ;
             _cur_mouse = mouse.get_local() * motor::math::vec2f_t( 2.0f ) - motor::math::vec2f_t( 1.0f ) ;
         }
 

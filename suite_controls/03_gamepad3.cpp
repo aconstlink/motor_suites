@@ -31,9 +31,9 @@ namespace this_file
         app::window_async_t _wid_async ;
         
         // always exists! We just need some mappings.
-        motor::device::game_device_res_t _game_dev = motor::device::game_device_t() ;
+        motor::controls::game_device_res_t _game_dev = motor::controls::game_device_t() ;
 
-        motor::vector< motor::device::imapping_res_t > _mappings ;
+        motor::vector< motor::controls::imapping_res_t > _mappings ;
 
     public:
 
@@ -56,23 +56,23 @@ namespace this_file
 
         virtual motor::application::result on_init( void_t ) noexcept
         { 
-            motor::device::xbc_device_res_t xbc_dev ;
-            motor::device::ascii_device_res_t ascii_dev ;
-            motor::device::three_device_res_t three_dev ;
+            motor::controls::xbc_device_res_t xbc_dev ;
+            motor::controls::ascii_device_res_t ascii_dev ;
+            motor::controls::three_device_res_t three_dev ;
 
-            motor::device::global_t::system()->search( [&] ( motor::device::idevice_res_t dev_in )
+            motor::controls::global_t::system()->search( [&] ( motor::controls::idevice_res_t dev_in )
             {
-                if( motor::device::xbc_device_res_t::castable( dev_in ) )
+                if( motor::controls::xbc_device_res_t::castable( dev_in ) )
                 {
                     if( xbc_dev.is_valid() ) return ;
                     xbc_dev = dev_in ;
                 }
-                if( motor::device::ascii_device_res_t::castable( dev_in ) )
+                if( motor::controls::ascii_device_res_t::castable( dev_in ) )
                 {
                     if( ascii_dev.is_valid() ) return ;
                     ascii_dev = dev_in ;
                 }
-                if( motor::device::three_device_res_t::castable( dev_in ) )
+                if( motor::controls::three_device_res_t::castable( dev_in ) )
                 {
                     if( three_dev.is_valid() ) return ;
                     three_dev = dev_in ;
@@ -81,13 +81,13 @@ namespace this_file
 
             // do mappings for xbox
             {
-                using a_t = motor::device::game_device_t ;
-                using b_t = motor::device::xbc_device_t ;
+                using a_t = motor::controls::game_device_t ;
+                using b_t = motor::controls::xbc_device_t ;
 
                 using ica_t = a_t::layout_t::input_component ;
                 using icb_t = b_t::layout_t::input_component ;
 
-                using mapping_t = motor::device::mapping< a_t, b_t > ;
+                using mapping_t = motor::controls::mapping< a_t, b_t > ;
                 mapping_t m( "xbc->gc", _game_dev, xbc_dev ) ;
 
                 {
@@ -120,13 +120,13 @@ namespace this_file
 
             // do mappings for ascii
             {
-                using a_t = motor::device::game_device_t ;
-                using b_t = motor::device::ascii_device_t ;
+                using a_t = motor::controls::game_device_t ;
+                using b_t = motor::controls::ascii_device_t ;
 
                 using ica_t = a_t::layout_t::input_component ;
                 using icb_t = b_t::layout_t::input_component ;
 
-                using mapping_t = motor::device::mapping< a_t, b_t > ;
+                using mapping_t = motor::controls::mapping< a_t, b_t > ;
                 mapping_t m( "ascii->gc", _game_dev, ascii_dev ) ;
 
                 {
@@ -138,28 +138,28 @@ namespace this_file
                 {
                     auto const res = m.insert( ica_t::movement,
                         b_t::layout_t::ascii_key_to_input_component( b_t::layout_t::ascii_key::a ),
-                        motor::device::mapping_detail::negative_x ) ;
+                        motor::controls::mapping_detail::negative_x ) ;
                     motor::log::global_t::warning( motor::core::is_not( res ), "can not do mapping." ) ;
                 }
 
                 {
                     auto const res = m.insert( ica_t::movement,
                         b_t::layout_t::ascii_key_to_input_component( b_t::layout_t::ascii_key::d ),
-                        motor::device::mapping_detail::positive_x ) ;
+                        motor::controls::mapping_detail::positive_x ) ;
                     motor::log::global_t::warning( motor::core::is_not( res ), "can not do mapping." ) ;
                 }
 
                 {
                     auto const res = m.insert( ica_t::movement,
                         b_t::layout_t::ascii_key_to_input_component( b_t::layout_t::ascii_key::w ),
-                        motor::device::mapping_detail::positive_y ) ;
+                        motor::controls::mapping_detail::positive_y ) ;
                     motor::log::global_t::warning( motor::core::is_not( res ), "can not do mapping." ) ;
                 }
 
                 {
                     auto const res = m.insert( ica_t::movement,
                         b_t::layout_t::ascii_key_to_input_component( b_t::layout_t::ascii_key::s ),
-                        motor::device::mapping_detail::negative_y ) ;
+                        motor::controls::mapping_detail::negative_y ) ;
                     motor::log::global_t::warning( motor::core::is_not( res ), "can not do mapping." ) ;
                 }
                 
@@ -169,13 +169,13 @@ namespace this_file
 
             // do mappings for mouse
             {
-                using a_t = motor::device::game_device_t ;
-                using b_t = motor::device::three_device_t ;
+                using a_t = motor::controls::game_device_t ;
+                using b_t = motor::controls::three_device_t ;
 
                 using ica_t = a_t::layout_t::input_component ;
                 using icb_t = b_t::layout_t::input_component ;
 
-                using mapping_t = motor::device::mapping< a_t, b_t > ;
+                using mapping_t = motor::controls::mapping< a_t, b_t > ;
                 mapping_t m( "mouse->gc", _game_dev, three_dev ) ;
 
                 {
@@ -189,23 +189,23 @@ namespace this_file
             return motor::application::result::ok ; 
         }
 
-        void_t test_button( motor::device::layouts::game_controller_t::button const btn )
+        void_t test_button( motor::controls::types::game_controller_t::button const btn )
         {
-            using ctrl_t = motor::device::layouts::game_controller_t ;
+            using ctrl_t = motor::controls::types::game_controller_t ;
             ctrl_t ctrl( _game_dev ) ;
 
             float_t value = 0.0f ;
-            if( ctrl.is( btn, motor::device::components::button_state::pressed, value ) )
+            if( ctrl.is( btn, motor::controls::components::button_state::pressed, value ) )
             {
                 motor::log::global_t::status( "pressed: " + ctrl_t::to_string( btn ) +
                     " [" + std::to_string( value ) + "]" ) ;
             }
-            else if( ctrl.is( btn, motor::device::components::button_state::pressing, value ) )
+            else if( ctrl.is( btn, motor::controls::components::button_state::pressing, value ) )
             {
                 motor::log::global_t::status( "pressing: " + ctrl_t::to_string( btn ) +
                     " [" + std::to_string( value ) + "]" ) ;
             }
-            else if( ctrl.is( btn, motor::device::components::button_state::released, value ) )
+            else if( ctrl.is( btn, motor::controls::components::button_state::released, value ) )
             {
                 motor::log::global_t::status( "released: " + ctrl_t::to_string( btn ) +
                     " [" + std::to_string( value ) + "]" ) ;
@@ -219,7 +219,7 @@ namespace this_file
                 m->update() ;
             }
 
-            using ctrl_t = motor::device::layouts::game_controller_t ;
+            using ctrl_t = motor::controls::types::game_controller_t ;
             for( size_t i=0; i<size_t(ctrl_t::button::num_buttons); ++i )
             {
                 this_t::test_button( ctrl_t::button(i) ) ;
@@ -228,12 +228,12 @@ namespace this_file
             ctrl_t ctrl( _game_dev ) ;
 
             motor::math::vec2f_t value ;
-            if( ctrl.is( ctrl_t::directional::aim, motor::device::components::stick_state::tilting, value ) )
+            if( ctrl.is( ctrl_t::directional::aim, motor::controls::components::stick_state::tilting, value ) )
             {
                 motor::log::global_t::status( "aiming: [" + std::to_string( value.x() ) + "," + std::to_string( value.y() ) + "]" ) ;
             }
 
-            if( ctrl.is( ctrl_t::directional::movement, motor::device::components::stick_state::tilting, value ) )
+            if( ctrl.is( ctrl_t::directional::movement, motor::controls::components::stick_state::tilting, value ) )
             {
                 motor::log::global_t::status( "movement: [" + std::to_string( value.x() ) + "," + std::to_string( value.y() ) + "]" ) ;
             }

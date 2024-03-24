@@ -6,7 +6,9 @@ set( tests
 
     "04_window_and_device.cpp"
     "05_window_and_gamepad.cpp"
-    "06_midi_device.cpp"
+    "06_00_midi_observer.cpp"
+    "06_01_midi_akai.cpp"
+    "06_02_midi_korg.cpp"
     )
 
 if( WIN32 )
@@ -26,11 +28,11 @@ foreach( _test ${tests} )
 
     add_executable( ${app_name} ${_test} ) 
     target_link_libraries( ${app_name} 
-      PRIVATE motor::device
+      PRIVATE motor::controls
       PRIVATE motor::application
       PRIVATE motor::platform )
 
-    set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_device" )
+    set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_controls" )
 
     set( data_path ${CMAKE_CURRENT_LIST_DIR} ) 
     target_compile_definitions( ${app_name} PRIVATE -DDATAPATH="${data_path}")
