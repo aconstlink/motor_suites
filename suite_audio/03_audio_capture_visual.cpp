@@ -4,8 +4,8 @@
 
 #include <motor/audio/object/capture_object.hpp>
 
-#include <motor/device/layouts/ascii_keyboard.hpp>
-#include <motor/device/layouts/three_mouse.hpp>
+#include <motor/controls/types/ascii_keyboard.hpp>
+#include <motor/controls/types/three_mouse.hpp>
 
 #include <motor/tool/structs.h>
 #include <motor/tool/imgui/player_controller.h>

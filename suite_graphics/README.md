@@ -1,12 +1,12 @@
 # suite graphics
 
 ## 01_simple_msl
-Tests and shows framebuffer usage. Outputs two colors and allows to switch between the two render target outputs in post via the UI. Uses motor shaders.
+Shows how to use msl shaders. The output goes to the screen directly.
 ![01_simple_msl]( readme_images/01_simple_msl.jpg )
 
 ## 02_framebuffer
 
-Tests and shows framebuffer usage. Outputs two colors and allows to switch between the two render target outputs. Uses motor shaders.
+Tests and shows framebuffer usage. Outputs the same scene as the last test but into a framebuffer which is then output to a half screen quad..
 
 ![02_framebuffer]( readme_images/02_framebuffer.jpg )
 
@@ -24,7 +24,7 @@ Tests and shows how to use MRT and the framebuffer object. Displays all output a
 
 ## 06_array_object
 
-Tests and shows how to use an array object by doing the so called "vertex pulling" in the platform shader. Additional geometry data is pulled from an array buffer in the shader for further transformation. The shader pulls translation, rotation and color information from the array object. Array objects can be used to transfer alot of data to the GPU and decouple it from the geometry. So the geometry just needs to be present a few time or even only a single time but can be rendered many times by accessing the array object arbitrarilly in the shader.
+Tests and shows how to use an array object by doing the so called "vertex pulling" in the vertex shader. Additional geometry data is pulled from an array buffer in the shader for further transformation. The shader pulls translation, rotation and color information from the array object. Array objects can be used to transfer alot of data to the GPU and decouple it from the geometry. So the geometry just needs to be present a few time or even only a single time but can be rendered many times by accessing the array object arbitrarilly in the shader.
 
 ![06_array_object]( readme_images/06_array_object.jpg )
 
