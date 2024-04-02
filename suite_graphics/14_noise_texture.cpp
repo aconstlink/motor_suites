@@ -6,6 +6,7 @@
 #include <motor/graphics/object/geometry_object.h>
 
 #include <motor/noise/method/gradient_noise.h>
+#include <motor/noise/method/value_noise.h>
 #include <motor/noise/method/fbm.hpp>
 
 #include <motor/log/global.h>
@@ -106,7 +107,8 @@ namespace this_file
 
             // image configuration
             {
-                motor::noise::gradient_noise_t vn( seed, bit, mixes ) ;
+                //motor::noise::gradient_noise_t vn( seed, bit, mixes ) ;
+                motor::noise::value_noise_t vn(seed, bit, mixes) ;
 
                 motor::graphics::image_t img = motor::graphics::image_t( motor::graphics::image_t::dims_t( 1024, 1024 ) )
                     .update( [&]( motor::graphics::image_ptr_t, motor::graphics::image_t::dims_in_t dims, void_ptr_t data_in )
@@ -275,7 +277,8 @@ namespace this_file
         {
             if( change_noise )
             {
-                motor::noise::gradient_noise_t vn( seed, bit, mixes ) ;
+                //motor::noise::gradient_noise_t vn( seed, bit, mixes ) ;
+                motor::noise::value_noise_t vn( seed, bit, mixes ) ;
 
                 img_obj.image().update( [&]( motor::graphics::image_ptr_t, motor::graphics::image_t::dims_in_t dims, void_ptr_t data_in )
                 {
