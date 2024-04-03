@@ -115,7 +115,7 @@ config render
             out.color = vec4_t( 1.0, 1.0, 1.0, 1.0 ) ;
 
             //out.color = test1_noise_1d( in.tx ) ;
-            out.color = test2_noise_1d( in.tx ) ; 
+            //out.color = test2_noise_1d( in.tx ) ; 
             //out.color = test3_perlin_1d( in.tx ) ;
             //out.color = test4_perlin_2d( in.tx ) ;
             //out.color = test5_perlin_3d( in.tx ) ;
@@ -123,7 +123,7 @@ config render
             //out.color = test7_snoise_3d( in.tx ) ;
             //out.color = test8_iqnoise( in.tx ) ;  
             //out.color = test9_fbm( in.tx ) ;
-            //out.color = test10_fbm( in.tx ) ;
+            out.color = test10_fbm( in.tx ) ;
             
         }
     }
