@@ -2,6 +2,7 @@
 set( tests
     "00_imgui.cpp"
     "01_imgui.cpp"
+    "02_profiling.cpp"
     )
 
 foreach( _test ${tests} )

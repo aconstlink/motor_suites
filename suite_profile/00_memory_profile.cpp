@@ -63,7 +63,6 @@ namespace this_file
             {
                 bool_t show = true ;
                 ImGui::ShowDemoWindow( &show ) ;
-                ImPlot::ShowDemoWindow( &show ) ;
             }
             return true ; 
         }

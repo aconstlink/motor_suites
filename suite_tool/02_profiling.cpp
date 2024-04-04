@@ -1,9 +1,14 @@
 
 
+
 #include <motor/platform/global.h>
 
 #include <motor/controls/types/ascii_keyboard.hpp>
 #include <motor/controls/types/three_mouse.hpp>
+
+#include <motor/tool/imgui/custom_widgets.h>
+#include <motor/tool/imgui/timeline.h>
+#include <motor/tool/imgui/player_controller.h>
 
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
@@ -19,6 +24,7 @@ namespace this_file
     {
         motor_this_typedefs( my_app ) ;
 
+        size_t cur_time = 0 ;
 
         virtual void_t on_init( void_t ) noexcept
         {
@@ -55,20 +61,8 @@ namespace this_file
 
         virtual bool_t on_tool( this_t::window_id_t const wid, motor::application::app::tool_data_ref_t ) noexcept 
         { 
-            {
-                if( ImGui::Begin("test window") ){}
-                ImGui::End() ;
-            }
-            
-            {
-                bool_t show = true ;
-                ImGui::ShowDemoWindow( &show ) ;
-                ImPlot::ShowDemoWindow( &show ) ;
-            }
             return true ; 
         }
-
-        virtual void_t on_shutdown( void_t ) noexcept {}
     };
 }
 

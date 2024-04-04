@@ -1,16 +1,7 @@
 
 set( tests
-    "00_mtr.cpp"
-    "01_container.cpp"
+    "00_memory_profile.cpp"
     )
-
-if( MOTOR_MEMORY_OBSERVER )
-list( APPEND tests "02_memory_observer.cpp" )
-endif()
-
-if( WIN32 )
-  #list( APPEND subdirs "some_file" )
-endif()
 
 foreach( _test ${tests} )
 
@@ -27,9 +18,13 @@ foreach( _test ${tests} )
     target_link_libraries( ${app_name} 
       PRIVATE motor::io 
       PRIVATE motor::concurrent 
-      PRIVATE motor::memory )
+      PRIVATE motor::memory
+      PRIVATE motor::application
+      PRIVATE motor::graphics
+      PRIVATE motor::platform
+      PRIVATE motor::tool )
 
-    set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_memory" )
+    set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_profile" )
 
     set( data_path ${CMAKE_CURRENT_LIST_DIR} ) 
     target_compile_definitions( ${app_name} PRIVATE -DDATAPATH="${data_path}")
