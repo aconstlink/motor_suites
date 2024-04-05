@@ -376,10 +376,11 @@ namespace this_file
                 fe->render( &msl_obj, detail ) ;
             }
         }
-        #if 1
-        virtual bool_t on_tool( this_t::window_id_t const, motor::application::app::tool_data_ref_t ) noexcept 
+
+        virtual bool_t on_tool( this_t::window_id_t const wid, motor::application::app::tool_data_ref_t ) noexcept 
         {
-            
+            if ( wid != 0 ) return false ;
+
             ImGui::Begin( "Test Control" ) ;
 
             {
@@ -394,7 +395,6 @@ namespace this_file
             
             return true ;
         }
-        #endif
     };
 }
 
