@@ -1,5 +1,7 @@
 
 
+#include <motor/profiling/probe_guard.hpp>
+
 #include <motor/platform/global.h>
 
 #include <motor/controls/types/ascii_keyboard.hpp>
@@ -22,6 +24,8 @@ namespace this_file
 
         virtual void_t on_init( void_t ) noexcept
         {
+            MOTOR_PROBE( "application", "on_init" ) ;
+
             {
                 motor::application::window_info_t wi ;
                 wi.x = 100 ;
@@ -42,6 +46,8 @@ namespace this_file
         virtual void_t on_event( window_id_t const wid, 
                 motor::application::window_message_listener::state_vector_cref_t sv ) noexcept
         {
+            MOTOR_PROBE( "application", "on_event" ) ;
+
             if( sv.create_changed )
             {
                 motor::log::global_t::status("[my_app] : window created") ;
@@ -55,6 +61,8 @@ namespace this_file
 
         virtual bool_t on_tool( this_t::window_id_t const wid, motor::application::app::tool_data_ref_t ) noexcept 
         { 
+            MOTOR_PROBE( "application", "on_tool" ) ;
+
             {
                 if( ImGui::Begin("test window") ){}
                 ImGui::End() ;
@@ -85,8 +93,9 @@ int main( int argc, char ** argv )
 
     motor::concurrent::global::deinit() ;
     motor::log::global::deinit() ;
+    motor::profiling::global::deinit() ;
     motor::memory::global::dump_to_std() ;
-
+    
 
     return ret ;
 }

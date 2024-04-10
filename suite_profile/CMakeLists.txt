@@ -1,6 +1,7 @@
 
 set( tests
-    "00_memory_profile.cpp"
+    
+    "00_manager.cpp"
     )
 
 foreach( _test ${tests} )
@@ -19,10 +20,7 @@ foreach( _test ${tests} )
       PRIVATE motor::io 
       PRIVATE motor::concurrent 
       PRIVATE motor::memory
-      PRIVATE motor::application
-      PRIVATE motor::graphics
-      PRIVATE motor::platform
-      PRIVATE motor::tool )
+      PRIVATE motor::profiling )
 
     set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_profile" )
 

@@ -15,6 +15,7 @@
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
 #include <motor/concurrent/global.h>
+#include <motor/profiling/global.h>
 
 #include <future>
 
@@ -44,7 +45,7 @@ namespace this_file
                 this_t::send_window_message( this_t::create_window( wi ), [&]( motor::application::app::window_view & wnd )
                 {
                     wnd.send_message( motor::application::show_message( { true } ) ) ;
-                    wnd.send_message( motor::application::cursor_message_t( {false} ) ) ;
+                    wnd.send_message( motor::application::cursor_message_t( {true} ) ) ;
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
@@ -61,6 +62,22 @@ namespace this_file
                 {
                     wnd.send_message( motor::application::show_message( { true } ) ) ;
                     wnd.send_message( motor::application::cursor_message_t( {false} ) ) ;
+                    wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
+                } ) ;
+            }
+
+            {
+                motor::application::window_info_t wi ;
+                wi.x = 400 ;
+                wi.y = 100 ;
+                wi.w = 800 ;
+                wi.h = 600 ;
+                wi.gen = motor::application::graphics_generation::gen4_auto ;
+
+                this_t::send_window_message( this_t::create_window( wi ), [&] ( motor::application::app::window_view & wnd )
+                {
+                    wnd.send_message( motor::application::show_message( { true } ) ) ;
+                    wnd.send_message( motor::application::cursor_message_t( { true } ) ) ;
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
@@ -217,6 +234,9 @@ namespace this_file
                 fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ;
             }
         }
+
+        virtual bool_t on_tool( this_t::window_id_t const wid, motor::application::app::tool_data_ref_t ) noexcept 
+        { return wid == 2; }
     };
 }
 
@@ -234,6 +254,7 @@ int main( int argc, char ** argv )
     motor::io::global::deinit() ;
     motor::concurrent::global::deinit() ;
     motor::log::global::deinit() ;
+    motor::profiling::global::deinit() ;
     motor::memory::global::dump_to_std() ;
 
 

@@ -60,6 +60,20 @@ namespace this_file
                 } ) ;
             }
 
+            {
+                motor::application::window_info_t wi ;
+                wi.x = 400 ;
+                wi.y = 100 ;
+                wi.w = 800 ;
+                wi.h = 600 ;
+                wi.gen = motor::application::graphics_generation::gen4_gl4 ;
+                this_t::send_window_message( this_t::create_window( wi ), [&] ( motor::application::app::window_view & wnd )
+                {
+                    wnd.send_message( motor::application::show_message( { true } ) ) ;
+                    wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
+                } ) ;
+            }
+
             // geometry configuration : points
             {
                 size_t const w = 100 ;
@@ -325,7 +339,9 @@ namespace this_file
 
         virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
             motor::application::app::render_data_in_t rd ) noexcept 
-        {            
+        {
+            if ( wid == 2 ) return ;
+
             if( rd.first_frame )
             {
                 fe->configure<motor::graphics::geometry_object_t>( &geo_pts_obj ) ;
@@ -379,7 +395,7 @@ namespace this_file
 
         virtual bool_t on_tool( this_t::window_id_t const wid, motor::application::app::tool_data_ref_t ) noexcept 
         {
-            if ( wid != 0 ) return false ;
+            if ( wid != 2 ) return false ;
 
             ImGui::Begin( "Test Control" ) ;
 
