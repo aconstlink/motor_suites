@@ -7,6 +7,9 @@
 #include <motor/controls/types/ascii_keyboard.hpp>
 #include <motor/controls/types/three_mouse.hpp>
 
+#include <motor/concurrent/global.h>
+#include <motor/profiling/global.h>
+
 #include <future>
 
 int main( int argc, char ** argv )
@@ -47,6 +50,8 @@ int main( int argc, char ** argv )
             wnd->register_out( motor::share( msgl_out ) ) ;
             wnd->send_message( motor::application::show_message( { true } ) ) ;
 
+            bool_t is_borderless = false ;
+
             {
                 while( true ) 
                 {
@@ -58,6 +63,21 @@ int main( int argc, char ** argv )
                         if( sv.close_changed )
                         {
                             break ;
+                        }
+
+                        if ( sv.mouse_msg_changed )
+                        {
+                            switch ( sv.mouse_msg.state )
+                            {
+                            case motor::application::mouse_message::state_type::enter:
+                                motor::log::global_t::status( "enter" ) ;
+                                break ;
+                            case motor::application::mouse_message::state_type::move:
+                                break ;
+                            case motor::application::mouse_message::state_type::leave:
+                                motor::log::global_t::status( "leave" ) ;
+                                break ;
+                            }
                         }
                     }
 
@@ -157,7 +177,29 @@ int main( int argc, char ** argv )
                                 if( ks == motor::controls::components::key_state::released )
                                     break ;
                             }
-                        }        
+
+                            {
+                                auto const ks = keyboard.get_state( key_t::f2 ) ;
+                                if ( ks == motor::controls::components::key_state::released )
+                                {
+                                    is_borderless = !is_borderless ;
+                                    wnd->send_message( motor::application::show_message {
+                                        true, motor::application::three_state::toggle } ) ;
+                                }
+                            }
+
+                            {
+                                auto const ks = keyboard.get_state( key_t::f3 ) ;
+                                if ( ks == motor::controls::components::key_state::released )
+                                {
+                                    wnd->send_message( motor::application::fullscreen_message 
+                                        { 
+                                            motor::application::three_state::toggle,
+                                            motor::application::three_state::off
+                                        } ) ;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -183,8 +225,9 @@ int main( int argc, char ** argv )
     motor::memory::release_ptr( carrier ) ;
 
     motor::log::global::deinit() ;
+    motor::concurrent::global::deinit() ;
+    motor::profiling::global::deinit() ;
     motor::memory::global::dump_to_std() ;
-
 
     return ret ;
 }

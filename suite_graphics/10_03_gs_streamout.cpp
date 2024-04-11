@@ -11,6 +11,7 @@
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
 #include <motor/concurrent/global.h>
+#include <motor/profiling/global.h>
 
 #include <future>
 
@@ -395,7 +396,7 @@ namespace this_file
 
         virtual bool_t on_tool( this_t::window_id_t const wid, motor::application::app::tool_data_ref_t ) noexcept 
         {
-            if ( wid != 2 ) return false ;
+            //if ( wid != 2 ) return false ;
 
             ImGui::Begin( "Test Control" ) ;
 
@@ -427,6 +428,7 @@ int main( int argc, char ** argv )
     
     motor::concurrent::global::deinit() ;
     motor::log::global::deinit() ;
+    motor::profiling::global::deinit() ;
     motor::memory::global::dump_to_std() ;
 
 
