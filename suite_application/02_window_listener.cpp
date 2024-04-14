@@ -96,8 +96,7 @@ namespace this_file
 
             // test message
             {
-                motor::application::fullscreen_message msg ;
-                msg.on_off = true ;
+                motor::application::fullscreen_message msg { motor::application::three_state::on } ;
 
                 this->foreach_out( [&]( motor::application::iwindow_message_listener_mtr_t ptr ) 
                 {
