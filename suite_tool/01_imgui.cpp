@@ -47,6 +47,22 @@ namespace this_file
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
+
+            {
+                motor::application::window_info_t wi ;
+                wi.x = 100 ;
+                wi.y = 100 ;
+                wi.w = 800 ;
+                wi.h = 600 ;
+                wi.gen = motor::application::graphics_generation::gen4_auto ;
+
+                this_t::send_window_message( this_t::create_window( wi ), [&] ( motor::application::app::window_view & wnd )
+                {
+                    wnd.send_message( motor::application::show_message( { true } ) ) ;
+                    wnd.send_message( motor::application::cursor_message_t( { true } ) ) ;
+                    wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
+                } ) ;
+            }
         }
 
         virtual void_t on_event( window_id_t const wid, 

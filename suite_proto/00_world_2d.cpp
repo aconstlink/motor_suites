@@ -13,11 +13,15 @@
 
 #include <motor/math/utility/angle.hpp>
 
+#include <motor/profiling/probe_guard.hpp>
+
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
 #include <motor/concurrent/global.h>
 
 #include <future>
+
+#define DRAW_SINGLE 0
 
 namespace this_file
 {
@@ -50,6 +54,9 @@ namespace this_file
         world::dimensions::regions_and_cells_t rac_ ;
 
         motor::math::vec2f_t _cur_mouse ;
+
+        float_t amplitude = 10.0f ;
+        float_t frequency = 0.5f ;
 
         //***************************************************************************************************
         virtual void_t on_init( void_t ) noexcept
@@ -307,6 +314,8 @@ namespace this_file
         //***************************************************************************************************
         void_t draw_cells( world::dimensions::regions_and_cells_cref_t rac ) noexcept
         {
+            MOTOR_PROBE( "application", "draw_cells" ) ;
+
             auto const num_cells = rac.cell_dif() ;
             auto const pixels_min = _grid.get_dims().cells_to_pixels( rac.cell_min() ) ;
             auto const view_pixels = _grid.get_dims().cells_to_pixels( num_cells ) ;
@@ -317,12 +326,24 @@ namespace this_file
                 motor::math::vec2f_t p0( start ) ;
                 motor::math::vec2f_t p1( start + motor::math::vec2i_t( 0, view_pixels.y() ) ) ;
 
+                #if DRAW_SINGLE
                 for( uint_t i = 0 ; i < num_cells.x() +1 ; ++i )
                 {
                     pr.draw_line( 0, p0, p1, motor::math::vec4f_t(0.6f) ) ;
                     p0 = p0 + motor::math::vec2f_t( float_t( _grid.get_dims().get_pixels_per_cell().x()), 0.0f ) ;
                     p1 = p1 + motor::math::vec2f_t( float_t(_grid.get_dims().get_pixels_per_cell().x()), 0.0f ) ;
                 }
+                #else
+                pr.draw_lines( 2, num_cells.x() + 1, [&] ( size_t const i ) 
+                {
+                    motor::gfx::line_render_2d::line_t const ln { { p0, p1 }, motor::math::vec4f_t( 0.6f ) } ;
+
+                    p0 = p0 + motor::math::vec2f_t( float_t( _grid.get_dims().get_pixels_per_cell().x() ), 0.0f ) ;
+                    p1 = p1 + motor::math::vec2f_t( float_t( _grid.get_dims().get_pixels_per_cell().x() ), 0.0f ) ;
+
+                    return std::move( ln ) ;
+                } ) ;
+                #endif
             }
 
             // y lines / horizontal lines
@@ -330,13 +351,25 @@ namespace this_file
                 auto const start = _grid.get_dims().transform_to_center( pixels_min ) ;
                 motor::math::vec2f_t p0( start ) ;
                 motor::math::vec2f_t p1( start + motor::math::vec2i_t( view_pixels.x(), 0  ) ) ;
-                        
+
+                #if DRAW_SINGLE
                 for( uint_t i = 0 ; i < num_cells.y() + 1 ; ++i )
                 {
                     pr.draw_line( 0, p0, p1, motor::math::vec4f_t(0.6f) ) ;
                     p0 = p0 + motor::math::vec2f_t( 0.0f, float_t( _grid.get_dims().get_pixels_per_cell().y() ) ) ;
                     p1 = p1 + motor::math::vec2f_t( 0.0f, float_t( _grid.get_dims().get_pixels_per_cell().y() ) ) ;
                 }
+                #else
+                pr.draw_lines( 2, num_cells.y() + 1, [&] ( size_t const i )
+                {
+                    motor::gfx::line_render_2d::line_t const ln { { p0, p1 }, motor::math::vec4f_t( 0.6f ) } ;
+
+                    p0 = p0 + motor::math::vec2f_t( 0.0f, float_t( _grid.get_dims().get_pixels_per_cell().y() ) ) ;
+                    p1 = p1 + motor::math::vec2f_t( 0.0f, float_t( _grid.get_dims().get_pixels_per_cell().y() ) ) ;
+
+                    return std::move( ln ) ;
+                } ) ;
+                #endif
             }
         }
 
@@ -354,12 +387,15 @@ namespace this_file
                 motor::math::vec2f_t p0( start ) ;
                 motor::math::vec2f_t p1( start + motor::math::vec2i_t( 0, view_pixels.y() ) ) ;
 
-                for( uint_t i = 0 ; i < num_region.x() + 1; ++i )
+                pr.draw_lines( l, num_region.x() + 1, [&] ( size_t const i )
                 {
-                    pr.draw_line( l, p0, p1, border_color ) ;
+                    motor::gfx::line_render_2d::line_t const ln { { p0, p1 }, border_color } ;
+
                     p0 = p0 + motor::math::vec2f_t( float_t( _grid.get_dims().get_pixels_per_region().x() ), 0.0f ) ;
                     p1 = p1 + motor::math::vec2f_t( float_t( _grid.get_dims().get_pixels_per_region().x() ), 0.0f ) ;
-                }
+
+                    return std::move( ln ) ;
+                } ) ;
             }
 
             // y lines / horizontal lines
@@ -367,21 +403,26 @@ namespace this_file
                 auto const start = _grid.get_dims().transform_to_center( pixels_min ) ;
                 motor::math::vec2f_t p0( start ) ;
                 motor::math::vec2f_t p1( start + motor::math::vec2i_t( view_pixels.x(), 0  ) ) ;
-                        
-                for( uint_t i = 0 ; i < num_region.y() + 1; ++i )
+                
+                pr.draw_lines( l, num_region.y() + 1, [&] ( size_t const i )
                 {
-                    pr.draw_line( l, p0, p1, border_color ) ;
+                    motor::gfx::line_render_2d::line_t const ln { { p0, p1 }, border_color } ;
+
                     p0 = p0 + motor::math::vec2f_t( 0.0f, float_t( _grid.get_dims().get_pixels_per_region().y() ) ) ;
                     p1 = p1 + motor::math::vec2f_t( 0.0f, float_t( _grid.get_dims().get_pixels_per_region().y() ) ) ;
-                }
+
+                    return std::move( ln ) ;
+                } ) ;
             }
         }
 
         //***************************************************************************************************
         void_t draw_content( world::dimensions::regions_and_cells_cref_t rac ) noexcept
         {
-            auto const cells_start = rac.cell_min() ;
+            MOTOR_PROBE( "application", "draw_content" ) ;
 
+            #if DRAW_SINGLE
+            auto const cells_start = rac.cell_min() ;
             for( auto y = rac.ocell_min().y(); y < rac.ocell_max().y(); ++y )
             {
                 for( auto x = rac.ocell_min().x(); x < rac.ocell_max().x(); ++x )
@@ -397,7 +438,7 @@ namespace this_file
                         auto const p3 = p0 + motor::math::vec2f_t( d.x(), 0.0f ) ;
 
                         int_t f = int_t( 10.0f * std::sin( x * 100.0f ) - y ) ;
-
+                        
                         if( f > 0 )
                         {
                             pr.draw_rect( 0, p0, p1, p2, p3, motor::math::vec4f_t(0.0f,0.0f,1.0f,1.0f), motor::math::vec4f_t(0.6f) ) ;
@@ -409,6 +450,52 @@ namespace this_file
                     }
                 }
             }
+            #else
+            {
+                motor::math::vec2ui_t const cell_dif = rac.cell_dif() ;
+                
+                size_t const num_cells = cell_dif.x() * cell_dif.y() ;
+
+                auto const cells_start = rac.cell_min() ;
+                pr.draw_rects( 0, num_cells, [&] ( size_t const i ) 
+                {
+                    uint_t const x_ = i % cell_dif.x() ;
+                    uint_t const y_ = i / cell_dif.x() % cell_dif.y() ;
+
+                    auto const abs_pos = motor::math::vec2ui_t( cells_start.x() + x_, cells_start.y() + y_ ) ;
+
+                    auto const cur_pos = _grid.get_dims().transform_cell_to_center( abs_pos ) ;
+                    motor::math::vec2f_t const p0 = _grid.get_dims().cells_to_pixels( cur_pos ) ;
+                    motor::math::vec2f_t const d = motor::math::vec2f_t( _grid.get_dims().get_pixels_per_cell() ) ;
+                    motor::math::vec2f_t const dh = motor::math::vec2f_t( _grid.get_dims().get_pixels_per_cell() >> uint_t( 1 ) ) ;
+
+                    auto const p1 = p0 + motor::math::vec2f_t( 0.0f, d.y() ) ;
+                    auto const p2 = p0 + motor::math::vec2f_t( d.x(), d.y() ) ;
+                    auto const p3 = p0 + motor::math::vec2f_t( d.x(), 0.0f ) ;
+
+                    motor::math::vec4f_t color( 1.0f, 0.5f, 0.2f, 1.0f ) ;
+
+                    // evaluate implicit function
+                    {
+
+                        auto const x = cur_pos.x() ;
+                        auto const y = cur_pos.y() ;
+
+                        int_t f = int_t( amplitude * std::sin( x * frequency ) - y ) ;
+
+                        if ( f > 0 )
+                        {
+                            color = motor::math::vec4f_t( 0.4f, 0.0f, 0.0f, 1.0f ) ;
+                        }
+                    }
+
+                    return motor::gfx::tri_render_2d_t::rect_md_t { { p0, p1, p2, p3 }, color } ;
+                } ) ;
+
+            }
+
+            #endif
+
         }
 
         virtual bool_t on_tool( this_t::window_id_t const wid, motor::application::app::tool_data_ref_t ) noexcept 
@@ -439,6 +526,11 @@ namespace this_file
 
                     camera.orthographic() ;
                 }
+            }
+
+            {
+                ImGui::SliderFloat( "Amplitude", &amplitude, 1.0f, 15.0f ) ;
+                ImGui::SliderFloat( "Frequency", &frequency, 0.0f, 2.0f ) ;
             }
 
             if( _view_preload_extend )
@@ -473,8 +565,8 @@ int main( int argc, char ** argv )
     motor::io::global::deinit() ;
     motor::concurrent::global::deinit() ;
     motor::log::global::deinit() ;
+    motor::profiling::global::deinit() ;
     motor::memory::global::dump_to_std() ;
-
 
     return ret ;
 }

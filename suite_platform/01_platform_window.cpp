@@ -37,11 +37,14 @@ int main( int argc, char ** argv )
             std::this_thread::sleep_for( std::chrono::milliseconds(500) ) ;
 
             motor::log::global_t::status( "[test] : show window fullscreen" ) ;
-            wnd->send_message( motor::application::fullscreen_message_t( { true, true } ) ) ;
+            wnd->send_message( motor::application::fullscreen_message_t { 
+                motor::application::three_state::on, motor::application::three_state::on } ) ;
+
             std::this_thread::sleep_for( std::chrono::milliseconds(500) ) ;
 
             motor::log::global_t::status( "[test] : show window windowed" ) ;
-            wnd->send_message( motor::application::fullscreen_message_t( { false, false } ) ) ;
+            wnd->send_message( motor::application::fullscreen_message_t{ 
+                motor::application::three_state::on, motor::application::three_state::on  } ) ;
             std::this_thread::sleep_for( std::chrono::milliseconds(500) ) ;
 
             motor::log::global_t::status( "[test] : resize window #1" ) ;
