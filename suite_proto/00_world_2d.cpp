@@ -489,7 +489,7 @@ namespace this_file
                         }
                     }
 
-                    return motor::gfx::tri_render_2d_t::rect_md_t { { p0, p1, p2, p3 }, color } ;
+                    return motor::gfx::primitive_render_2d::rect_t { { p0, p1, p2, p3 }, color } ;
                 } ) ;
 
             }
