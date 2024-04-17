@@ -11,6 +11,9 @@
 #include <motor/format/future_items.hpp>
 #include <motor/property/property_sheet.hpp>
 
+#include <motor/noise/method/gradient_noise.h>
+#include <motor/noise/method/fbm.hpp>
+
 #include <motor/math/utility/angle.hpp>
 
 #include <motor/profiling/probe_guard.hpp>
@@ -41,7 +44,7 @@ namespace this_file
             world::dimensions_t( 
                 motor::math::vec2ui_t(1000), // regions_per_grid
                 motor::math::vec2ui_t(16), // cells_per_region
-                motor::math::vec2ui_t(8)  // pixels_per_cell
+                motor::math::vec2ui_t(16)  // pixels_per_cell
             ) 
         ) ;
 
@@ -49,6 +52,7 @@ namespace this_file
         bool_t _draw_debug = false ;
         bool_t _view_preload_extend = false ;
 
+        uint_t _extend_scale = 1 ;
         motor::math::vec2ui_t _extend ;
         motor::math::vec2ui_t _preload_extend ;
         world::dimensions::regions_and_cells_t rac_ ;
@@ -56,7 +60,18 @@ namespace this_file
         motor::math::vec2f_t _cur_mouse ;
 
         float_t amplitude = 10.0f ;
-        float_t frequency = 0.5f ;
+        float_t frequency = 0.073f ;
+
+        float_t noise_amplitude = 10.0f ;
+        float_t gold_factor = 0.2f ;
+        float_t gold_divisor = 23.0f ;
+
+        float_t fbm_lacunarity = 0.5f ;
+        float_t fbm_h = 0.5f ;
+        float_t fbm_octaves = 0.5f ;
+
+        motor::noise::gradient_noise_t _gn = motor::noise::gradient_noise_t( 376482, 8 ) ;
+        motor::noise::fbm< motor::noise::gradient_noise_t > _fbm ;
 
         //***************************************************************************************************
         virtual void_t on_init( void_t ) noexcept
@@ -76,10 +91,11 @@ namespace this_file
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
-
+            
+            #if 0
             {
                 motor::application::window_info_t wi ;
-                wi.x = 100 ;
+                wi.x = 500 ;
                 wi.y = 100 ;
                 wi.w = 800 ;
                 wi.h = 600 ;
@@ -92,7 +108,7 @@ namespace this_file
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
-
+            #endif
             // import fonts and create text render
             {
                 motor::property::property_sheet_mtr_t ps = motor::shared( motor::property::property_sheet_t() ) ;
@@ -151,6 +167,33 @@ namespace this_file
         }
 
         //***************************************************************************************************
+        motor::math::vec2ui_t extend( void_t ) const noexcept
+        {
+            return _extend * _extend_scale ;
+        }
+
+        //***************************************************************************************************
+        motor::math::vec2ui_t preload_extend( void_t ) const noexcept
+        {
+            return _preload_extend ;
+        }
+
+        //***************************************************************************************************
+        void_t change_extend( motor::math::vec2ui_cref_t ext, uint_t const ext_scale ) noexcept
+        {
+            _extend_scale = ext_scale ;
+            _extend = ext ;
+            
+            auto const new_ext = this_t::extend() ;
+
+            _preload_extend = new_ext + motor::math::vec2ui_t( _grid.get_dims().get_pixels_per_region() * 2 ) ;
+
+            rac_ = world::dimensions::regions_and_cells_t() ;
+            camera.set_dims( float_t( new_ext.x() ), float_t( new_ext.y() ), 1.0f, 1000.0f ) ;
+            camera.orthographic() ;
+        }
+
+        //***************************************************************************************************
         virtual void_t on_event( window_id_t const wid, 
                 motor::application::window_message_listener::state_vector_cref_t sv ) noexcept
         {
@@ -165,13 +208,8 @@ namespace this_file
             }
             if( sv.resize_changed )
             {
-                _extend = motor::math::vec2ui_t( uint_t(sv.resize_msg.w), uint_t( sv.resize_msg.h ) ) ;
-                _preload_extend = _extend + motor::math::vec2ui_t( _grid.get_dims().get_pixels_per_region() * 2 ) ;
-
-                
-                rac_ = world::dimensions::regions_and_cells_t() ;
-                camera.set_dims( float_t(_extend.x()), float_t(_extend.y()), 1.0f, 1000.0f ) ;
-                camera.orthographic() ;
+                auto const new_ext = motor::math::vec2ui_t( uint_t( sv.resize_msg.w ), uint_t( sv.resize_msg.h ) ) ;
+                this_t::change_extend( new_ext, _extend_scale ) ;
             }
         }
 
@@ -180,7 +218,7 @@ namespace this_file
         {
             motor::controls::types::three_mouse mouse( dd.mouse ) ;
             _cur_mouse = mouse.get_local() * motor::math::vec2f_t( 2.0f ) - motor::math::vec2f_t( 1.0f ) ;
-            _cur_mouse = _cur_mouse * (_extend * motor::math::vec2f_t(0.5f) );
+            _cur_mouse = _cur_mouse * (this_t::extend() * motor::math::vec2f_t(0.5f) );
 
             static motor::math::vec2f_t old = mouse.get_global() * motor::math::vec2f_t( 2.0f ) - motor::math::vec2f_t( 1.0f ) ;
             motor::math::vec2f_t const dif = (mouse.get_global()* motor::math::vec2f_t( 2.0f ) - motor::math::vec2f_t( 1.0f )) - old ;
@@ -188,10 +226,8 @@ namespace this_file
             if( mouse.is_pressing(motor::controls::types::three_mouse::button::right ) )
             {
                 auto old2 = camera.get_transformation() ;
-                auto trafo = old2.translate_fl( motor::math::vec3f_t( -dif.x()*200.0f, -dif.y()*200.0f, 0.0f ) ) ;
+                auto trafo = old2.translate_fl( motor::math::vec3f_t( -dif.x()*2000.0f, -dif.y()*2000.0f, 0.0f ) ) ;
                 camera.set_transformation( trafo ) ;
-
-                
             }
 
             old = mouse.get_global() * motor::math::vec2f_t( 2.0f ) - motor::math::vec2f_t( 1.0f ) ;
@@ -209,7 +245,7 @@ namespace this_file
                 {
                     world::dimensions::regions_and_cells_t rac = 
                     _grid.get_dims().calc_regions_and_cells( motor::math::vec2i_t( cpos ), 
-                        motor::math::vec2ui_t( _extend ) >> motor::math::vec2ui_t( 1 ) ) ;
+                        this_t::extend() >> motor::math::vec2ui_t( 1 ) ) ;
 
                     // draw cells
                     this_t::draw_cells( rac ) ;
@@ -222,7 +258,7 @@ namespace this_file
                 {
                     world::dimensions::regions_and_cells_t rac = 
                     _grid.get_dims().calc_regions_and_cells( motor::math::vec2i_t( cpos ), 
-                        motor::math::vec2ui_t( _preload_extend ) >> motor::math::vec2ui_t( 1 ) ) ;
+                        motor::math::vec2ui_t( this_t::preload_extend() ) >> motor::math::vec2ui_t( 1 ) ) ;
 
                     // draw regions
                     this_t::draw_regions( rac, 2, motor::math::vec4f_t( 0.0f, 0.0f, 0.5f, 1.0f) ) ;
@@ -258,7 +294,7 @@ namespace this_file
 
                 world::dimensions::regions_and_cells_t rac = 
                     _grid.get_dims().calc_regions_and_cells( motor::math::vec2i_t( cpos ), 
-                        motor::math::vec2ui_t( _extend ) >> motor::math::vec2ui_t( 1 ) ) ;
+                        this_t::extend() >> motor::math::vec2ui_t( 1 ) ) ;
                 
                 this_t::draw_content( rac ) ;
 
@@ -270,10 +306,10 @@ namespace this_file
             {
                 auto const cpos = camera.get_position().xy() ;
 
-                motor::math::vec2f_t p0 = cpos + _preload_extend * motor::math::vec2f_t(-0.5f,-0.5f) ;
-                motor::math::vec2f_t p1 = cpos + _preload_extend * motor::math::vec2f_t(-0.5f,+0.5f) ;
-                motor::math::vec2f_t p2 = cpos + _preload_extend * motor::math::vec2f_t(+0.5f,+0.5f) ;
-                motor::math::vec2f_t p3 = cpos + _preload_extend * motor::math::vec2f_t(+0.5f,-0.5f) ;
+                motor::math::vec2f_t p0 = cpos + this_t::preload_extend() * motor::math::vec2f_t(-0.5f,-0.5f) ;
+                motor::math::vec2f_t p1 = cpos + this_t::preload_extend() * motor::math::vec2f_t(-0.5f,+0.5f) ;
+                motor::math::vec2f_t p2 = cpos + this_t::preload_extend() * motor::math::vec2f_t(+0.5f,+0.5f) ;
+                motor::math::vec2f_t p3 = cpos + this_t::preload_extend() * motor::math::vec2f_t(+0.5f,-0.5f) ;
 
                 motor::math::vec4f_t color0( 1.0f, 1.0f, 1.0f, 0.0f ) ;
                 motor::math::vec4f_t color1( 0.0f, 0.0f, 1.0f, 1.0f ) ;
@@ -473,7 +509,16 @@ namespace this_file
                     auto const p2 = p0 + motor::math::vec2f_t( d.x(), d.y() ) ;
                     auto const p3 = p0 + motor::math::vec2f_t( d.x(), 0.0f ) ;
 
-                    motor::math::vec4f_t color( 1.0f, 0.5f, 0.2f, 1.0f ) ;
+                    motor::math::vec4f_t air ( 0.0f, 0.3f, 1.0f, 1.0f  ) ;
+                    motor::math::vec4f_t gras ( 0.0f, 1.0f, 0.0f, 1.0f ) ;
+                    motor::math::vec4f_t soil ( 0.4f, 0.0f, 0.0f, 1.0f ) ;
+                    motor::math::vec4f_t cave ( 0.0f, 0.3f, 1.0f, 1.0f ) ;
+                    motor::math::vec4f_t gold ( 1.0f, 1.0f, 0.0f, 1.0f ) ;
+                    motor::math::vec4f_t coal ( 0.0f, 0.0f, 0.0f, 1.0f ) ;
+                    motor::math::vec4f_t iron ( 185.0f/255.0f, 169.0f / 255.0f, 180.0f / 255.0f, 1.0f ) ;
+                    motor::math::vec4f_t dias ( 0.0f, 0.7f, 1.0f, 1.0f ) ;
+
+                    motor::math::vec4f_t color = air ;
 
                     // evaluate implicit function
                     {
@@ -481,12 +526,44 @@ namespace this_file
                         auto const x = cur_pos.x() ;
                         auto const y = cur_pos.y() ;
 
-                        int_t f = int_t( amplitude * std::sin( x * frequency ) - y ) ;
+                        float_t amp_scale_0 = 10.0f * _gn.noise( motor::math::vec2f_t( x / 50.0f, y / 100.0f ) ) ;
+                        float_t amp_scale_1 = 10.0f * _gn.noise( motor::math::vec2f_t( x / 100.0f, y / 200.0f ) ) ;
+                        float_t amp = (amplitude * amp_scale_0)+ amp_scale_0*amp_scale_1 ;
 
-                        if ( f > 0 )
+                        int_t f = int_t( amp * std::sin( x * frequency ) - y ) ;
+                        f += int_t( noise_amplitude * _gn.noise( motor::math::vec2f_t( x / 5.0f, y / 5.0f ) ) ) ;
+
+                        int_t f_cave = int_t( noise_amplitude * _gn.noise( motor::math::vec2f_t( x / 10.0f, y / 10.0f ) ) ) ; ;
+                        
+                        int_t f_coal = int_t( noise_amplitude * 0.4f * _gn.noise( motor::math::vec2f_t( x / 15.0f, y / 15.0f ) ) ) ; 
+                        int_t f_iron = int_t( noise_amplitude * 0.4f * _gn.noise( motor::math::vec2f_t( x / 18.0f, y / 18.0f ) ) ) ; 
+                        
+                        int_t f_gold = int_t( noise_amplitude * gold_factor * 
+                            _gn.noise( motor::math::vec2f_t( x / gold_divisor, y / gold_divisor ) ) ) ;
+                        
+                        int_t f_dias = int_t( noise_amplitude * 0.22f * _gn.noise( motor::math::vec2f_t( (x+14.2f) / 15.0f, (y + 44.2f ) / 15.0f ) ) ) ;
+
+                        if ( f <= 1 && f >= 0 )
                         {
-                            color = motor::math::vec4f_t( 0.4f, 0.0f, 0.0f, 1.0f ) ;
+                            color = gras ;
                         }
+                        else if ( f > 0 )
+                        {
+                            color = soil ;
+
+                            if ( f_cave > 0 && y < -20.0f )
+                            {
+                                color = cave ;
+                            }
+                            else 
+                            {
+                                if ( f_coal > 0 && y < -50.0f ) color = coal ;
+                                if ( f_iron > 0 && y < -50.0f ) color = iron ;
+                                if ( f_gold > 0 && y < -100.0f ) color = gold ;
+                                if ( f_dias > 0 && y < -200.0f ) color = dias ;
+                            }
+                        }
+
                     }
 
                     return motor::gfx::primitive_render_2d::rect_t { { p0, p1, p2, p3 }, color } ;
@@ -504,6 +581,14 @@ namespace this_file
 
             ImGui::Begin( "Control and Info" ) ;
 
+            ImGui::Text( "Control" ) ;
+
+            {
+                int_t v = _extend_scale ;
+                ImGui::SliderInt( "Extend Scale", &v, 1, 10 ) ;
+                this_t::change_extend( _extend, v ) ;
+            }
+
             {
                 ImGui::Checkbox( "Draw Grid", &_draw_grid ) ;
             }
@@ -517,7 +602,7 @@ namespace this_file
                 {
                     if( _view_preload_extend )
                     {
-                        camera.set_dims( float_t(_preload_extend.x()), float_t(_preload_extend.y()), 1.0f, 1000.0f ) ;
+                        camera.set_dims( float_t( this_t::preload_extend().x()), float_t( this_t::preload_extend().y()), 1.0f, 1000.0f ) ;
                     }
                     else
                     {
@@ -528,13 +613,27 @@ namespace this_file
                 }
             }
 
+            ImGui::Text( "noise" ) ;
             {
                 ImGui::SliderFloat( "Amplitude", &amplitude, 1.0f, 15.0f ) ;
-                ImGui::SliderFloat( "Frequency", &frequency, 0.0f, 2.0f ) ;
+                ImGui::SliderFloat( "Frequency", &frequency, 0.01f, 0.5f ) ;
+            }
+
+            {
+                ImGui::SliderFloat( "Noise Amplitude", &noise_amplitude, 1.0f, 15.0f ) ;
+                ImGui::SliderFloat( "Gold Factor", &gold_factor, 0.1f, 0.4f ) ; 
+                ImGui::SliderFloat( "Gold Divisor", &gold_divisor, 3.0f, 50.0f ) ;
+            }
+            {
+                ImGui::SliderFloat( "Lacunarity", &fbm_lacunarity, 0.01f, 2.0f ) ;
+                ImGui::SliderFloat( "H", &fbm_h, 0.01f, 2.0f ) ;
+                ImGui::SliderFloat( "Octaves", &fbm_octaves, 1.0f, 10.0f ) ;
             }
 
             if( _view_preload_extend )
             {
+                ImGui::Text( "Preload" ) ;
+
                 static float_t mult = 1.0f ;
                 if( ImGui::SliderFloat( "Preload extend mult", &mult, 1.0f, 3.0f ) )
                 {

@@ -37,7 +37,8 @@ foreach( _test ${tests} )
       PRIVATE motor::platform
       PRIVATE motor::gfx
       PRIVATE motor::property
-      PRIVATE motor::format )
+      PRIVATE motor::format
+      PRIVATE motor::noise )
 
     set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_proto" )
 
