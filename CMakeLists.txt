@@ -32,7 +32,6 @@ add_subdirectory( "suite_tool" )
 add_subdirectory( "suite_audio" )
 add_subdirectory( "suite_format" )
 add_subdirectory( "suite_gfx" )
-add_subdirectory( "suite_proto" )
 add_subdirectory( "suite_noise" )
 add_subdirectory( "suite_profile" )
 
