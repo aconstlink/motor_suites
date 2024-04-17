@@ -62,7 +62,7 @@ namespace proto
         return internal::__material_names[ size_t( m ) ] ;
     }
 
-    struct material_properties
+    struct material_property
     {
         proto::material_form form ;
         float_t amplitude = 10.0f ;
@@ -74,11 +74,11 @@ namespace proto
     };
 
     using material_funk_t = std::function< bool_t (
-        motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t n, material_properties const & props ) > ;
+        motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t n, material_property const & props ) > ;
 
     using material_funktions_t = motor::vector < material_funk_t > ;
 
-    using material_properties_t = motor::vector< proto::material_properties > ;
+    using material_properties_t = motor::vector< proto::material_property > ;
 
     static material_properties_t get_default_properties( void_t ) noexcept
     {
@@ -164,13 +164,13 @@ namespace proto
         return material_funktions_t
         {
             // air
-            [=] ( motor::math::vec2f_cref_t, motor::noise::gradient_noise_cref_t, material_properties const & )
+            [=] ( motor::math::vec2f_cref_t, motor::noise::gradient_noise_cref_t, material_property const & )
             {
                 return true ;
             },
 
             // soil
-            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_properties const & props )
+            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_property const & props )
             {
                 float_t amp_scale_0 = props.amplitude * gn.noise( pos / props.divisor ) ;
                 float_t amp_scale_1 = props.amplitude * gn.noise( pos / props.divisor.yx() ) ;
@@ -183,7 +183,7 @@ namespace proto
             },
 
             // stone
-            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_properties const & props )
+            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_property const & props )
             {
                 float_t amp_scale_0 = props.amplitude * gn.noise( pos / props.divisor ) ;
                 float_t amp_scale_1 = props.amplitude * gn.noise( pos / props.divisor.yx() ) ;
@@ -195,7 +195,7 @@ namespace proto
                 return f > 0 ;
             },  
 
-            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_properties const & props )
+            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_property const & props )
             {
                 float_t amp_scale_0 = props.amplitude * gn.noise( pos / props.divisor ) ;
                 float_t amp_scale_1 = props.amplitude * gn.noise( pos / props.divisor.yx() ) ;
@@ -208,7 +208,7 @@ namespace proto
             },
 
             // grass
-            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_properties const & props )
+            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_property const & props )
             {
                 auto p = ( (pos + props.offset) / props.divisor ) ;
                 int_t v = int_t( props.amplitude * props.factor * gn.noise( p ) ) ;
@@ -216,7 +216,7 @@ namespace proto
             },
 
             // coal
-            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_properties const & props )
+            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_property const & props )
             {
                 auto p = ( (pos + props.offset) / props.divisor ) ;
                 int_t v = int_t( props.amplitude * props.factor * gn.noise( p ) ) ;
@@ -224,7 +224,7 @@ namespace proto
             },
 
             // iron
-            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_properties const & props )
+            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_property const & props )
             {
                 auto p = ( (pos + props.offset) / props.divisor ) ;
                 int_t v = int_t( props.amplitude * props.factor * gn.noise( p ) ) ;
@@ -232,7 +232,7 @@ namespace proto
             },
 
             // gold
-            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_properties const & props )
+            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_property const & props )
             {
                 auto p = ( (pos + props.offset) / props.divisor ) ;
                 int_t v = int_t( props.amplitude * props.factor * gn.noise( p ) ) ;
@@ -240,7 +240,7 @@ namespace proto
             },
 
             // diamant
-            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_properties const & props )
+            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_property const & props )
             {
                 auto p = ( (pos + props.offset) / props.divisor ) ;
                 int_t v = int_t( props.amplitude * props.factor * gn.noise( p ) ) ;
@@ -291,6 +291,16 @@ namespace this_file
         float_t fbm_lacunarity = 0.5f ;
         float_t fbm_h = 0.5f ;
         float_t fbm_octaves = 0.5f ;
+
+        proto::material_property _cave_prop =
+        {
+            proto::material_form::solid,
+            10.0f,
+            10.0f,
+            motor::math::vec2f_t( 18.0f, 18.0f ),
+            motor::math::vec2f_t( 0.0f ),
+            motor::math::vec4f_t( 185.0f / 255.0f, 169.0f / 255.0f, 180.0f / 255.0f, 1.0f )
+        } ;
 
         proto::material_properties_t _material_properties = proto::get_default_properties() ;
         proto::material_funktions_t _material_funks = proto::get_default_material_funktions() ;
@@ -738,9 +748,6 @@ namespace this_file
                     motor::math::vec4f_t soil ( 0.4f, 0.0f, 0.0f, 1.0f ) ;
                     motor::math::vec4f_t cave ( 0.0f, 0.3f, 1.0f, 1.0f ) ;
 
-
-
-
                     motor::math::vec4f_t gras ( 0.0f, 1.0f, 0.0f, 1.0f ) ;
                     motor::math::vec4f_t gold ( 1.0f, 1.0f, 0.0f, 1.0f ) ;
                     motor::math::vec4f_t coal ( 0.0f, 0.0f, 0.0f, 1.0f ) ;
@@ -759,35 +766,36 @@ namespace this_file
                         float_t amp_scale_1 = 10.0f * _gn.noise( motor::math::vec2f_t( x / 100.0f, y / 200.0f ) ) ;
                         float_t amp = (amplitude * amp_scale_0)+ amp_scale_0*amp_scale_1 ;
 
-                        int_t f = int_t( amp * std::sin( x * frequency ) - y ) ;
-                        f += int_t( noise_amplitude * _gn.noise( motor::math::vec2f_t( x / 5.0f, y / 5.0f ) ) ) ;
+                        
+                        int_t f = int_t( y ) ;
 
-                        int_t f_cave = int_t( noise_amplitude * _gn.noise( motor::math::vec2f_t( x / 10.0f, y / 10.0f ) ) ) ; ;
+                        f += int_t( amp * std::sin( x * frequency ) ) ;
+                        f += int_t( noise_amplitude * _gn.noise( motor::math::vec2f_t( x / 10.0f, y / 10.0f ) ) ) ;
                         
-                        #if 0
-                        int_t f_coal = int_t( noise_amplitude * 0.4f * _gn.noise( motor::math::vec2f_t( x / 15.0f, y / 15.0f ) ) ) ; 
-                        int_t f_iron = int_t( noise_amplitude * 0.4f * _gn.noise( motor::math::vec2f_t( x / 18.0f, y / 18.0f ) ) ) ; 
-                        
-                        int_t f_gold = int_t( noise_amplitude * gold_factor * 
-                            _gn.noise( motor::math::vec2f_t( x / gold_divisor, y / gold_divisor ) ) ) ;
-                        
-                        int_t f_dias = int_t( noise_amplitude * 0.22f * _gn.noise( motor::math::vec2f_t( (x+14.2f) / 15.0f, (y + 44.2f ) / 15.0f ) ) ) ;
-                        #endif
+                        int_t f_cave = f ;
+
+                        // cave function
+                        {
+                            motor::math::vec2f_t const p = ( motor::math::vec2f_t( cur_pos ) + _cave_prop.offset ) / _cave_prop.divisor ;
+                            f_cave = int_t( _cave_prop.amplitude * _gn.noise( p ) ) ;
+
+                            //f = std::max( f, f_cave ) ;
+                            //f = f_cave ;
+                        }
 
                         // over solid material surface
                         // aka. in gas space
-                        if ( f < 0 )
-                        {
+                        
 
-                        }
+                        #if 1
                         // on solid material surface
-                        else if ( f <= 1 && f >= 0 )
+                        if ( f <= 1 && f >= 0 )
                         {
                             color = gras ;
                         }
 
                         // under solid material surface
-                        else if ( f > 0 )
+                        else if ( f < 0 )
                         {
                             color = soil ;
 
@@ -809,7 +817,7 @@ namespace this_file
                                 }
                             }
                         }
-
+                        #endif
                     }
 
                     return motor::gfx::primitive_render_2d::rect_t { { p0, p1, p2, p3 }, color } ;
@@ -821,7 +829,7 @@ namespace this_file
 
         }
 
-        void_t draw_props_imgui( char const * name, proto::material_properties & props )
+        void_t draw_props_imgui( char const * name, proto::material_property & props )
         {
             {
                 float_t v = props.amplitude ;
@@ -843,6 +851,32 @@ namespace this_file
             {
                 float_t v[ 2 ] = { props.offset.x(), props.offset.y() } ;
                 ImGui::SliderFloat2( "Offset", v, -100.0f, 100.0f ) ;
+                props.offset = motor::math::vec2f_t( v[ 0 ], v[ 1 ] ) ;
+            }
+        }
+
+        void_t draw_props_imgui_cave( char const * name, proto::material_property & props )
+        {
+            {
+                float_t v = props.amplitude ;
+                ImGui::SliderFloat( "Amplitude##cave", &v, 1.0f, 50.0f ) ;
+                props.amplitude = v ;
+            }
+
+            {
+                float_t v = props.factor ;
+                ImGui::SliderFloat( "Factor##cave", &v, 0.1f, 10.4f ) ;
+                props.factor = v ;
+            }
+            {
+                float_t v[ 2 ] = { props.divisor.x(), props.divisor.y() } ;
+                ImGui::SliderFloat2( "Divisor##cave", v, 3.0f, 50.0f ) ;
+                props.divisor = motor::math::vec2f_t( v[ 0 ], v[ 1 ] ) ;
+            }
+
+            {
+                float_t v[ 2 ] = { props.offset.x(), props.offset.y() } ;
+                ImGui::SliderFloat2( "Offset##cave", v, -100.0f, 100.0f ) ;
                 props.offset = motor::math::vec2f_t( v[ 0 ], v[ 1 ] ) ;
             }
         }
@@ -875,6 +909,9 @@ namespace this_file
                 }
 
                 this_t::draw_props_imgui( items[ item_current_idx ], _material_properties[ item_current_idx ] ) ;
+
+                ImGui::Text( "cave" );
+                this_t::draw_props_imgui_cave( "cave", _cave_prop ) ;
             }
             ImGui::End() ;
 
@@ -916,7 +953,7 @@ namespace this_file
             ImGui::Text( "noise" ) ;
             {
                 ImGui::SliderFloat( "Amplitude", &amplitude, 1.0f, 15.0f ) ;
-                ImGui::SliderFloat( "Frequency", &frequency, 0.01f, 0.5f ) ;
+                ImGui::SliderFloat( "Frequency", &frequency, 0.001f, 0.1f ) ;
             }
 
             {
