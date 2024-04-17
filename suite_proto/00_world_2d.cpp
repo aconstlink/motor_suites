@@ -26,6 +26,230 @@
 
 #define DRAW_SINGLE 0
 
+namespace proto
+{
+    using namespace motor::core::types ;
+
+    enum class material_form
+    {
+        gass,
+        liquid,
+        solid
+    } ;
+
+    enum class material : size_t
+    {
+        air,
+        soil,
+        stone,
+        grass,
+        coal,
+        iron,
+        gold,
+        diamant,
+        num_materials
+    };
+
+    namespace internal
+    {
+        static char const * __material_names[] = {
+            "air", "soil", "stone", "grass", "coal", "iron", "gold", "diamant",
+        } ;
+    }
+
+    static motor::string_t to_string( proto::material const m ) noexcept
+    {
+        return internal::__material_names[ size_t( m ) ] ;
+    }
+
+    struct material_properties
+    {
+        proto::material_form form ;
+        float_t amplitude = 10.0f ;
+        float_t factor = 0.2f ;
+
+        motor::math::vec2f_t  divisor = 23.0f ;
+        motor::math::vec2f_t  offset = 0.0f ;
+        motor::math::vec4f_t color ;
+    };
+
+    using material_funk_t = std::function< bool_t (
+        motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t n, material_properties const & props ) > ;
+
+    using material_funktions_t = motor::vector < material_funk_t > ;
+
+    using material_properties_t = motor::vector< proto::material_properties > ;
+
+    static material_properties_t get_default_properties( void_t ) noexcept
+    {
+        return material_properties_t
+        {
+            // air
+            {
+                proto::material_form::gass,
+                1.0f,
+                1.0f,
+                motor::math::vec2f_t( 23.0f ),
+                motor::math::vec2f_t( 0.0f ),
+                motor::math::vec4f_t( 0.0f, 0.3f, 1.0f, 1.0f )
+            },
+            // soil
+            {
+                proto::material_form::solid,
+                10.0f,
+                1.0f,
+                motor::math::vec2f_t( 50.0f, 100.0f ),
+                motor::math::vec2f_t( 0.0f ),
+                motor::math::vec4f_t( 101.0f, 67.0f, 33.0f, 255.0f ) / 255.0f
+            },
+            // stone
+            {
+                proto::material_form::solid,
+                10.0f,
+                1.0f,
+                motor::math::vec2f_t( 50.0f, 100.0f ),
+                motor::math::vec2f_t( 0.0f ),
+                motor::math::vec4f_t( 101.0f, 67.0f, 33.0f, 255.0f ) / 255.0f
+            },
+                // grass
+            {
+                proto::material_form::solid,
+                10.0f,
+                1.0f,
+                motor::math::vec2f_t( 50.0f, 100.0f ),
+                motor::math::vec2f_t( 0.0f ),
+                motor::math::vec4f_t( 0.0f, 1.0f, 0.0f, 1.0f )
+            },
+                // coal
+            {
+                proto::material_form::solid,
+                10.0f,
+                0.4f,
+                motor::math::vec2f_t( 15.0f, 15.0f ),
+                motor::math::vec2f_t( 0.0f ),
+                motor::math::vec4f_t( 0.0f, 0.0f, 0.0f, 1.0f )
+            },
+                // iron
+            {
+                proto::material_form::solid,
+                10.0f,
+                0.4f,
+                motor::math::vec2f_t( 18.0f, 18.0f ),
+                motor::math::vec2f_t( 0.0f ),
+                motor::math::vec4f_t( 185.0f / 255.0f, 169.0f / 255.0f, 180.0f / 255.0f, 1.0f )
+            },
+                // gold
+            {
+                proto::material_form::solid,
+                10.0f,
+                0.2f,
+                motor::math::vec2f_t( 23.0f, 23.0f ),
+                motor::math::vec2f_t( 0.0f ),
+                motor::math::vec4f_t( 1.0f, 1.0f, 0.0f, 1.0f )
+            },
+                // diamant
+            {
+                proto::material_form::solid,
+                10.0f,
+                0.22f,
+                motor::math::vec2f_t( 15.0f, 15.0f ),
+                motor::math::vec2f_t( 14.2f, 44.2f ),
+                motor::math::vec4f_t( 0.0f, 0.7f, 1.0f, 1.0f )
+            }
+        };
+    }
+
+    static material_funktions_t get_default_material_funktions( void_t ) noexcept
+    {
+        return material_funktions_t
+        {
+            // air
+            [=] ( motor::math::vec2f_cref_t, motor::noise::gradient_noise_cref_t, material_properties const & )
+            {
+                return true ;
+            },
+
+            // soil
+            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_properties const & props )
+            {
+                float_t amp_scale_0 = props.amplitude * gn.noise( pos / props.divisor ) ;
+                float_t amp_scale_1 = props.amplitude * gn.noise( pos / props.divisor.yx() ) ;
+
+                float_t amp = ( props.amplitude * amp_scale_0 ) + amp_scale_0 * amp_scale_1 ;
+
+                int_t f = int_t( amp * std::sin( pos.x() /** frequency*/ ) - pos.y() ) ;
+
+                return f > 0 ;
+            },
+
+            // stone
+            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_properties const & props )
+            {
+                float_t amp_scale_0 = props.amplitude * gn.noise( pos / props.divisor ) ;
+                float_t amp_scale_1 = props.amplitude * gn.noise( pos / props.divisor.yx() ) ;
+
+                float_t amp = ( props.amplitude * amp_scale_0 ) + amp_scale_0 * amp_scale_1 ;
+
+                int_t f = int_t( amp * std::sin( pos.x() /** frequency*/ ) - pos.y() ) ;
+
+                return f > 0 ;
+            },  
+
+            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_properties const & props )
+            {
+                float_t amp_scale_0 = props.amplitude * gn.noise( pos / props.divisor ) ;
+                float_t amp_scale_1 = props.amplitude * gn.noise( pos / props.divisor.yx() ) ;
+
+                float_t amp = ( props.amplitude * amp_scale_0 ) + amp_scale_0 * amp_scale_1 ;
+
+                int_t f = int_t( amp * std::sin( pos.x() /** frequency*/ ) - pos.y() ) ;
+
+                return f > 0 ;
+            },
+
+            // grass
+            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_properties const & props )
+            {
+                auto p = ( (pos + props.offset) / props.divisor ) ;
+                int_t v = int_t( props.amplitude * props.factor * gn.noise( p ) ) ;
+                return v > 0 ;
+            },
+
+            // coal
+            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_properties const & props )
+            {
+                auto p = ( (pos + props.offset) / props.divisor ) ;
+                int_t v = int_t( props.amplitude * props.factor * gn.noise( p ) ) ;
+                return v > 0 && pos.y() < -50.0f ;
+            },
+
+            // iron
+            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_properties const & props )
+            {
+                auto p = ( (pos + props.offset) / props.divisor ) ;
+                int_t v = int_t( props.amplitude * props.factor * gn.noise( p ) ) ;
+                return v > 0 && pos.y() < -50.0f ;
+            },
+
+            // gold
+            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_properties const & props )
+            {
+                auto p = ( (pos + props.offset) / props.divisor ) ;
+                int_t v = int_t( props.amplitude * props.factor * gn.noise( p ) ) ;
+                return v > 0 && pos.y() < -100.0f ;
+            },
+
+            // diamant
+            [=] ( motor::math::vec2f_cref_t pos, motor::noise::gradient_noise_cref_t gn, material_properties const & props )
+            {
+                auto p = ( (pos + props.offset) / props.divisor ) ;
+                int_t v = int_t( props.amplitude * props.factor * gn.noise( p ) ) ;
+                return v > 0 && pos.y() < -200.0f ;
+            }
+        } ;
+    }
+}
+
 namespace this_file
 {
     using namespace motor::core::types ;
@@ -63,12 +287,13 @@ namespace this_file
         float_t frequency = 0.073f ;
 
         float_t noise_amplitude = 10.0f ;
-        float_t gold_factor = 0.2f ;
-        float_t gold_divisor = 23.0f ;
 
         float_t fbm_lacunarity = 0.5f ;
         float_t fbm_h = 0.5f ;
         float_t fbm_octaves = 0.5f ;
+
+        proto::material_properties_t _material_properties = proto::get_default_properties() ;
+        proto::material_funktions_t _material_funks = proto::get_default_material_funktions() ;
 
         motor::noise::gradient_noise_t _gn = motor::noise::gradient_noise_t( 376482, 8 ) ;
         motor::noise::fbm< motor::noise::gradient_noise_t > _fbm ;
@@ -80,8 +305,8 @@ namespace this_file
                 motor::application::window_info_t wi ;
                 wi.x = 100 ;
                 wi.y = 100 ;
-                wi.w = 800 ;
-                wi.h = 600 ;
+                wi.w = 1240 ;
+                wi.h = 800 ;
                 wi.gen = motor::application::graphics_generation::gen4_auto ;
 
                 this_t::send_window_message( this_t::create_window( wi ), [&]( motor::application::app::window_view & wnd )
@@ -510,9 +735,13 @@ namespace this_file
                     auto const p3 = p0 + motor::math::vec2f_t( d.x(), 0.0f ) ;
 
                     motor::math::vec4f_t air ( 0.0f, 0.3f, 1.0f, 1.0f  ) ;
-                    motor::math::vec4f_t gras ( 0.0f, 1.0f, 0.0f, 1.0f ) ;
                     motor::math::vec4f_t soil ( 0.4f, 0.0f, 0.0f, 1.0f ) ;
                     motor::math::vec4f_t cave ( 0.0f, 0.3f, 1.0f, 1.0f ) ;
+
+
+
+
+                    motor::math::vec4f_t gras ( 0.0f, 1.0f, 0.0f, 1.0f ) ;
                     motor::math::vec4f_t gold ( 1.0f, 1.0f, 0.0f, 1.0f ) ;
                     motor::math::vec4f_t coal ( 0.0f, 0.0f, 0.0f, 1.0f ) ;
                     motor::math::vec4f_t iron ( 185.0f/255.0f, 169.0f / 255.0f, 180.0f / 255.0f, 1.0f ) ;
@@ -535,6 +764,7 @@ namespace this_file
 
                         int_t f_cave = int_t( noise_amplitude * _gn.noise( motor::math::vec2f_t( x / 10.0f, y / 10.0f ) ) ) ; ;
                         
+                        #if 0
                         int_t f_coal = int_t( noise_amplitude * 0.4f * _gn.noise( motor::math::vec2f_t( x / 15.0f, y / 15.0f ) ) ) ; 
                         int_t f_iron = int_t( noise_amplitude * 0.4f * _gn.noise( motor::math::vec2f_t( x / 18.0f, y / 18.0f ) ) ) ; 
                         
@@ -542,11 +772,21 @@ namespace this_file
                             _gn.noise( motor::math::vec2f_t( x / gold_divisor, y / gold_divisor ) ) ) ;
                         
                         int_t f_dias = int_t( noise_amplitude * 0.22f * _gn.noise( motor::math::vec2f_t( (x+14.2f) / 15.0f, (y + 44.2f ) / 15.0f ) ) ) ;
+                        #endif
 
-                        if ( f <= 1 && f >= 0 )
+                        // over solid material surface
+                        // aka. in gas space
+                        if ( f < 0 )
+                        {
+
+                        }
+                        // on solid material surface
+                        else if ( f <= 1 && f >= 0 )
                         {
                             color = gras ;
                         }
+
+                        // under solid material surface
                         else if ( f > 0 )
                         {
                             color = soil ;
@@ -557,10 +797,16 @@ namespace this_file
                             }
                             else 
                             {
-                                if ( f_coal > 0 && y < -50.0f ) color = coal ;
-                                if ( f_iron > 0 && y < -50.0f ) color = iron ;
-                                if ( f_gold > 0 && y < -100.0f ) color = gold ;
-                                if ( f_dias > 0 && y < -200.0f ) color = dias ;
+                                size_t const b = size_t( proto::material::coal ) ;
+                                size_t const e = size_t( proto::material::num_materials ) ;
+
+                                for ( size_t m = b; m < e; ++m )
+                                {
+                                    if ( _material_funks[ m ]( cur_pos, _gn, _material_properties[m] ) )
+                                    {
+                                        color = _material_properties[ m ].color ;
+                                    }
+                                }
                             }
                         }
 
@@ -575,9 +821,63 @@ namespace this_file
 
         }
 
+        void_t draw_props_imgui( char const * name, proto::material_properties & props )
+        {
+            {
+                float_t v = props.amplitude ;
+                ImGui::SliderFloat( "Amplitude", &v, 1.0f, 15.0f ) ;
+                props.amplitude = v ;
+            }
+
+            {
+                float_t v = props.factor ;
+                ImGui::SliderFloat( "Factor", &v, 0.1f, 0.4f ) ;
+                props.factor = v ;
+            }
+            {
+                float_t v[ 2 ] = { props.divisor.x(), props.divisor.y() } ;
+                ImGui::SliderFloat2( "Divisor", v, 3.0f, 50.0f ) ;
+                props.divisor = motor::math::vec2f_t( v[0], v[1] ) ;
+            }
+
+            {
+                float_t v[ 2 ] = { props.offset.x(), props.offset.y() } ;
+                ImGui::SliderFloat2( "Offset", v, -100.0f, 100.0f ) ;
+                props.offset = motor::math::vec2f_t( v[ 0 ], v[ 1 ] ) ;
+            }
+        }
+
         virtual bool_t on_tool( this_t::window_id_t const wid, motor::application::app::tool_data_ref_t ) noexcept 
         { 
             if( wid != 0 ) return false ;
+
+            if ( ImGui::Begin( "Materials" ) )
+            {
+                static int item_current_idx = 0;
+                auto * items = proto::internal::__material_names ;
+                const char * combo_preview_value = items[ item_current_idx] ;
+
+                if ( ImGui::BeginCombo( "material_combo_box", combo_preview_value, 0 ) )
+                {
+                    for ( int n = 0; n < int(proto::material::num_materials); n++ )
+                    {
+                        const bool is_selected = ( item_current_idx == n );
+                        if ( ImGui::Selectable( items[ n ], is_selected ) )
+                            item_current_idx = n;
+
+                        // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+                        if ( is_selected )
+                        {
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+
+                this_t::draw_props_imgui( items[ item_current_idx ], _material_properties[ item_current_idx ] ) ;
+            }
+            ImGui::End() ;
+
 
             ImGui::Begin( "Control and Info" ) ;
 
@@ -585,7 +885,7 @@ namespace this_file
 
             {
                 int_t v = _extend_scale ;
-                ImGui::SliderInt( "Extend Scale", &v, 1, 10 ) ;
+                ImGui::SliderInt( "Extend Scale", &v, 1, 3 ) ;
                 this_t::change_extend( _extend, v ) ;
             }
 
