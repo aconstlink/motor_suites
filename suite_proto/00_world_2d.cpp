@@ -921,8 +921,6 @@ namespace this_file
 
             {
                 ImGui::SliderFloat( "Noise Amplitude", &noise_amplitude, 1.0f, 15.0f ) ;
-                ImGui::SliderFloat( "Gold Factor", &gold_factor, 0.1f, 0.4f ) ; 
-                ImGui::SliderFloat( "Gold Divisor", &gold_divisor, 3.0f, 50.0f ) ;
             }
             {
                 ImGui::SliderFloat( "Lacunarity", &fbm_lacunarity, 0.01f, 2.0f ) ;
