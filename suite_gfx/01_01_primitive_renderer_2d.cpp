@@ -103,16 +103,19 @@ namespace this_file
             #else
             pr.draw_lines( 0, 1000, [&] ( size_t const i ) 
             {
+                float_t const x = float_t( i % 250 ) ;
+                float_t const y = float_t( i / 250 ) ;
+
                 auto const color = motor::math::vec4f_t(
                     ( inc + float_t( i + 600 ) / 1000.0f ) / 2.0f,
                     ( inc + float_t( ( i + 300 ) % 1000 ) / 1000.0f ) / 2.0f,
                     ( inc + float_t( ( i + 900 ) % 1000 ) / 1000.0f ) / 2.0f,
                     1.0f ) ;
 
-                auto const p0 = pos + motor::math::vec2f_t( 0.0f, -0.4f ) ;
-                auto const p1 = pos + motor::math::vec2f_t( 0.0f, +0.4f ) ;
+                auto const p = pos + motor::math::vec2f_t( float_t( x*4.0f ) / 500.0f, y * 0.25f ) ;
 
-                pos += motor::math::vec2f_t( float_t( i ) / 1000.0f, 0.0f ) ;
+                auto const p0 = p + motor::math::vec2f_t( 0.0f, -0.2f ) ;
+                auto const p1 = p + motor::math::vec2f_t( 0.0f, +0.2f ) ;
 
                 return motor::gfx::line_render_2d::line_t { { p0, p1 }, color } ;
             } ) ;
@@ -146,10 +149,12 @@ namespace this_file
                     ( float_t( ( idx + 900 ) % 1000 ) / 1000.0f ) / 2.0f,
                     1.0f ) ;
 
-                auto const p0 = pos + motor::math::vec2f_t( 0.0f, -0.4f ) ;
-                auto const p1 = pos + motor::math::vec2f_t( 0.0f, +0.4f ) ;
+                auto const p = pos - motor::math::vec2f_t( ( float_t( i ) / 1000.0f ), 0.0f ) ;
 
-                pos -= motor::math::vec2f_t( ( float_t( i ) / 1000.0f ), 0.0f ) ;
+                auto const p0 = p + motor::math::vec2f_t( 0.0f, -0.4f ) ;
+                auto const p1 = p + motor::math::vec2f_t( 0.0f, +0.4f ) ;
+
+                
 
                 return motor::gfx::line_render_2d::line_t { { p0, p1 }, color } ;
             } ) ;
