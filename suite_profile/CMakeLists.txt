@@ -1,7 +1,7 @@
 
 set( tests
-    
     "00_manager.cpp"
+    "01_vector_timing.cpp"
     )
 
 foreach( _test ${tests} )

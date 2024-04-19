@@ -6,6 +6,7 @@ set( subdirs
     "01_basics"
     "02_containers"
     "03_some_basic_tests"
+    "04_vector_pod"
     )
 
 if( WIN32 )
