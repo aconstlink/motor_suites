@@ -345,6 +345,7 @@ namespace this_file
                         (int) captured_frequencies.size(), 0, 0, 0.0f, 1.0f, ImVec2( ImGui::GetWindowWidth(), 100.0f ) ) ;
                 }
 
+                #if 0
                 // print frequencies captured 4th - quater size
                 {
                     ImGui::PlotHistogram( "Frequencies Captured 4", captured_frequencies.data(),
@@ -363,6 +364,7 @@ namespace this_file
                         (int) captured_frequencies_var.size(), 0, 0, 0.0f, 1.0f, ImVec2( ImGui::GetWindowWidth(), 100.0f ) ) ;
                 }
 
+                #endif
                 {
                     ImGui::Checkbox( "Kick", &asys.is_kick ) ; ImGui::SameLine() ;
                     ImGui::Checkbox( "Mid", &asys.is_lowm ) ; ImGui::SameLine() ;
