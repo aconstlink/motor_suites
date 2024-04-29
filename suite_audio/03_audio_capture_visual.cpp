@@ -36,6 +36,8 @@ namespace this_file
         motor::vector< float_t > captured_frequencies_avg ;
         motor::vector< float_t > captured_frequencies_var ;
 
+        // based on idea of:
+        // https://www.parallelcube.com/2018/03/30/beat-detection-algorithm/
         struct analysis
         {
         public: //
@@ -267,8 +269,6 @@ namespace this_file
                 #endif
             }
 
-
-
             // do threshold
             {
                 #if USE_HISTORY_BUFFER
@@ -342,7 +342,7 @@ namespace this_file
                 // print frequencies captured
                 {
                     ImGui::PlotHistogram( "Frequencies Captured", captured_frequencies.data(),
-                        (int) captured_frequencies.size(), 0, 0, 0.0f, 1.0f, ImVec2( ImGui::GetWindowWidth(), 100.0f ) ) ;
+                        (int) captured_frequencies.size()>>2, 0, 0, 0.0f, 1.0f, ImVec2( ImGui::GetWindowWidth(), 100.0f ) ) ;
                 }
 
                 #if 0
