@@ -35,6 +35,8 @@ add_subdirectory( "suite_gfx" )
 add_subdirectory( "suite_noise" )
 add_subdirectory( "suite_profile" )
 add_subdirectory( "suite_network" )
+add_subdirectory( "suite_social" )
+
 
 install( EXPORT suites-targets DESTINATION "cmake" )
 

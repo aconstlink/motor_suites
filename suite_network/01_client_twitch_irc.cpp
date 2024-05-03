@@ -1,6 +1,10 @@
 
+
+
 #include <motor/network/typedefs.h>
 #include <motor/platform/network/network_module_creator.hpp>
+
+#include "tokens.hpp"
 
 using namespace motor::core::types ;
 
@@ -43,27 +47,9 @@ namespace this_file
         virtual motor::network::transmit_result on_send(
             byte_cptr_t & buffer, size_t & num_sib ) noexcept
         {
-            #if 0
-            //if ( !_pass_send )
+            if ( _pass_send == 0 )
             {
-                data = "PASS oauth:3016fimc2m9nz0oqftji6f5wtuqod8\r\nNICK aconstlink_chatbot\r\n" ;
-                buffer = byte_ptr_t( data.c_str() ) ;
-                num_sib = data.size() ;
-                _pass_send = true ;
-                return motor::network::transmit_result::ok ;
-            }
-            #else
-            if ( _pass_send == 100 )
-            {
-                data = "CAP REQ :twitch.tv/membership twitch.tv/tags twitch.tv/commands\r\n" ;
-                buffer = byte_ptr_t( data.c_str() ) ;
-                num_sib = data.size() ;
-                ++_pass_send ;
-                return motor::network::transmit_result::ok ;
-            }
-            else if ( _pass_send == 0 )
-            {
-                data = "PASS oauth:8qj8b15ogxlutt4994ingutukotmxm\r\n" ;
+                data = "PASS oauth:"+ tokens::twitch() +"\r\n" ;
                 buffer = byte_ptr_t( data.c_str() ) ;
                 num_sib = data.size() ;
                 ++_pass_send ;
@@ -85,7 +71,43 @@ namespace this_file
                 ++_pass_send ;
                 return motor::network::transmit_result::ok ;
             }
+            #if 1
+            else if ( _pass_send == 3 )
+            {
+                data = "CAP REQ :twitch.tv/membership twitch.tv/tags twitch.tv/commands\r\n" ;
+                buffer = byte_ptr_t( data.c_str() ) ;
+                num_sib = data.size() ;
+                ++_pass_send ;
+                return motor::network::transmit_result::ok ;
+            }
+            #else
+            else if ( _pass_send == 3 ) ++_pass_send ;
             #endif
+            else if ( _pass_send == 4 )
+            {
+                data = "PRIVMSG #aconstlink : HeyGuys <3 PartyTime\r\n" ;
+                buffer = byte_ptr_t( data.c_str() ) ;
+                num_sib = data.size() ;
+                ++_pass_send ;
+                return motor::network::transmit_result::ok ;
+            }
+            else if ( _pass_send == 5 )
+            {
+                data = "PRIVMSG #aconstlink :/color blue\r\n" ;
+                buffer = byte_ptr_t( data.c_str() ) ;
+                num_sib = data.size() ;
+                ++_pass_send ;
+                return motor::network::transmit_result::ok ;
+            }
+            else if ( _pass_send == 6 )
+            {
+                data = "PRIVMSG #aconstlink : HeyGuys <3 PartyTime test\r\n" ;
+                buffer = byte_ptr_t( data.c_str() ) ;
+                num_sib = data.size() ;
+                ++_pass_send ;
+                return motor::network::transmit_result::ok ;
+            }
+
             return motor::network::transmit_result::have_nothing ;
         }
     };

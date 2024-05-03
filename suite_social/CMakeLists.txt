@@ -1,10 +1,7 @@
 
 
 set( tests
-    "00_client_localhost.cpp"
-    "00_server_localhost.cpp"
-    "01_client_twitch_irc.cpp"
-    #"01_server_client_app.cpp"
+    "00_twitch_irc_parser.cpp"
     )
 
 foreach( _test ${tests} )
@@ -22,9 +19,10 @@ foreach( _test ${tests} )
     target_link_libraries( ${app_name} 
       PRIVATE motor::application
       PRIVATE motor::platform
-      PRIVATE motor::io )
+      PRIVATE motor::io
+      PRIVATE motor::social)
 
-    set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_network" )
+    set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_social" )
 
     set( data_path ${CMAKE_CURRENT_LIST_DIR} ) 
     target_compile_definitions( ${app_name} PRIVATE -DDATAPATH="${data_path}")
