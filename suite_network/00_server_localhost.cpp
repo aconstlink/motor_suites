@@ -75,7 +75,7 @@ namespace this_file
                 cd.do_handshake_sent = true ;
             }
 
-            return motor::network::transmit_result::proceed ;
+            return motor::network::transmit_result::ok ;
         }
     };
 }

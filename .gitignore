@@ -32,3 +32,4 @@
 *.app
 *.mdb
 *.vscode
+suite_network/tokens.hpp

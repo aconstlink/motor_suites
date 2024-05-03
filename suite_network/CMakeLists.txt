@@ -3,6 +3,8 @@
 set( tests
     "00_client_localhost.cpp"
     "00_server_localhost.cpp"
+    "01_client_twitch_irc.cpp"
+    "tokens.hpp"
     #"01_server_client_app.cpp"
     )
 

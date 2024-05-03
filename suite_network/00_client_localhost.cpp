@@ -6,25 +6,51 @@ using namespace motor::core::types ;
 
 bool_t done = false ;
 
-bool_t handshake_recv = false ;
-bool_t handshake_sent = false ;
-
-auto const send_funk = [] ( byte_ptr_t ptr, size_t & send_sib, size_t const max_sib ) -> motor::network::transmit_result
+namespace this_file
 {
-
-    ptr[ 0 ] = 1 ;
-    ptr[ 1 ] = 2 ;
-    ptr[ 2 ] = 3 ;
-    send_sib = 3 ;
-
-    if ( handshake_recv && !handshake_sent )
+    class my_client : public motor::network::iclient_handler
     {
+        motor::string_t data ;
 
-    }
+        bool_t _pass_send = true ;
 
-    return motor::network::transmit_result::proceed ;
-} ;
+    public:
 
+        my_client( void_t ) noexcept {
+
+        }
+
+        virtual void_t on_connect( motor::network::connect_result const res ) noexcept
+        {
+            motor::log::global_t::status( "Connection : " + motor::network::to_string( res ) ) ;
+        }
+
+        virtual void_t on_close( void_t ) noexcept
+        {
+            motor::log::global_t::status( "Connection closed" ) ;
+        }
+
+        virtual motor::network::receive_result on_receive(
+            byte_cptr_t buffer, size_t const sib ) noexcept
+        {
+            motor::string_t message( (char_cptr_t)buffer, sib ) ;
+            return motor::network::receive_result::ok ;
+        }
+
+        virtual motor::network::transmit_result on_send(
+            byte_cptr_t & buffer, size_t & num_sib ) noexcept
+        {
+            if ( !_pass_send )
+            {
+                return motor::network::transmit_result::ok ;
+            }
+            return motor::network::transmit_result::have_nothing ;
+        }
+    };
+}
+
+// need to transfer to client handler.
+#if 0
 auto const recv_funk = [&] ( byte_cptr_t data, size_t const sib ) -> motor::network::receive_result
 {
     if ( !handshake_recv )
@@ -43,6 +69,7 @@ auto const recv_funk = [&] ( byte_cptr_t data, size_t const sib ) -> motor::netw
     
     return motor::network::receive_result::ok ;
 } ;
+#endif
 
 int main( int argc, char ** argv )
 {
@@ -52,9 +79,9 @@ int main( int argc, char ** argv )
     if ( mod == nullptr ) return 1 ;
 
     mod->create_tcp_client( motor::network::create_tcp_client_info { 
-        "", 
-        motor::network::ipv4::binding_point::localhost_at( 3456 ),
-        send_funk, recv_funk } ) ;
+        "my_client", 
+        motor::network::ipv4::binding_point_host { "3456", "localhost" },
+        motor::shared( this_file::my_client() ) } ) ;
 
     while ( !done )
     {
