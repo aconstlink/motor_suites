@@ -4,6 +4,7 @@ set( tests
     "00_client_localhost.cpp"
     "00_server_localhost.cpp"
     "01_client_twitch_irc.cpp"
+    "xx_server_localhost_just_listen.cpp"
     #"01_server_client_app.cpp"
     )
 
@@ -20,6 +21,7 @@ foreach( _test ${tests} )
 
     add_executable( ${app_name} ${_test} ) 
     target_link_libraries( ${app_name} 
+      PRIVATE motor::social
       PRIVATE motor::application
       PRIVATE motor::platform
       PRIVATE motor::io )

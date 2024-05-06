@@ -3,6 +3,7 @@
 
 #include <motor/network/typedefs.h>
 #include <motor/platform/network/network_module_creator.hpp>
+#include <motor/social/twitch/irc_parser.hpp>
 
 #include "tokens.hpp"
 
@@ -19,11 +20,14 @@ namespace this_file
 
         size_t _pass_send = 0 ;
 
+        bool_t _require_pong = false ;
+        motor::string_t _pong = "" ;
+
+        motor::social::twitch::irc_parser_t parser ;
+
     public:
 
-        my_client( void_t ) noexcept {
-
-        }
+        my_client( void_t ) noexcept {}
 
         virtual void_t on_connect( motor::network::connect_result const res ) noexcept
         {
@@ -39,8 +43,25 @@ namespace this_file
             byte_cptr_t buffer, size_t const sib ) noexcept
         {
             motor::string_t message( (char_cptr_t)buffer, sib ) ;
+            
+            parser.parse( message ) ;
+            
+            parser.for_each( [&]( motor::social::twitch::irc_command const c, motor::string_in_t param )
+            {
+                if( c == motor::social::twitch::irc_command::ping )
+                {
+                    _pong = "PONG " + motor::string_t(":") + param ;
+                    _require_pong = true ;
+                    return false ;
+                }
+                return true ;
+            } ) ;
+            
+            parser.clear() ;
+            
             motor::log::global_t::status( message ) ;
 
+            
             return motor::network::receive_result::ok ;
         }
 
@@ -83,6 +104,20 @@ namespace this_file
             #else
             else if ( _pass_send == 3 ) ++_pass_send ;
             #endif
+
+            if( _pass_send > 3 )
+            {
+                if( _require_pong )
+                {
+                    buffer = byte_ptr_t( _pong.c_str() ) ;
+                    num_sib = _pong.size() ;
+                    _require_pong = false ;
+                }
+            }
+
+
+            #if 0 // test send section
+            
             else if ( _pass_send == 4 )
             {
                 data = "PRIVMSG #aconstlink : HeyGuys <3 PartyTime\r\n" ;
@@ -107,7 +142,7 @@ namespace this_file
                 ++_pass_send ;
                 return motor::network::transmit_result::ok ;
             }
-
+            #endif
             return motor::network::transmit_result::have_nothing ;
         }
     };

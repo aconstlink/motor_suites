@@ -13,8 +13,6 @@ namespace this_file
         struct client_data
         {
             motor::network::ipv4::address_t addr ;
-            bool_t do_handshake_sent ;
-            bool_t do_handshake_recv ;
 
             motor::string_t send_buffer ;
             motor::string_t recv_buffer ;
@@ -29,7 +27,7 @@ namespace this_file
 
             if ( clients.size() <= cid ) clients.resize( cid + 1 ) ;
 
-            clients[cid] = client_data { addr, false, false } ;
+            clients[cid] = client_data { addr } ;
 
             return motor::network::accept_result::ok ;
         }
@@ -46,14 +44,7 @@ namespace this_file
 
             cd.recv_buffer = motor::string_t( char_cptr_t(byte), sib ) ;
 
-            // handshake section
-            if ( !cd.do_handshake_recv )
-            {
-                if ( cd.recv_buffer == motor::string_t( "ok" ) )
-                {
-                    cd.do_handshake_recv = true ;
-                }
-            }
+            motor::log::global_t::status(cd.recv_buffer ) ;
 
             return motor::network::receive_result::ok ;
         }
@@ -61,21 +52,7 @@ namespace this_file
         virtual motor::network::transmit_result on_send(
             motor::network::client_id_t const cid, byte_cptr_t & buffer, size_t & num_sib ) noexcept
         {
-            auto & cd = clients[ cid ] ;
-
-            // handshake section
-            if ( !cd.do_handshake_sent )
-            {
-                motor::log::global_t::status( "[my_server_handler] : sending initial handshake" ) ;
-
-                cd.send_buffer = motor::string_t( "Hello Client" ) ;
-                buffer = (byte_cptr_t) cd.send_buffer.c_str() ;
-                num_sib = cd.send_buffer.size() ;
-
-                cd.do_handshake_sent = true ;
-            }
-
-            return motor::network::transmit_result::ok ;
+            return motor::network::transmit_result::have_nothing;
         }
     };
 }
@@ -88,7 +65,7 @@ int main( int argc, char ** argv )
     if ( mod == nullptr ) return 1 ;
     
     
-    mod->create_tcp_server( { "my server", motor::network::ipv4::binding_point { 3456 },
+    mod->create_tcp_server( { "my server", motor::network::ipv4::binding_point { 3000 }, 
         motor::shared( this_file::my_server_handler() ) } ) ;
 
     while ( !done )
