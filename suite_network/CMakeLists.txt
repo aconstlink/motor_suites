@@ -36,3 +36,5 @@ foreach( _test ${tests} )
       RUNTIME DESTINATION bin )
 
 endforeach()
+
+#configure_file( ${CMAKE_CURRENT_LIST_DIR}/twitch.in.tokens ${CMAKE_CURRENT_LIST_DIR}/working/twitch.tokens @ONLY )
