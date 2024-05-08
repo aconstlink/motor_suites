@@ -24,7 +24,8 @@ foreach( _test ${tests} )
       PRIVATE motor::social
       PRIVATE motor::application
       PRIVATE motor::platform
-      PRIVATE motor::io )
+      PRIVATE motor::io 
+      PRIVATE nlohmann_json)
 
     set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_network" )
 
