@@ -2,6 +2,8 @@
 #include <motor/network/typedefs.h>
 #include <motor/platform/network/network_module_creator.hpp>
 
+#include <thread>
+
 using namespace motor::core::types ;
 
 bool_t done = false ;

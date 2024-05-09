@@ -2,6 +2,11 @@
 #include <motor/network/typedefs.h>
 #include <motor/platform/network/network_module_creator.hpp>
 
+#include <motor/std/vector>
+#include <motor/log/global.h>
+
+#include <thread>
+
 using namespace motor::core::types ;
 
 bool_t done = false ;
@@ -52,7 +57,7 @@ namespace this_file
         virtual motor::network::transmit_result on_send(
             motor::network::client_id_t const cid, byte_cptr_t & buffer, size_t & num_sib ) noexcept
         {
-            return motor::network::transmit_result::have_nothing;
+            return motor::network::transmit_result::ok;
         }
     };
 }

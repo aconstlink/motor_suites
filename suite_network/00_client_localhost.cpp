@@ -2,6 +2,9 @@
 #include <motor/network/typedefs.h>
 #include <motor/platform/network/network_module_creator.hpp>
 
+#include <thread>
+#include <chrono>
+
 using namespace motor::core::types ;
 
 bool_t done = false ;
@@ -20,32 +23,31 @@ namespace this_file
 
         }
 
-        virtual void_t on_connect( motor::network::connect_result const res ) noexcept
+        virtual motor::network::user_decision on_connect( motor::network::connect_result const res, size_t const tries ) noexcept 
         {
             motor::log::global_t::status( "Connection : " + motor::network::to_string( res ) ) ;
+            return motor::network::user_decision::keep_going ;
         }
-
-        virtual void_t on_close( void_t ) noexcept
+        virtual motor::network::user_decision on_sync( void_t ) noexcept 
         {
-            motor::log::global_t::status( "Connection closed" ) ;
+            return motor::network::user_decision::keep_going ;
+        }
+        virtual motor::network::user_decision on_update( void_t ) noexcept 
+        {
+            return motor::network::user_decision::keep_going ;
         }
 
-        virtual motor::network::receive_result on_receive(
-            byte_cptr_t buffer, size_t const sib ) noexcept
+        virtual void_t on_receive( byte_cptr_t buffer, size_t const sib ) noexcept
         {
             motor::string_t message( (char_cptr_t)buffer, sib ) ;
-            return motor::network::receive_result::ok ;
+        }
+        virtual void_t on_received( void_t ) noexcept {}
+
+        virtual void_t on_send( byte_cptr_t & buffer, size_t & num_sib ) noexcept
+        {
         }
 
-        virtual motor::network::transmit_result on_send(
-            byte_cptr_t & buffer, size_t & num_sib ) noexcept
-        {
-            if ( !_pass_send )
-            {
-                return motor::network::transmit_result::ok ;
-            }
-            return motor::network::transmit_result::have_nothing ;
-        }
+        virtual void_t on_sent( motor::network::transmit_result const ) noexcept {}
     };
 }
 
