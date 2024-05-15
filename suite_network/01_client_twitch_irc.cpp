@@ -59,7 +59,9 @@ namespace this_file
                 "-H \"Authorization: OAuth " + ld.user_token + "\" "
                 "-s -o validate" ;
 
-            std::system( curl_validate_com.c_str() ) ;
+            auto const sys_res = std::system( curl_validate_com.c_str() ) ;
+
+            if( !sys_res ) exit( 1 ) ;
 
             // investigate response
             {
@@ -116,7 +118,9 @@ namespace this_file
                 "&client_secret=" + ld.client_secret + "\" "
                 "-s -o refresh_token";
 
-            std::system( curl_refresh_com.c_str() ) ;
+            auto const sys_res = std::system( curl_refresh_com.c_str() ) ;
+
+            if( !sys_res ) exit( 1 ) ;
 
             std::string response ;
 
