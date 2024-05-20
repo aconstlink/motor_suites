@@ -15,7 +15,6 @@ using namespace motor::core::types ;
 
 bool_t done = false ;
 
-
 namespace this_file
 {
     // the client code flow can not be used because it only grants a app access token,
@@ -439,6 +438,9 @@ namespace this_file
             }
             this_t::validate_and_or_refresh_token() ;
         }
+
+        //**********************************************************************************
+        virtual ~twitch_irc_bot( void_t ) noexcept{}
 
         //**********************************************************************************
         virtual motor::network::user_decision on_connect( motor::network::connect_result const res, size_t const tried ) noexcept
