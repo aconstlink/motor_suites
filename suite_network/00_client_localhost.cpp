@@ -2,6 +2,9 @@
 #include <motor/network/typedefs.h>
 #include <motor/platform/network/network_module_creator.hpp>
 
+#include <thread>
+#include <chrono>
+
 using namespace motor::core::types ;
 
 bool_t done = false ;
@@ -10,52 +13,65 @@ namespace this_file
 {
     class my_client : public motor::network::iclient_handler
     {
-        motor::string_t data_in ;
-        motor::string_t data_out ;
+        motor::string_t data ;
+
+        bool_t _pass_send = true ;
 
     public:
 
-        my_client( void_t ) noexcept {}
+        my_client( void_t ) noexcept {
 
-        virtual ~my_client( void_t ) noexcept {}
+        }
 
-        virtual motor::network::user_decision on_connect( motor::network::connect_result const res, size_t const ) noexcept
+        virtual motor::network::user_decision on_connect( motor::network::connect_result const res, size_t const tries ) noexcept 
         {
             motor::log::global_t::status( "Connection : " + motor::network::to_string( res ) ) ;
             return motor::network::user_decision::keep_going ;
         }
-
         virtual motor::network::user_decision on_sync( void_t ) noexcept 
         {
             return motor::network::user_decision::keep_going ;
         }
-
-        virtual motor::network::user_decision on_update( void_t ) noexcept
+        virtual motor::network::user_decision on_update( void_t ) noexcept 
         {
             return motor::network::user_decision::keep_going ;
         }
 
         virtual void_t on_receive( byte_cptr_t buffer, size_t const sib ) noexcept
         {
-            data_in += motor::string_t( (char_cptr_t) buffer, sib ) ;
+            motor::string_t message( (char_cptr_t)buffer, sib ) ;
         }
+        virtual void_t on_received( void_t ) noexcept {}
 
-        virtual void_t on_received( void_t ) noexcept 
-        {
-            // do something with data_in ...
-            // ... and then clear it
-            data_in.clear() ;
-        }
-
-        virtual void_t on_send( byte_cptr_t & buffer, size_t & num_sib ) noexcept 
+        virtual void_t on_send( byte_cptr_t & buffer, size_t & num_sib ) noexcept
         {
         }
 
-        virtual void_t on_sent( motor::network::transmit_result const ) noexcept 
-        {
-        }
+        virtual void_t on_sent( motor::network::transmit_result const ) noexcept {}
     };
 }
+
+// need to transfer to client handler.
+#if 0
+auto const recv_funk = [&] ( byte_cptr_t data, size_t const sib ) -> motor::network::receive_result
+{
+    if ( !handshake_recv )
+    {
+        motor::string_t received( char_cptr_t( data ), sib ) ;
+        if ( received != motor::string_t( "Hello Client" ) )
+        {
+            motor::log::global_t::status( "client handshake : failed" ) ;
+            return motor::network::receive_result::close ;
+        }
+
+        motor::log::global_t::status( "client handshake : " + received ) ;
+
+        handshake_recv = true ;
+    }
+    
+    return motor::network::receive_result::ok ;
+} ;
+#endif
 
 int main( int argc, char ** argv )
 {
