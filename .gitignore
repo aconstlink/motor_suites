@@ -34,3 +34,5 @@
 *.vscode
 suite_network/tokens.hpp
 suite_network/working/twitch.tokens
+*.tokens
+*.credentials

@@ -37,4 +37,6 @@ foreach( _test ${tests} )
 
 endforeach()
 
-#configure_file( ${CMAKE_CURRENT_LIST_DIR}/twitch.in.tokens ${CMAKE_CURRENT_LIST_DIR}/working/twitch.tokens @ONLY )
+if( NOT EXISTS "${CMAKE_CURRENT_LIST_DIR}/working/twitch.credentials" )
+configure_file( ${CMAKE_CURRENT_LIST_DIR}/twitch.credentials.in ${CMAKE_CURRENT_LIST_DIR}/working/twitch.credentials @ONLY )
+endif()
