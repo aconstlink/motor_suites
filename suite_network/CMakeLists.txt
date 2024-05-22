@@ -4,6 +4,7 @@ set( tests
     "00_client_localhost.cpp"
     "00_server_localhost.cpp"
     "01_client_twitch_irc.cpp"
+    "02_client_twitch_irc.cpp"
     "xx_server_localhost_just_listen.cpp"
     #"01_server_client_app.cpp"
     )
@@ -24,7 +25,7 @@ foreach( _test ${tests} )
       PRIVATE motor::social
       PRIVATE motor::application
       PRIVATE motor::platform
-      PRIVATE motor::io 
+      PRIVATE motor::io
       PRIVATE nlohmann_json)
 
     set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_network" )

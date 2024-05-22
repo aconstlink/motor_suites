@@ -167,25 +167,6 @@ namespace this_file
         // this is when update needs to wait for something
         std::chrono::seconds _timeout = std::chrono::seconds(0) ;
 
-        #if 0
-        bool_t _need_login = true ;
-
-        // waiting for user to authorize
-        bool_t _token_pending = false ;
-        // twitch user token refresh
-        bool_t _need_refresh = false ;
-
-        bool_t irc_need_login( void_t ) const noexcept
-        {
-            return _need_login && !_token_pending && !_need_refresh ;
-        }
-
-        bool_t irc_is_logged_in( void_t ) const noexcept
-        {
-            return !_need_login && !_token_pending && !_need_refresh ;
-        }
-        #endif
-
         motor::io::database_mtr_t _db ;
 
         struct login_data
@@ -270,7 +251,7 @@ namespace this_file
         }
 
         //**********************************************************************************
-        // refresh in authorization code grat flow. Use if client secret is known.
+        // Refresh the user token using the refresh token.
         this_file::refresh_process_result refresh_token( login_data_ref_t ld, this_file::code_grant_flow const cgf ) const noexcept
         {
             motor::log::global_t::status( "Refreshing User Token" ) ;
