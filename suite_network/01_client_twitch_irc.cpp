@@ -33,8 +33,8 @@ namespace this_file
     struct device_code_response
     {
         motor::string_t device_code ;
-        int_t expires_in ;
-        int_t interval ;
+        int_t expires_in = 0 ;
+        int_t interval = 0  ;
         motor::string_t user_code ;
         motor::string_t verification_uri ;
 
@@ -80,6 +80,68 @@ namespace this_file
             return *this ;
         }
     } ;
+    motor_typedef( device_code_response ) ;
+
+    enum class program_state
+    {
+        load_credentials,
+        need_device_code,
+        need_token,
+        need_refresh,
+        need_token_validation,
+        pending,
+        need_login,
+        login_pending,
+        bot_is_online
+    };
+
+    enum class initial_process_result
+    {
+        invalid,
+        ok, 
+        curl_failed,
+        // there are no credentials or no client_id
+        credentials_failed,
+        // credentials has no token
+        no_token,
+        // twitch responded the token to be invalid
+        invalid_token
+    };
+
+    enum class refresh_process_result
+    {
+        invalid,
+        invalid_client_id,
+        invalid_token,
+        ok,
+        curl_failed,
+        
+    };
+
+    enum class request_user_token_result
+    {
+        invalid,
+        curl_failed,
+        invalid_device_code,
+        request_failed,
+        pending,
+        ok
+    };
+
+    enum class validation_process_result
+    {
+        invalid,
+        ok,
+        invalid_access_token,
+        curl_failed,
+    };
+
+    enum class device_code_process_result
+    {
+        curl_failed,
+        device_code_request_failed,
+        ok
+    };
 
     class twitch_irc_bot : public motor::network::iclient_handler
     {
@@ -95,8 +157,34 @@ namespace this_file
 
         motor::social::twitch::irc_parser_t parser ;
 
+        
+        this_file::program_state _ps = 
+            this_file::program_state::load_credentials ;
+
+        using clk_t = std::chrono::high_resolution_clock ;
+        clk_t::time_point _login_tp ;
+
+        // this is when update needs to wait for something
+        std::chrono::seconds _timeout = std::chrono::seconds(0) ;
+
+        #if 0
         bool_t _need_login = true ;
+
+        // waiting for user to authorize
+        bool_t _token_pending = false ;
+        // twitch user token refresh
         bool_t _need_refresh = false ;
+
+        bool_t irc_need_login( void_t ) const noexcept
+        {
+            return _need_login && !_token_pending && !_need_refresh ;
+        }
+
+        bool_t irc_is_logged_in( void_t ) const noexcept
+        {
+            return !_need_login && !_token_pending && !_need_refresh ;
+        }
+        #endif
 
         motor::io::database_mtr_t _db ;
 
@@ -107,6 +195,7 @@ namespace this_file
             motor::string_t client_id ;
             motor::string_t client_secret ;
             motor::string_t scopes ;
+            motor::string_t device_code ;
         };
         motor_typedef( login_data  ) ;
 
@@ -115,13 +204,15 @@ namespace this_file
 
         device_code_response _dcr ;
 
-        code_grant_flow _mode ;
+        code_grant_flow _mode = this_file::code_grant_flow::device_code_flow ;
 
     private:
 
         //**********************************************************************************
-        bool_t validate_token( login_data_cref_t ld ) const noexcept
+        validation_process_result validate_token( login_data_cref_t ld ) const noexcept
         {
+            motor::log::global_t::status( "Validating User Tocken" ) ;
+
             auto const curl_validate_com =
                 "curl -X GET https://id.twitch.tv/oauth2/validate "
                 "-H \"Authorization: OAuth " + ld.user_token + "\" "
@@ -129,7 +220,10 @@ namespace this_file
 
             auto const sys_res = std::system( curl_validate_com.c_str() ) ;
 
-            if( sys_res != 0 ) exit( 1 ) ;
+            if( sys_res != 0 ) 
+            {
+                return this_file::validation_process_result::curl_failed ;
+            }
 
             // investigate response
             {
@@ -158,9 +252,9 @@ namespace this_file
                         size_t const code = data[ "status" ] ;
                         motor::string_t const msg = data["message"] ;
 
-                        motor::log::global_t::status( "Twitch IRC Bot token validation: " ) ;
+                        motor::log::global_t::status( "Twitch IRC Bot token validation failed: " ) ;
                         motor::log::global_t::status( "["+motor::to_string(code)+"] : " + msg ) ;
-                        return false ;
+                        return this_file::validation_process_result::invalid_access_token ;
                     }
                 }
             }
@@ -172,24 +266,53 @@ namespace this_file
                 ofs.close();
             }
 
-            return true ;
+            return this_file::validation_process_result::ok ;
         }
 
         //**********************************************************************************
         // refresh in authorization code grat flow. Use if client secret is known.
-        bool_t refresh_token_acf( login_data_ref_t ld ) const noexcept
+        this_file::refresh_process_result refresh_token( login_data_ref_t ld, this_file::code_grant_flow const cgf ) const noexcept
         {
-            auto const curl_refresh_com =
-                "curl -X POST https://id.twitch.tv/oauth2/token "
-                "-H \"Content-Type: application/x-www-form-urlencoded\" "
-                "-d \"grant_type=refresh_token&refresh_token=" + ld.refresh_token +
-                "&client_id=" + ld.client_id +
-                "&client_secret=" + ld.client_secret + "\" "
-                "-s -o refresh_token";
+            motor::log::global_t::status( "Refreshing User Token" ) ;
 
-            auto const sys_res = std::system( curl_refresh_com.c_str() ) ;
+            if( cgf == this_file::code_grant_flow::authorization_code_flow )
+            {
+                auto const curl_refresh_com =
+                    "curl -X POST https://id.twitch.tv/oauth2/token "
+                    "-H \"Content-Type: application/x-www-form-urlencoded\" "
+                    "-d \"grant_type=refresh_token&refresh_token=" + ld.refresh_token +
+                    "&client_id=" + ld.client_id +
+                    "&client_secret=" + ld.client_secret + "\" "
+                    "-s -o refresh_token";
 
-            if( sys_res != 0) exit( 1 ) ;
+                auto const sys_res = std::system( curl_refresh_com.c_str() ) ;
+
+                if ( sys_res != 0 ) 
+                {
+                    return this_file::refresh_process_result::curl_failed ;
+                }
+            }
+            else if ( cgf == this_file::code_grant_flow::device_code_flow )
+            {
+                auto const curl_refresh_com =
+                    "curl -X POST https://id.twitch.tv/oauth2/token "
+                    "-H \"Content-Type: application/x-www-form-urlencoded\" "
+                    "-d \"grant_type=refresh_token&refresh_token=" + ld.refresh_token +
+                    "&client_id=" + ld.client_id +
+                    #if 0
+                    "&client_secret=" + ld.client_secret + "\" "
+                    #else
+                    "\" "
+                    #endif
+                    "-s -o refresh_token";
+
+                auto const sys_res = std::system( curl_refresh_com.c_str() ) ;
+
+                if ( sys_res != 0 )
+                {
+                    return this_file::refresh_process_result::curl_failed ;
+                }
+            }
 
             std::string response ;
 
@@ -225,10 +348,11 @@ namespace this_file
                     {
                         msg = data["message"] ;
                     }
-                    motor::log::global_t::status( "Twitch IRC Bot token validation: " ) ;
+                    motor::log::global_t::status( "Twitch IRC Bot token refresh failed: " ) ;
                     motor::log::global_t::status( "[" + motor::to_string( code ) + "] : " + msg ) ;
 
-                    return false ;
+                    //return this_file::refresh_process_result::invalid_client_id ;
+                    return this_file::refresh_process_result::invalid_token ;
                 }
                 
                 if( data.contains("access_token") )
@@ -242,11 +366,13 @@ namespace this_file
                 }
             }
 
-            return true ;
+            return this_file::refresh_process_result::ok ;
         }
 
-        bool_t request_device_code( login_data const & ld, device_code_response & rt ) const noexcept
+        this_file::device_code_process_result request_device_code( login_data_inout_t ld, device_code_response & rt ) const noexcept
         {
+            motor::log::global_t::status( "Requesting Device Code" ) ;
+
             auto const curl_request_com =
                 "curl --location https://id.twitch.tv/oauth2/device "
                 "--form \"client_id=" + ld.client_id + "\" "
@@ -254,7 +380,10 @@ namespace this_file
                 "-s -o data_code_flow_request" ;
 
             auto const sys_res = std::system( curl_request_com.c_str() ) ;
-            if( sys_res ) exit( 1 ) ;
+            if( sys_res != 0 ) 
+            {
+                return this_file::device_code_process_result::curl_failed ;
+            }
 
             std::string response ;
 
@@ -294,12 +423,13 @@ namespace this_file
                     motor::log::global_t::error( "Twitch IRC Bot device code request failed: " ) ;
                     motor::log::global_t::error( "[" + motor::to_string( code ) + "] : " + msg ) ;
 
-                    return false ;
+                    return this_file::device_code_process_result::device_code_request_failed ;
                 }
                 
                 if( data.contains("device_code") )
                 {
                     rt.device_code = data["device_code"] ;
+                    ld.device_code = data[ "device_code" ] ;
                 }
                 if( data.contains("expires_in") )
                 {
@@ -318,73 +448,338 @@ namespace this_file
                     rt.verification_uri = data["verification_uri"] ;
                 }
             }
-            return true ;
+            return this_file::device_code_process_result::ok ;
+        }
+
+
+        this_file::request_user_token_result request_user_token(
+            this_t::login_data_inout_t ld ) const noexcept
+        {
+            motor::log::global_t::status( "Requesting User Token" ) ;
+
+            auto const curl_request_com =
+                "curl --location https://id.twitch.tv/oauth2/token "
+                "--form \"client_id=" + ld.client_id + "\" "
+                "--form \"scopes=" + ld.scopes + "\" "
+                "--form \"device_code=" + ld.device_code + "\" "
+                "--form \"grant_type=urn:ietf:params:oauth:grant-type:device_code\" "
+                "-s -o user_access_token" ;
+
+            auto const sys_res = std::system( curl_request_com.c_str() ) ;
+            if ( sys_res != 0 ) 
+            {
+                return this_file::request_user_token_result::curl_failed ;
+            }
+
+            std::string response ;
+
+            // read content
+            {
+                std::ifstream myfile( "user_access_token" ) ;
+                std::string line;
+                if ( myfile.is_open() )
+                {
+                    while ( std::getline ( myfile, line ) )
+                    {
+                        response += line ;
+                    }
+                    myfile.close();
+                }
+            }
+
+            // clear content
+            {
+                std::ofstream ofs;
+                ofs.open( "user_access_token", std::ofstream::out | std::ofstream::trunc );
+                ofs.close();
+            }
+
+            // json 
+            if( !response.empty() )
+            {
+                nlohmann::json data = nlohmann::json::parse( response ) ;
+
+                if ( data.contains( "status" ) )
+                {
+                    size_t const code = data[ "status" ] ;
+                    motor::string_t msg ;
+
+                    if ( data.contains( "message" ) )
+                    {
+                        msg = data[ "message" ] ;
+                    }
+
+                    motor::log::global_t::error( "Twitch IRC Bot device code request failed: " ) ;
+                    motor::log::global_t::error( "[" + motor::to_string( code ) + "] : " + msg ) ;
+
+                    if( msg == "authorization_pending" )
+                    {
+                        return this_file::request_user_token_result::pending ;
+                    }
+                    else if( msg == "invalid device code" )
+                    {
+                        return this_file::request_user_token_result::invalid_device_code ;
+                    }
+                    else if( msg == "missing device_code" )
+                    {
+                        return this_file::request_user_token_result::invalid_device_code ;
+                    }
+                    
+                    return this_file::request_user_token_result::request_failed ;
+                }
+
+                if ( data.contains( "access_token" ) )
+                {
+                    ld.user_token = data[ "access_token" ] ;
+                }
+                if ( data.contains( "refresh_token" ) )
+                {
+                    ld.refresh_token = data[ "refresh_token" ] ;
+                }
+            }
+            else
+            {
+                motor::log::global_t::error("response was empty. Please check curl request.") ;
+                return this_file::request_user_token_result::request_failed ;
+            }
+            return this_file::request_user_token_result::ok ;
+        }
+
+        bool_t load_credentials( this_t::login_data_out_t ld ) const noexcept
+        {
+            bool_t ret = false ;
+
+            _db->load( motor::io::location( "twitch.credentials" ) ).wait_for_operation(
+                [&] ( char_cptr_t buf, size_t const sib, motor::io::result const res )
+            {
+                if ( res == motor::io::result::ok )
+                {
+                    auto const content = std::string( buf, sib ) ;
+                    auto const json = nlohmann::json::parse( content ) ;
+                    if ( json.contains( "access_token" ) )
+                    {
+                        ld.user_token = json[ "access_token" ] ;
+                    }
+                    if ( json.contains( "refresh_token" ) )
+                    {
+                        ld.refresh_token = json[ "refresh_token" ] ;
+                    }
+                    if ( json.contains( "client_id" ) )
+                    {
+                        ld.client_id = json[ "client_id" ] ;
+                    }
+                    if ( json.contains( "client_secret" ) )
+                    {
+                        ld.client_secret = json[ "client_secret" ] ;
+                    }
+                    if ( json.contains( "scopes" ) )
+                    {
+                        ld.scopes = json[ "scopes" ] ;
+                    }
+                    if ( json.contains( "device_code" ) )
+                    {
+                        ld.device_code = json[ "device_code" ] ;
+                    }
+                    ret = true ;
+                }
+            } ) ;
+            return ret ;
         }
 
         //**********************************************************************************
-        bool_t validate_and_or_refresh_token( void_t ) noexcept
+        bool_t validate_credentials( this_t::login_data_out_t ld  ) const noexcept
         {
-            // at least a client id is required.
-            if( _login_data.client_id.empty() )
-            {
-                motor::log::global_t::status( "[twitch_irc_bot] : Twitch Client ID missing." ) ;
-                return false ;
-            }
+            return !ld.client_id.empty() ;
+        }
 
-            // need to request the user token
-            if( _login_data.user_token.empty() )
+        //**********************************************************************************
+        void_t write_credentials( this_t::login_data_in_t ld ) const noexcept
+        {
+            //
+            std::string const content = nlohmann::json (
             {
-                if( _mode == this_file::code_grant_flow::device_code_flow )
+                { "access_token", _login_data.user_token },
+                { "refresh_token", _login_data.refresh_token },
+                { "client_id", _login_data.client_id },
+                { "client_secret", _login_data.client_secret },
+                { "scopes", _login_data.scopes },
+                { "device_code", _login_data.device_code }
+            } ).dump() ;
+
+            _db->store( motor::io::location_t( "twitch.credentials" ), content.c_str(), content.size() ).
+                wait_for_operation( [&] ( motor::io::result const res )
+            {
+                if ( res == motor::io::result::ok )
                 {
-                    if( !this_t::request_device_code( _login_data, _dcr ) ) 
-                    {
-                        motor::log::global::error("Device Code request failed.") ;
-                        motor::log::global::error("Check client_id or scopes. Then try again.") ;
-                        return false ;
-                    }
-
-                    // requested device code so user need to authorize device manually now 
-                    // via the verification_uri
-                    motor::log::global::status("Please authorize via:") ;
-                    motor::log::global::status( _dcr.verification_uri ) ;
+                    motor::log::global_t::error( "New Twitch Tokens written to : twitch.credentials" ) ;
                 }
                 else
                 {
-                    motor::log::global_t::status( "[twitch_irc_bot] : Twitch User Access Token required." ) ;
-                    return false ;
+                    motor::log::global_t::error( "failed to write new tokens" ) ;
                 }
-            }
+            } ) ;
+        }
 
-            if ( !this_t::validate_token( _login_data ) )
+        //**********************************************************************************
+        void_t update( void_t ) noexcept
+        {
+            std::this_thread::sleep_for( _timeout ) ;
+            _timeout = std::chrono::seconds( 0 ) ;
+
+            switch( _ps ) 
             {
-                if ( _mode == this_file::code_grant_flow::authorization_code_flow && this_t::refresh_token_acf( _login_data ) )
+            case this_file::program_state::load_credentials:
+            {
+                auto const res = this_t::load_credentials_from_file() ;
+                switch( res )
                 {
-                    motor::log::global_t::status( "[twitch_irc_bot] : Twitch Token refreshed." ) ;
-                    _need_refresh = false ;
-
-                    //
-                    std::string const content = nlohmann::json (
-                    {
-                        { "access_token", _login_data.user_token },
-                        { "refresh_token", _login_data.refresh_token },
-                        { "client_id", _login_data.client_id },
-                        { "client_secret", _login_data.client_secret }
-                    } ).dump() ;
-
-                    _db->store( motor::io::location_t("twitch.tokens"), content.c_str(), content.size() ).
-                        wait_for_operation([&]( motor::io::result const res )
-                    {
-                        if( res == motor::io::result::ok )
-                        {
-                            motor::log::global_t::error( "New Twitch Tokens written to : twitch.tokens" ) ;
-                        }
-                        else 
-                        {
-                            motor::log::global_t::error( "failed to write new tokens" ) ;
-                        }
-                    }) ;
+                case this_file::initial_process_result::curl_failed: 
+                    exit( 1 ) ; 
+                    break ;
+                case this_file::initial_process_result::invalid_token: 
+                    _ps = this_file::program_state::need_refresh ;
+                    break ;
+                case this_file::initial_process_result::no_token: 
+                    _ps = this_file::program_state::need_device_code ;
+                    break ;
+                case this_file::initial_process_result::ok : 
+                    _ps = this_file::program_state::need_token_validation ;
+                    break ;
                 }
+
+                break ;
             }
+            case this_file::program_state::need_token_validation:
+            {
+                auto const res = this_t::validate_token( _login_data ) ;
+                switch( res ) 
+                {
+                case this_file::validation_process_result::curl_failed:
+                    exit( 1 ) ;
+                    break ;
+                case this_file::validation_process_result::invalid_access_token:
+                    _ps = this_file::program_state::need_refresh ;
+                    break ;
+                case this_file::validation_process_result::ok:
+                    _ps = this_file::program_state::need_login ;
+                    break ;
+                }
+                break ;
+            }
+            case this_file::program_state::need_device_code:
+            {
+                auto const res = this_t::request_device_code( _login_data, _dcr ) ;
+                switch( res ) 
+                {
+                case this_file::device_code_process_result::curl_failed: 
+                    exit( 1 ) ;
+                    break ;
+
+                case this_file::device_code_process_result::device_code_request_failed: 
+                {
+                    motor::log::global_t::error("Please check the client_id in the credentials.") ;
+                    motor::log::global_t::error( "Will reinitialize in 10 seconds." ) ;
+                    _timeout = std::chrono::seconds( 10 ) ;
+                    _ps = this_file::program_state::load_credentials ;
+                    break ;
+                }
+                case this_file::device_code_process_result::ok: 
+                    _ps = this_file::program_state::need_token ;
+                    break ;
+                }
+                break ;
+            }
+            case this_file::program_state::need_token:
+            {
+                auto const res = this_t::request_user_token( _login_data ) ;
+                switch ( res )
+                {
+                case this_file::request_user_token_result::curl_failed: 
+                    exit(1) ;
+                    break ;
+                case this_file::request_user_token_result::invalid_device_code:
+                    _ps = this_file::program_state::need_device_code ;
+                    break ;
+                    // lets give the user some time to authorize.
+                    // then re-try user token request.
+                case this_file::request_user_token_result::pending:
+                    motor::log::global_t::status( "Please visit for authorization:") ;
+                    motor::log::global_t::status( _dcr.verification_uri ) ;
+                    _timeout = std::chrono::seconds( 10 ) ;
+                    break ;
+                    // unknown failure. Just redo everything and hope for the best.
+                    // Twitch error status codes are not documented or are changing 
+                    // based on error, so if the message can not be parsed correctly...
+                case this_file::request_user_token_result::request_failed:
+                    motor::log::global::error("Some error occurred when requesting a user token.") ;
+                    motor::log::global::error( "Reinitializing process." ) ;
+                    _ps = this_file::program_state::load_credentials ;
+                    break ;
+                    // Yay. Worked.
+                case this_file::request_user_token_result::ok:
+                    this_t::write_credentials( _login_data ) ;
+                    _ps = this_file::program_state::need_login ;
+                    break ;
+                }
+                break ;
+            }
+            case this_file::program_state::need_refresh: 
+            {
+                auto const res = this_t::refresh_token( _login_data, _mode ) ;
+                switch ( res )
+                {
+                case this_file::refresh_process_result::ok:
+                    _ps = this_file::program_state::need_login ;
+                    break ;
+                case this_file::refresh_process_result::curl_failed: break ;
+                case this_file::refresh_process_result::invalid_client_id: break ;
+                case this_file::refresh_process_result::invalid_token:
+                    _ps = this_file::program_state::need_token ;
+                    break ;
+                case this_file::refresh_process_result::invalid: break ;
+
+                }
+                break ;
+            }
+            case this_file::program_state::need_login:
+            {
+                data_out =
+                    "PASS oauth:" + _login_data.user_token + "\r\n"
+                    "NICK aconstlink\r\n"
+                    "JOIN #aconstlink\r\n"
+                    "CAP REQ :twitch.tv/membership twitch.tv/tags twitch.tv/commands\r\n" ;
+
+                _login_tp = clk_t::now() ;
+                _ps = this_file::program_state::login_pending ;
+                break ;
+            }
+            case this_file::program_state::login_pending:
+            {
+                if( std::chrono::duration_cast<std::chrono::seconds>( clk_t::now() - _login_tp ) >= 
+                    std::chrono::seconds(5) ) 
+                {
+                    //_ps = this_file::program_state::need_login ;
+                }
+                break ;
+            }}
+        }
+
+        //**********************************************************************************
+        this_file::initial_process_result load_credentials_from_file( void_t ) noexcept
+        {
+            if ( !this_t::load_credentials( _login_data ) ||
+                !this_t::validate_credentials( _login_data ) )
+            {
+                motor::log::global_t::status( "[twitch_irc_bot] : Twitch Client ID missing." ) ;
+                return this_file::initial_process_result::credentials_failed ;
+            }
+
+            if ( _login_data.user_token.empty() ) 
+            {
+                return this_file::initial_process_result::no_token ;
+            }
+
+            return this_file::initial_process_result::ok ;
         }
 
     public:
@@ -397,46 +792,15 @@ namespace this_file
 
             // test if curl is present in the system
             {
-                auto const sys_res = std::system("curl --version -s") ;
-                if( sys_res != 0 )
+                auto const sys_res = std::system( "curl --version -s " ) ;
+                if ( sys_res != 0 )
                 {
-                    motor::log::global::error("curl required. Please install curl.") ;
+                    motor::log::global::error( "curl required. Please install curl." ) ;
                     exit(1) ;
                 }
             }
 
-            {
-                _db->load( motor::io::location("twitch.credentials") ).wait_for_operation(
-                    [&] ( char_cptr_t buf, size_t const sib, motor::io::result const res )
-                {
-                    if ( res == motor::io::result::ok )
-                    {
-                        auto const content = std::string( buf, sib ) ;
-                        auto const json = nlohmann::json::parse( content ) ;
-                        if( json.contains("access_token") )
-                        {
-                            _login_data.user_token = json[ "access_token" ] ;
-                        }
-                        if ( json.contains( "refresh_token" ) )
-                        {
-                            _login_data.refresh_token = json[ "refresh_token" ] ;
-                        }
-                        if ( json.contains( "client_id" ) )
-                        {
-                            _login_data.client_id = json[ "client_id" ] ;
-                        }
-                        if ( json.contains( "client_secret" ) )
-                        {
-                            _login_data.client_secret = json[ "client_secret" ] ;
-                        }
-                        if ( json.contains( "scopes" ) )
-                        {
-                            _login_data.scopes = json[ "scopes" ] ;
-                        }
-                    }
-                } ) ;
-            }
-            this_t::validate_and_or_refresh_token() ;
+            this_t::update() ;
         }
 
         //**********************************************************************************
@@ -450,8 +814,11 @@ namespace this_file
 
             if( res == motor::network::connect_result::established )
             {
-                this_t::validate_and_or_refresh_token() ;
-                _need_login = true ;
+                this_t::update() ;
+            }
+            else if( res == motor::network::connect_result::closed )
+            {
+                _ps = this_file::program_state::need_login ;
             }
 
             return motor::network::user_decision::keep_going ;
@@ -467,11 +834,7 @@ namespace this_file
         //**********************************************************************************
         virtual motor::network::user_decision on_update( void_t ) noexcept
         {
-            if( _need_refresh )
-            {
-                _need_login = this_t::refresh_token_acf( _login_data ) ;
-                _need_refresh = false ;
-            }
+            this_t::update() ;
 
             return motor::network::user_decision::keep_going ;
         }
@@ -486,6 +849,11 @@ namespace this_file
         virtual void_t on_received( void_t ) noexcept
         {
             parser.parse( data_in ) ;
+
+            if( _ps == this_file::program_state::login_pending )
+            {
+                _ps = this_file::program_state::bot_is_online ;
+            }
 
             parser.for_each( [&] ( motor::social::twitch::irc_command const c, 
                 motor::social::twitch::tags_cref_t tags, motor::string_in_t param )
@@ -504,8 +872,7 @@ namespace this_file
                     
                     if( r1 != std::string::npos && r2 != std::string::npos )
                     {
-                        _need_refresh = true ;
-                        _need_login = true ;
+                        _ps = this_file::program_state::need_refresh ;
                     }
                     
                     return false ;
@@ -539,6 +906,10 @@ namespace this_file
                 else if( c == motor::social::twitch::irc_command::part )
                 {
                 }
+                else
+                {
+                    int bp = 0 ;
+                }
 
                 return true ;
             } ) ;
@@ -552,22 +923,6 @@ namespace this_file
         //**********************************************************************************
         virtual void_t on_send( byte_cptr_t & buffer, size_t & num_sib ) noexcept
         {
-            if( _need_login )
-            {
-                data_out =
-                    "PASS oauth:" + _login_data.user_token + "\r\n"
-                    "NICK acl_bot\r\n"
-                    "JOIN #aconstlink\r\n"
-                    "CAP REQ :twitch.tv/membership twitch.tv/tags twitch.tv/commands\r\n" ;
-
-                buffer = byte_ptr_t( data_out.c_str()  );
-                num_sib = data_out.size() ;
-
-                _need_login = false ;
-
-                return ;
-            }
-
             if ( _require_pong )
             {
                 buffer = byte_ptr_t( _pong.c_str() ) ;
