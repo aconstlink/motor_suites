@@ -48,6 +48,10 @@ int main( int argc, char ** argv )
                 {
                     mtr->send_response( "https://discord.gg/FnxJYWsN" ) ;
                 }
+                else if( c.name == "test" )
+                {
+                    mtr->send_announcement( "Mega Announcement!" ) ;
+                }
                 else
                 {
                     mtr->send_response( "NotLikeThis unrecognized command. Try !commands" ) ;
