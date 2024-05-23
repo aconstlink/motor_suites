@@ -14,6 +14,7 @@
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
 #include <motor/concurrent/global.h>
+#include <motor/profiling/global.h>
 
 #include <future>
 
@@ -304,6 +305,7 @@ int main( int argc, char ** argv )
     motor::io::global::deinit() ;
     motor::concurrent::global::deinit() ;
     motor::log::global::deinit() ;
+    motor::profiling::global_t::deinit() ;
     motor::memory::global::dump_to_std() ;
 
 

@@ -20,7 +20,8 @@ int main( int argc, char ** argv )
     // platform not supported
     if ( mod == nullptr ) return 1 ;
 
-    auto mtr = motor::shared( motor::social::twitch::twitch_irc_bot( motor::move( db ) ) ) ;
+    auto mtr = motor::shared( motor::social::twitch::twitch_irc_bot( motor::move( db ),
+        motor::io::location_t("twitch.pub.credentials") ) ) ;
 
     mod->create_tcp_client( motor::network::create_tcp_client_info { 
         "my_twitch_client", 

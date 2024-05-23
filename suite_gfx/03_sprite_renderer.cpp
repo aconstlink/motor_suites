@@ -10,6 +10,7 @@
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
 #include <motor/concurrent/global.h>
+#include <motor/profiling/global.h>
 
 #include <future>
 
@@ -59,7 +60,7 @@ namespace this_file
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
-
+            
             // image configuration
             {
                 motor::format::module_registry_mtr_t mod_reg = motor::format::global::register_default_modules( 
@@ -104,6 +105,7 @@ namespace this_file
             }
 
             sr.init( "my_sprite_render", "image_array" ) ;
+            
         }
 
         virtual void_t on_event( window_id_t const wid, 
@@ -127,7 +129,7 @@ namespace this_file
             motor::math::vec2f_t const max_dims = motor::math::vec2f_t( img_obj.image().get_dims() ) ;
 
             motor::math::vec2f_t pos( -1.0f, 0.5f ) ;
-
+            
             // take sprite from image plane 1. value are setup for that.
             for( size_t i=0; i<1000; ++i )
             {
@@ -202,10 +204,11 @@ int main( int argc, char ** argv )
     auto const ret = carrier->exec() ;
     
     motor::memory::release_ptr( carrier ) ;
-
+    
     motor::io::global::deinit() ;
     motor::concurrent::global::deinit() ;
     motor::log::global::deinit() ;
+    motor::profiling::global_t::deinit() ;
     motor::memory::global::dump_to_std() ;
 
 
