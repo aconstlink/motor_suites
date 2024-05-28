@@ -5,6 +5,7 @@ set( tests
     "00_server_localhost.cpp"
     "01_client_twitch_irc.cpp"
     "02_client_twitch_irc.cpp"
+    "03_client_in_app.cpp"
     "xx_server_localhost_just_listen.cpp"
     #"01_server_client_app.cpp"
     )

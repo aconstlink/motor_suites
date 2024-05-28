@@ -64,6 +64,7 @@ namespace this_file
 
 int main( int argc, char ** argv )
 {
+    #if 0
     auto * mod = motor::platform::network_module_creator::create() ;
     
     // platform not supported
@@ -78,6 +79,6 @@ int main( int argc, char ** argv )
         //motor::log::global_t::status("waiting in main loop") ;
         std::this_thread::sleep_for( std::chrono::seconds( 2 ) ) ;
     }
-
+    #endif
     return 0 ;
 }

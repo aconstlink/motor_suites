@@ -10,10 +10,14 @@ bool_t done = false ;
 
 namespace this_file
 {
+    using clk_t = std::chrono::high_resolution_clock ;
+
     class my_server_handler : public motor::network::iserver_handler
     {
         struct client_data
         {
+            clk_t::time_point tp ;
+
             motor::network::ipv4::address_t addr ;
             bool_t do_handshake_sent ;
             bool_t do_handshake_recv ;
@@ -31,7 +35,7 @@ namespace this_file
 
             if ( clients.size() <= cid ) clients.resize( cid + 1 ) ;
 
-            clients[cid] = client_data { addr, false, false } ;
+            clients[cid] = client_data { clk_t::now(), addr, false, false } ;
 
             return motor::network::accept_result::ok ;
         }
@@ -79,12 +83,23 @@ namespace this_file
 
             return motor::network::transmit_result::ok ;
         }
+
+        virtual motor::network::server_decision on_update( motor::network::client_id_t const cid ) noexcept
+        {
+            if( (clk_t::now() - clients[cid].tp) >= std::chrono::seconds(3) )
+            {
+                clients.erase( clients.begin() + cid ) ;
+                motor::log::global_t::status( "Shutting down client now." ) ;
+                return motor::network::server_decision::shutdown_client ;
+            }
+            return motor::network::server_decision::keep_going ;
+        }
     };
 }
 
 int main( int argc, char ** argv )
 {
-    auto * mod = motor::platform::network_module_creator::create() ;
+    auto mod = motor::platform::network_module_creator::create() ;
     
     // platform not supported
     if ( mod == nullptr ) return 1 ;

@@ -930,7 +930,7 @@ namespace this_file
 
 int main( int argc, char ** argv )
 {
-    auto * mod = motor::platform::network_module_creator::create() ;
+    auto mod = motor::platform::network_module_creator::create() ;
 
     motor::io::database_mtr_t db = motor::shared( 
         motor::io::database( motor::io::path_t( DATAPATH ), "./working", "data" ) ) ;

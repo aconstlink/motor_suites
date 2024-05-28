@@ -75,7 +75,7 @@ auto const recv_funk = [&] ( byte_cptr_t data, size_t const sib ) -> motor::netw
 
 int main( int argc, char ** argv )
 {
-    auto * mod = motor::platform::network_module_creator::create() ;
+    auto mod = motor::platform::network_module_creator::create() ;
 
     // platform not supported
     if ( mod == nullptr ) return 1 ;
