@@ -14,6 +14,7 @@
 
 #include <motor/math/interpolation/interpolate.hpp>
 
+#include <motor/profiling/global.h>
 #include <motor/io/database.h>
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
@@ -349,6 +350,7 @@ int main( int argc, char ** argv )
     
     motor::memory::release_ptr( carrier ) ;
     
+    motor::profiling::global_t::deinit() ;
     motor::io::global_t::deinit() ;
     motor::concurrent::global::deinit() ;
     motor::log::global::deinit() ;
