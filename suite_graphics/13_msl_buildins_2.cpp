@@ -35,14 +35,17 @@ namespace this_file
         motor::graphics::msl_object_t msl_obj ;
         motor::graphics::msl_object_t msl_lib_obj ;
 
-        motor::io::monitor_mtr_t mon = motor::memory::create_ptr( motor::io::monitor_t() ) ;
-        motor::io::database db = motor::io::database( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
+        motor::io::monitor_mtr_t mon ;
+        motor::io::database db ;
 
         motor::vector< motor::graphics::msl_object_ptr_t > reconfigs ;
 
         //***********************************************************************************
         virtual void_t on_init( void_t ) noexcept
         {
+            mon = motor::memory::create_ptr( motor::io::monitor_t() ) ;
+            db = motor::io::database( motor::io::path_t( DATAPATH ), "./working", "data" ) ; ;
+
             {
                 motor::application::window_info_t wi ;
                 wi.x = 100 ;
@@ -341,21 +344,5 @@ namespace this_file
 
 int main( int argc, char ** argv )
 {
-    using namespace motor::core::types ;
-
-    motor::application::carrier_mtr_t carrier = motor::platform::global_t::create_carrier(
-        motor::shared( this_file::my_app() ) ) ;
-    
-    auto const ret = carrier->exec() ;
-    
-    motor::memory::release_ptr( carrier ) ;
-    
-    motor::profiling::global_t::deinit() ;
-    motor::io::global_t::deinit() ;
-    motor::concurrent::global::deinit() ;
-    motor::log::global::deinit() ;
-    motor::memory::global::dump_to_std() ;
-
-
-    return ret ;
+    return motor::platform::global_t::create_and_exec< this_file::my_app >() ;
 }

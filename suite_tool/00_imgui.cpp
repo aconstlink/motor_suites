@@ -82,20 +82,5 @@ namespace this_file
 
 int main( int argc, char ** argv )
 {
-    using namespace motor::core::types ;
-
-    motor::application::carrier_mtr_t carrier = motor::platform::global_t::create_carrier(
-        motor::shared( this_file::my_app() ) ) ;
-    
-    auto const ret = carrier->exec() ;
-    
-    motor::memory::release_ptr( carrier ) ;
-
-    motor::concurrent::global::deinit() ;
-    motor::log::global::deinit() ;
-    motor::profiling::global::deinit() ;
-    motor::memory::global::dump_to_std() ;
-    
-
-    return ret ;
+    return motor::platform::global_t::create_and_exec< this_file::my_app >() ;
 }

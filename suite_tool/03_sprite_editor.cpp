@@ -23,7 +23,7 @@ namespace this_file
     class my_app : public motor::application::app
     {
         motor_this_typedefs( my_app ) ;
-
+        
         motor::tool::sprite_editor_t _se ;
         motor::io::database_mtr_t _db ;
 
@@ -70,13 +70,7 @@ namespace this_file
                 _se.add_sprite_sheet( "sprite_sheets", motor::io::location_t( "sprite_sheets.motor" ) ) ;
             }
         }
-
-        //************************************************************************
-        virtual void_t on_shutdown( void_t ) noexcept 
-        {
-            motor::memory::release_ptr( motor::move( _db ) ) ;
-        }
-
+        
         //************************************************************************
         virtual void_t on_event( window_id_t const wid,
             motor::application::window_message_listener::state_vector_cref_t sv ) noexcept
@@ -86,6 +80,11 @@ namespace this_file
                 motor::log::global_t::status( "[my_app] : window closed" ) ;
                 this->close() ;
             }
+        }
+        //************************************************************************
+        virtual void_t on_shutdown( void_t ) noexcept 
+        {
+            motor::memory::release_ptr( motor::move( _db ) ) ;
         }
 
         //************************************************************************
@@ -108,22 +107,5 @@ namespace this_file
 //************************************************************************
 int main( int argc, char ** argv )
 {
-    using namespace motor::core::types ;
-
-    motor::application::carrier_mtr_t carrier = motor::platform::global_t::create_carrier(
-        motor::shared( this_file::my_app() ) ) ;
-
-    auto const ret = carrier->exec() ;
-
-    motor::memory::release_ptr( carrier ) ;
-
-    motor::concurrent::global::deinit() ;
-    motor::log::global::deinit() ;
-    motor::profiling::global::deinit() ;
-    motor::io::global::deinit() ;
-    motor::memory::global::dump_to_std() ;
-    
-
-
-    return ret ;
+    return motor::platform::global_t::create_and_exec< this_file::my_app >() ;
 }
