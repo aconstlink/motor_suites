@@ -3,6 +3,7 @@
 set( tests
     "00_format_load.cpp"
     "01_sprite_sheet.cpp"
+    "02_aseprite_json_import.cpp"
     )
 
 foreach( _test ${tests} )
