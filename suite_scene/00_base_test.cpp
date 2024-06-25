@@ -47,7 +47,7 @@ int main( int argc, char ** argv )
         // try log visitor and print the tree
         {
             motor::scene::log_visitor_t lv ;
-            root.apply( &lv ) ;
+            motor::scene::node_t::traverser( &root ).apply( &lv ) ;
         }
     }
 
@@ -65,7 +65,7 @@ int main( int argc, char ** argv )
                     motor::log::global::status( "code in group g" ) ;
                 } ) ) );
 
-                // can not add a second component of the same time.
+                // can not add a second component of the same type.
                 {
                     auto res = g->add_component( motor::shared( motor::scene::code_component_t( [=] ( motor::scene::node_ptr_t )
                     {
@@ -90,7 +90,7 @@ int main( int argc, char ** argv )
 
         {
             motor::scene::code_exe_visitor_t v ;
-            root.apply( &v ) ;
+            motor::scene::node_t::traverser( &root ).apply( &v ) ;
         }
     }
 

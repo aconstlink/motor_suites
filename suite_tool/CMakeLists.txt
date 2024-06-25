@@ -4,6 +4,7 @@ set( tests
     "01_imgui.cpp"
     "02_profiling.cpp"
     "03_sprite_editor.cpp"
+    "04_imgui_scene_visitor.cpp"
     )
 
 foreach( _test ${tests} )
