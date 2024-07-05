@@ -1,8 +1,8 @@
 
 
 set( tests
-    "00_base_test.cpp"
-    "01_scene_render.cpp"
+    "00_wire.cpp"
+    "01_wire.cpp"
     )
 
 foreach( _test ${tests} )
@@ -21,13 +21,9 @@ foreach( _test ${tests} )
       PRIVATE motor::application
       PRIVATE motor::platform
       PRIVATE motor::io
-      PRIVATE motor::graphics
-      PRIVATE motor::geometry
-      PRIVATE motor::scene
-      PRIVATE motor::tool
-    )
+      PRIVATE motor::wire )
 
-    set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_scene" )
+    set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_wire" )
 
     set( data_path ${CMAKE_CURRENT_LIST_DIR} ) 
     target_compile_definitions( ${app_name} PRIVATE -DDATAPATH="${data_path}")
