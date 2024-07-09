@@ -9,35 +9,53 @@ int main( int argc, char ** argv )
 {
     bool_t run_loop = true ;
 
-    motor::concurrent::task_mtr_t t0 = motor::memory::create_ptr( motor::concurrent::task_t( [=]( motor::concurrent::task_mtr_t )
+    auto t0 = motor::shared( motor::concurrent::task_t( [=]( motor::concurrent::task_mtr_t )
     {
         motor::log::global_t::status( "t0" ) ;
     } ), "t0 task" ) ;
     
 
-    motor::concurrent::task_mtr_t t1 = motor::memory::create_ptr( motor::concurrent::task_t( [=]( motor::concurrent::task_mtr_t )
+    auto t1 = motor::shared( motor::concurrent::task_t( [=]( motor::concurrent::task_mtr_t )
     {
         motor::log::global_t::status( "t1" ) ;
     } ), "t1 task" ) ;
 
-    motor::concurrent::task_mtr_t t2 = motor::memory::create_ptr( motor::concurrent::task_t( [=]( motor::concurrent::task_mtr_t )
+    auto t2 = motor::shared( motor::concurrent::task_t( [=]( motor::concurrent::task_mtr_t )
     {
         motor::log::global_t::status( "t2" ) ;
     } ), "t2 task" ) ;
 
-    motor::concurrent::task_mtr_t t3 = motor::memory::create_ptr( motor::concurrent::task_t( [&]( motor::concurrent::task_mtr_t )
+    auto t3 = motor::shared( motor::concurrent::task_t( [&]( motor::concurrent::task_mtr_t )
     {
         run_loop = false ;
         motor::log::global_t::status( "good bye" ) ;
     } ), "t3 task" ) ;
 
-    motor::concurrent::task_mtr_t t4 = motor::memory::create_ptr( motor::concurrent::task_t( [=]( motor::concurrent::task_mtr_t )
+    auto t4 = motor::shared( motor::concurrent::task_t( [=]( motor::concurrent::task_mtr_t this_task )
     {
         std::this_thread::sleep_for( std::chrono::milliseconds(100) ) ;
+
+        // add an inbetweener while the taks is executed
+        {
+            this_task->in_between( motor::shared( motor::concurrent::task_t( [=] ( motor::concurrent::task_mtr_t this_task ) 
+            {
+                motor::log::global_t::status( "inbetween t4" ) ;
+            } ) ) ) ;
+        }
+
+        // add an then'er while the taks is executed
+        {
+            this_task->then( motor::shared( motor::concurrent::task_t( [=] ( motor::concurrent::task_mtr_t this_task )
+            {
+                motor::log::global_t::status( "t4 then" ) ;
+            } ) ) ) ;
+        }
+        
+
         motor::log::global_t::status( "t4" ) ;
     } ), "t4 task" ) ;
 
-    motor::concurrent::task_mtr_t t5 = motor::memory::create_ptr( motor::concurrent::task_t( [=]( motor::concurrent::task_mtr_t )
+    auto t5 = motor::shared( motor::concurrent::task_t( [=]( motor::concurrent::task_mtr_t )
     {
         motor::log::global_t::status( "t5" ) ;
     } ), "t5 task" ) ;
@@ -55,6 +73,7 @@ int main( int argc, char ** argv )
         motor::concurrent::loose_thread_scheduler lts ;
         lts.init() ;
 
+        // will consume the tasks
         lts.schedule( motor::move( t0 ) ) ;
 
         while( run_loop )
