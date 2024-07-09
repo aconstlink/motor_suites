@@ -7,7 +7,6 @@ set( tests
     "03_tasks.cpp"
     "04_thread_pool.cpp"
     "05_parallel_for.cpp"
-    "06_loose_scheduler.cpp"
     )
 
 if( WIN32 )

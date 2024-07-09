@@ -3,6 +3,7 @@
 set( tests
     "00_wire.cpp"
     "01_wire_node.cpp"
+    "02_wire_node.cpp"
     )
 
 foreach( _test ${tests} )

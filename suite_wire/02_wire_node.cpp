@@ -10,6 +10,9 @@ using namespace motor::core::types ;
 
 int main( int argc, char ** argv )
 {
+    motor::concurrent::loose_thread_scheduler lts ;
+    lts.init() ;
+
     bool_t run_loop = true ;
 
     auto start = motor::shared( motor::wire::node( [=] ( motor::wire::node_ptr_t ) 
@@ -49,36 +52,36 @@ int main( int argc, char ** argv )
     //         .-(a)-.-----.-(d)-.
     // (start)-|     |-(c)-'     |
     //         '-(b)-'-----------'-(e)
-    #if 1
+    
     {
         start->then( motor::share( a ) )->then( motor::share( c ) )->then( motor::share( d ) )->then( motor::share( e ) ) ;
         start->then( motor::share( b ) )->then( motor::share( c ) ) ;
         b->then( motor::share( e ) ) ;
     }
-    #else
-    // #graph
-    //         
-    // (start)-(a)-(e)
-    //
-    {
-        start->then( motor::share( a ) )->then( motor::share( e ) ) ;
-    }
-    #endif
 
-    // #execute
+    // #execute round 1
     {
-        motor::concurrent::loose_thread_scheduler lts ;
-        lts.init() ;
-
         lts.schedule( start->get_task() ) ;
 
         while ( run_loop )
         {
             lts.update() ;
-            //std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) ) ;
         }
+    }
 
-        lts.deinit() ;
+    // #disconnect c from the graph
+    {
+        c->disconnect() ;
+    }
+
+    // #execute round 2
+    {
+        lts.schedule( start->get_task() ) ;
+
+        while ( run_loop )
+        {
+            lts.update() ;
+        }
     }
 
     {
@@ -95,6 +98,8 @@ int main( int argc, char ** argv )
     motor::release( c ) ;
     motor::release( d ) ;
     motor::release( e ) ;
+
+    lts.deinit() ;
 
     motor::concurrent::global::deinit() ;
     motor::log::global::deinit() ;

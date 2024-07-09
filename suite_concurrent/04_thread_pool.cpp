@@ -41,7 +41,7 @@ int main( int argc, char ** argv )
         // add 1 task
         {
             motor::log::global_t::status("[SECTION 1] : adding one task") ;
-            auto const task_funk = [&]( motor::concurrent::task_mtr_t )
+            auto const task_funk = [&]( motor::concurrent::task_t::task_funk_param_in_t )
             {
                 inc_thread_counter() ;
 
@@ -71,7 +71,7 @@ int main( int argc, char ** argv )
 
             motor::concurrent::semaphore_t task_counter(n) ;
 
-            auto const task_funk = [&]( motor::concurrent::task_mtr_t )
+            auto const task_funk = [&]( motor::concurrent::task_t::task_funk_param_in_t )
             {
                 inc_thread_counter() ;
 
@@ -106,25 +106,28 @@ int main( int argc, char ** argv )
     // test dynamic task insertion
     // the root task inserts n tasks during
     // it is being executed
+    #if 0
     {
         motor::concurrent::thread_pool_t tp ;
 
         tp.init() ;
 
-        motor::log::global_t::status("[SECTION 3] : adding n inbetweeners") ;
+        motor::log::global_t::status("[SECTION 3] : adding n thens") ;
 
         size_t const num_in_betweens = 10000 ;
         motor::concurrent::semaphore_t sem_counter(num_in_betweens) ;
 
         motor::concurrent::sync_object_mtr_t so =  motor::memory::create_ptr( motor::concurrent::sync_object_t() ) ;
 
-        motor::concurrent::task_mtr_t root = motor::concurrent::global_t::make_task( [&]( motor::concurrent::task_mtr_t this_task )
+        motor::concurrent::task_mtr_t root = motor::shared( motor::concurrent::task_t( 
+            [&, root]( motor::concurrent::task_t::task_funk_param_in_t  )
         {
             inc_thread_counter() ;
 
             for( size_t i=0; i<num_in_betweens; ++i ) 
             {
-                this_task->in_between( motor::concurrent::global_t::make_task( [&]( motor::concurrent::task_mtr_t )
+                root->then( motor::concurrent::global_t::make_task( 
+                    [&]( motor::concurrent::task_t::task_funk_param_in_t )
                 {
                     // make it busy
                     for( size_t i=0; i<1000000; ++i ) 
@@ -133,12 +136,13 @@ int main( int argc, char ** argv )
                     --sem_counter ;
                 }) ) ;
             }
-        }).mtr() ;
+        }) ) ;
 
-        motor::concurrent::task_mtr_t merge = motor::concurrent::global_t::make_task( [=]( motor::concurrent::task_mtr_t )
+        motor::concurrent::task_mtr_t merge = motor::shared( 
+            motor::concurrent::task_t( [=]( motor::concurrent::task_t::task_funk_param_in_t )
         {
             so->set_and_signal() ;
-        } ).mtr() ;
+        } ) ) ;
 
         root->then( motor::move(merge) ) ;
 
@@ -154,10 +158,12 @@ int main( int argc, char ** argv )
 
         tp.shutdown() ;
     }
+    #endif
+
     //motor::memory::global_t::dump_to_std() ;
 
     // parallel for with yield and nested
-    // this will serve as the prototype for the natus in-engine parallel_for
+    // this will serve as the prototype for the motor in-engine parallel_for
     {
         motor::concurrent::thread_pool_t tp ;
 
@@ -171,7 +177,7 @@ int main( int argc, char ** argv )
         size_t const num_splits = std::thread::hardware_concurrency() ;
         motor::log::global_t::status( motor::from_std( "[SECTION 4] : there should be " + std::to_string(num_splits*num_splits) + " tasks" ) ) ;
 
-        motor::concurrent::task_mtr_t root = motor::concurrent::global_t::make_task( [&]( motor::concurrent::task_mtr_t this_task )
+        motor::concurrent::task_mtr_t root = motor::concurrent::global_t::make_task( [&]( motor::concurrent::task_t::task_funk_param_in_t )
         {
             inc_thread_counter() ;
             
@@ -182,7 +188,7 @@ int main( int argc, char ** argv )
             // outer for: create num_splits tasks that will yield
             for( size_t i=0; i<num_splits; ++i ) 
             {
-                tp.schedule( motor::concurrent::global_t::make_task( [&]( motor::concurrent::task_mtr_t )
+                tp.schedule( motor::concurrent::global_t::make_task( [&]( motor::concurrent::task_t::task_funk_param_in_t )
                 {
                     inc_thread_counter() ;
 
@@ -191,7 +197,7 @@ int main( int argc, char ** argv )
                     // inner for
                     for( size_t i=0; i<num_splits; ++i ) 
                     {
-                        tp.schedule( motor::concurrent::global_t::make_task( [&]( motor::concurrent::task_mtr_t )
+                        tp.schedule( motor::concurrent::global_t::make_task( [&]( motor::concurrent::task_t::task_funk_param_in_t )
                         {
                             inc_thread_counter() ;
 

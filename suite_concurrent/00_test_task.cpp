@@ -11,7 +11,8 @@
 int main( int argc, char ** argv )
 {
     {
-        auto t = motor::concurrent::global_t::make_task( [&]( motor::concurrent::task_mtr_t ){} ) ;
+        auto t = motor::shared( motor::concurrent::task_t( 
+            [&]( motor::concurrent::task_t::task_funk_param_in_t ){} ) ) ;
 
         //motor::memory::release_ptr( t ) ;
         motor::memory::global_t::release( std::move(t) ) ;
