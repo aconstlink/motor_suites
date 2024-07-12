@@ -73,6 +73,58 @@ namespace this_file
                 ImGui::ShowDemoWindow( &show ) ;
                 ImPlot::ShowDemoWindow( &show ) ;
             }
+
+            {
+                ImGui::Begin( "simple node editor" );
+
+                ImNodes::BeginNodeEditor();
+                {
+                    ImNodes::BeginNode( 1 );
+
+                    ImNodes::BeginNodeTitleBar();
+                    ImGui::TextUnformatted( "first node" );
+                    ImNodes::EndNodeTitleBar();
+
+                    ImNodes::BeginInputAttribute( 2 );
+                    ImGui::Text( "input" );
+                    ImNodes::EndInputAttribute();
+
+                    ImNodes::BeginOutputAttribute( 3 );
+                    ImGui::Indent( 40 );
+                    ImGui::Text( "output" );
+                    ImNodes::EndOutputAttribute();
+
+                    ImNodes::EndNode();
+                }
+
+                {
+                    ImNodes::BeginNode( 4 );
+
+                    ImNodes::BeginNodeTitleBar();
+                    ImGui::TextUnformatted( "second node" );
+                    ImNodes::EndNodeTitleBar();
+
+                    ImNodes::BeginInputAttribute( 5 );
+                    ImGui::Text( "input" );
+                    ImNodes::EndInputAttribute();
+
+                    ImNodes::BeginOutputAttribute( 6 );
+                    ImGui::Indent( 40 );
+                    ImGui::Text( "output" );
+                    ImNodes::EndOutputAttribute();
+
+                    ImNodes::EndNode();
+                }
+
+                {
+                    ImNodes::Link( 3, 3, 5  ) ;
+                }
+
+
+                ImNodes::EndNodeEditor();
+
+                ImGui::End();
+            }
             return true ; 
         }
 
