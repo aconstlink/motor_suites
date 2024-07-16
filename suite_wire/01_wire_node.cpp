@@ -46,14 +46,17 @@ int main( int argc, char ** argv )
     } ), "node" ) ;
 
     // #graph
-    //         .-(a)-.-----.-(d)-.
-    // (start)-|     |-(c)-'     |
-    //         '-(b)-'-----------'-(e)
+    //         .-(a)-.
+    // (start)-|     |-(c)-(d)-.
+    //         '-(b)-'---------'-(e)
     #if 1
     {
         start->then( motor::share( a ) )->then( motor::share( c ) )->then( motor::share( d ) )->then( motor::share( e ) ) ;
         start->then( motor::share( b ) )->then( motor::share( c ) ) ;
         b->then( motor::share( e ) ) ;
+
+        // make cycle 
+        //e->then( motor::share( start ) ) ;
     }
     #else
     // #graph
@@ -64,6 +67,31 @@ int main( int argc, char ** argv )
         start->then( motor::share( a ) )->then( motor::share( e ) ) ;
     }
     #endif
+
+    // test tier builder
+    // #graph
+    //         .-(a)-.
+    // (start)-|     |-(c)-(d)-.
+    //         '-(b)-'---------'-(e)
+
+    // #tiers for this graph
+    // tier #1 | tier #2 | tier #3 | tier #4  | tier #5 
+    //  start  |  a, b   |   c     |    d     |   e
+    {
+        motor::concurrent::task::tier_builder_t::build_result_t br ;
+        motor::concurrent::task::tier_builder_t tb ;
+        tb.build( start->get_task(), br ) ;
+
+        size_t idx = 0 ;
+        for( auto t : br.tiers )
+        {
+            motor::log::global_t::status(
+                "Tier #" + motor::to_string(idx) + " has " + motor::to_string( t.tasks.size() ) + " tasks" ) ;
+        }
+
+        if( br.has_cylce ) motor::log::global_t::status("graph has a cycle.") ;
+        assert( br.has_cylce == false ) ;
+    }
 
     // #execute
     {

@@ -63,6 +63,10 @@ namespace this_file
         { 
             MOTOR_PROBE( "application", "on_tool" ) ;
 
+            static float_t pos_x = 0.0f ;
+            static float_t pos_y = 0.0f ;
+
+            #if 0
             {
                 if( ImGui::Begin("test window") ){}
                 ImGui::End() ;
@@ -73,16 +77,63 @@ namespace this_file
                 ImGui::ShowDemoWindow( &show ) ;
                 ImPlot::ShowDemoWindow( &show ) ;
             }
-
+            #endif
             {
                 ImGui::Begin( "simple node editor" );
 
+                ImGui::SliderFloat( "move node x", &pos_x, -1000.0f, 1000.0f) ;
+                ImGui::SliderFloat( "move node y", &pos_y, -1000.0f, 1000.0f) ;
+
+                ImVec2 cur_pos = ImGui::GetCursorPos() ;
+
+                
+                
                 ImNodes::BeginNodeEditor();
+
                 {
+                    auto style = ImNodes::GetStyle() ;
+                    style.GridSpacing = 20.0f ;
+                    //ImNodes::PushStyleVar( ImNodesStyleVar_GridSpacing, 1.0f ) ;
+                    
+                    //ImNodes::GetCurrentContext()-> ;
+                }
+
+                #if 1
+                {
+                    for( int_t i=0; i<3; ++i )
+                    {
+                        ImNodes::BeginNode( i );
+
+                        ImNodes::BeginNodeTitleBar();
+                        ImGui::TextUnformatted( "node" );
+                        ImNodes::EndNodeTitleBar();
+
+                        #if 0
+                        ImNodes::BeginInputAttribute( 2 );
+                        ImGui::Text( "input" );
+                        ImNodes::EndInputAttribute();
+                         
+                        ImNodes::BeginOutputAttribute( 3 );
+                        ImGui::Indent( 40 );
+                        ImGui::Text( "output" );
+                        ImNodes::EndOutputAttribute();
+                        #else
+                        ImGui::Dummy(ImVec2() ) ;
+                        #endif
+                        cur_pos = ImGui::GetCursorPos() ;
+                        
+                        ImNodes::EndNode();
+                        ImNodes::SetNodeGridSpacePos( i, ImVec2( pos_x, pos_y+float_t(i)*1000.0f ) ) ;
+                    }
+                }
+                #else
+                {
+                  
+
                     ImNodes::BeginNode( 1 );
 
                     ImNodes::BeginNodeTitleBar();
-                    ImGui::TextUnformatted( "first node" );
+                    ImGui::TextUnformatted( "node" );
                     ImNodes::EndNodeTitleBar();
 
                     ImNodes::BeginInputAttribute( 2 );
@@ -94,14 +145,17 @@ namespace this_file
                     ImGui::Text( "output" );
                     ImNodes::EndOutputAttribute();
 
-                    ImNodes::EndNode();
-                }
+                    cur_pos = ImGui::GetCursorPos() ;
 
+                    ImNodes::EndNode();
+                    ImNodes::SetNodeGridSpacePos( 1, ImVec2( pos_x, pos_y ) ) ;
+                }
+                
                 {
                     ImNodes::BeginNode( 4 );
 
                     ImNodes::BeginNodeTitleBar();
-                    ImGui::TextUnformatted( "second node" );
+                    ImGui::TextUnformatted( "node" );
                     ImNodes::EndNodeTitleBar();
 
                     ImNodes::BeginInputAttribute( 5 );
@@ -114,13 +168,23 @@ namespace this_file
                     ImNodes::EndOutputAttribute();
 
                     ImNodes::EndNode();
+                    ImNodes::SetNodeGridSpacePos( 4, ImVec2( pos_x+10.0f, pos_y ) ) ;
+                }
+                #endif
+                {
+                    
+                    
+                    //ImNodes::SetNodeGridSpacePos( 4, ImVec2( style.GridSpacing*3.0f, style.GridSpacing *3.0f ) ) ;
+
+                    //ImNodes::EditorContextMoveToNode( 1 ) ;
+                     
                 }
 
                 {
-                    ImNodes::Link( 3, 3, 5  ) ;
+                    //ImNodes::Link( 3, 3, 5  ) ;
                 }
 
-
+                ImNodes::MiniMap();
                 ImNodes::EndNodeEditor();
 
                 ImGui::End();
