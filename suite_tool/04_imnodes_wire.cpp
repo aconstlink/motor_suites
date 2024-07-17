@@ -44,46 +44,52 @@ namespace this_file
 
             // init node graph
             {
-                auto start = motor::shared( motor::wire::node( [=] ( motor::wire::node_ptr_t )
+                auto start = motor::shared( motor::wire::node( "start", [=] ( motor::wire::node_ptr_t )
                 {
                 } ), "start node" ) ;
 
-                auto a = motor::shared( motor::wire::node( [=] ( motor::wire::node_ptr_t )
+                auto a = motor::shared( motor::wire::node( "a", [=] ( motor::wire::node_ptr_t )
                 {
                 } ), "node" ) ;
 
-                auto b = motor::shared( motor::wire::node( [=] ( motor::wire::node_ptr_t )
+                auto b = motor::shared( motor::wire::node( "b",  [=] ( motor::wire::node_ptr_t )
                 {
                     //std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) ) ;
                     
                 } ), "node" ) ;
 
-                auto c = motor::shared( motor::wire::node( [=] ( motor::wire::node_ptr_t )
+                auto c = motor::shared( motor::wire::node( "c", [=] ( motor::wire::node_ptr_t )
                 {
                 } ), "node" ) ;
 
-                auto d = motor::shared( motor::wire::node( [=] ( motor::wire::node_ptr_t )
+                auto d = motor::shared( motor::wire::node( "d", [=] ( motor::wire::node_ptr_t )
                 {
                 } ), "node" ) ;
 
-                auto e = motor::shared( motor::wire::node( [&] ( motor::wire::node_ptr_t )
+                auto e = motor::shared( motor::wire::node( "e", [=] ( motor::wire::node_ptr_t )
+                {
+                } ), "node" ) ;
+
+                auto f = motor::shared( motor::wire::node( "f", [&] ( motor::wire::node_ptr_t )
                 {
                 } ), "node" ) ;
 
                 // #graph
-                //         .-(a)-.
-                // (start)-|     |-(c)-(d)-.
-                //         '-(b)-'---------'-(e)
+                //         .-(a)-.     .-(d)-.
+                // (start)-|     |-(c)-'-(e)-|
+                //         '-(b)-'-----------'-(f)
 
                 {
-                    start->then( motor::share( a ) )->then( motor::share( c ) )->then( motor::share( d ) )->then( motor::share( e ) ) ;
-                    start->then( motor::share( b ) )->then( motor::share( c ) ) ;
-                    b->then( motor::share( e ) ) ;
+                    start->then( motor::share( a ) )->then( motor::share( c ) )->then( motor::share( d ) )->then( motor::share( f ) ) ;
+                    start->then( motor::share( b ) )->then( motor::share( c ) )->then( motor::share( e ) )->then( motor::share( f ) ) ;
+                    
+                    
+                    b->then( motor::share( f ) ) ;
                 }
 
                 // #tiers for this graph
                 // tier #1 | tier #2 | tier #3 | tier #4  | tier #5 
-                //  start  |  a, b   |   c     |    d     |   e
+                //  start  |  a, b   |   c     |    d,e     |   f
                 {
                     motor::concurrent::task::tier_builder_t tb ;
 
