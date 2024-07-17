@@ -21,6 +21,7 @@ namespace this_file
         motor_this_typedefs( my_app ) ;
 
         motor::concurrent::task::tier_builder_t::build_result_t _tier_builder_result ;
+        motor::wire::node::tier_builder_t::build_result_t _tier_builder_result_nodes ;
 
         virtual void_t on_init( void_t ) noexcept
         {
@@ -83,7 +84,6 @@ namespace this_file
                     start->then( motor::share( a ) )->then( motor::share( c ) )->then( motor::share( d ) )->then( motor::share( f ) ) ;
                     start->then( motor::share( b ) )->then( motor::share( c ) )->then( motor::share( e ) )->then( motor::share( f ) ) ;
                     
-                    
                     b->then( motor::share( f ) ) ;
                 }
 
@@ -98,6 +98,15 @@ namespace this_file
 
                     if ( _tier_builder_result.has_cylce ) motor::log::global_t::status( "graph has a cycle." ) ;
                     assert( _tier_builder_result.has_cylce == false ) ;
+                }
+
+                {
+                    motor::wire::node::tier_builder_t tb ;
+
+                    tb.build( start, _tier_builder_result_nodes ) ;
+
+                    if ( _tier_builder_result_nodes.has_cylce ) motor::log::global_t::status( "graph has a cycle." ) ;
+                    assert( _tier_builder_result_nodes.has_cylce == false ) ;
                 }
             }
         }
@@ -122,72 +131,70 @@ namespace this_file
         { 
             MOTOR_PROBE( "application", "on_tool" ) ;
 
-            #if 0
+            // #1 : task graph window
+            if( ImGui::Begin( "task graph visualization" ) )
             {
-                if( ImGui::Begin("test window") ){}
-                ImGui::End() ;
-            }
-            #endif
-            {
-                ImGui::Begin( "simple node editor" );
+                ImNodes::BeginNodeEditor();
 
-                
                 ImVec2 cur_pos(0.0f,0.0f) ;//= ImGui::GetCursorPos() ; 
                 
-                
+                // visualize tasks
                 {
                     motor::hash_map< motor::concurrent::task_mtr_t, int_t > tasks_to_ids ;
 
-                    ImNodes::BeginNodeEditor();
+                    int_t const num_nodes = int_t( _tier_builder_result.num_tasks ) ;
 
-                    int_t nid = 0 ;
-                    int_t tier_id = 0 ;
-
-                    int_t const num_nodes = int_t(_tier_builder_result.num_tasks) ;
-                    for ( auto & tier : _tier_builder_result.tiers )
+                    // visualize tasks and collect info
                     {
-                        for ( auto * t : tier.tasks )
+                        int_t nid = 0 ;
+                        int_t tier_id = 0 ;
+                        
+                        for ( auto & tier : _tier_builder_result.tiers )
                         {
-                            ImNodes::BeginNode( nid );
-
-                            ImNodes::BeginNodeTitleBar();
-                            ImGui::TextUnformatted( "node" );
-                            ImNodes::EndNodeTitleBar();
-
-                            #if 0
-                            ImGui::Dummy(ImVec2() ) ;
-                            #else
+                            for ( auto * t : tier.tasks )
                             {
-                                int_t const base_attr_id = num_nodes + nid * 2 ;
-                                ImNodes::BeginInputAttribute( base_attr_id + 0 );
-                                ImGui::Text( "input" );
-                                ImNodes::EndInputAttribute();
+                                ImNodes::BeginNode( nid );
+
+                                ImNodes::BeginNodeTitleBar();
+                                ImGui::TextUnformatted( "node" );
+                                ImNodes::EndNodeTitleBar();
+
+                                #if 0
+                                ImGui::Dummy( ImVec2() ) ;
+                                #else
+                                {
+                                    int_t const base_attr_id = num_nodes + nid * 2 ;
+                                    ImNodes::BeginInputAttribute( base_attr_id + 0 );
+                                    ImGui::Text( "input" );
+                                    ImNodes::EndInputAttribute();
 
 
-                                ImNodes::BeginOutputAttribute( base_attr_id + 1 );
-                                ImGui::Indent( 40 );
-                                ImGui::Text( "output" );
-                                ImNodes::EndOutputAttribute();
+                                    ImNodes::BeginOutputAttribute( base_attr_id + 1 );
+                                    ImGui::Indent( 40 );
+                                    ImGui::Text( "output" );
+                                    ImNodes::EndOutputAttribute();
+                                }
+                                #endif
+
+                                ImNodes::EndNode();
+                                ImNodes::SetNodeGridSpacePos( nid, cur_pos ) ;
+
+                                tasks_to_ids[ t ] = nid ;
+
+                                ImVec2 const dims = ImNodes::GetNodeDimensions( nid ) ;
+
+                                cur_pos.y += dims.y * 2.0f ;
+
+                                ++nid ;
                             }
-                            #endif
 
-                            ImNodes::EndNode();
-                            ImNodes::SetNodeGridSpacePos( nid, cur_pos ) ;
-                            
-                            tasks_to_ids[ t ] = nid ;
-
-                            ImVec2 const dims = ImNodes::GetNodeDimensions( nid ) ;
-
-                            cur_pos.y += dims.y * 2.0f ;
-
-                            ++nid ;
+                            ImVec2 const dims( 50.0f, 1.0f ) ;
+                            cur_pos.x += dims.x * 3.0f ;
+                            cur_pos.y = 0.0f ;
                         }
-
-                        ImVec2 const dims( 50.0f, 1.0f ) ;
-                        cur_pos.x += dims.x * 3.0f ;
-                        cur_pos.y = 0.0f ;
                     }
 
+                    // link all tasks
                     {
                         int_t link_id = 0 ;
                         motor::concurrent::task::tier_builder_t::output_slot_walk( _tier_builder_result,
@@ -206,25 +213,107 @@ namespace this_file
                             }
                         } ) ;
                     }
-                    
-                    
-                    
-                    
-                    for ( auto & tier : _tier_builder_result.tiers )
-                    {
-                        for ( auto * t : tier.tasks )
-                        {
 
-                            //ImNodes::Link( 3, 3, 5  ) ;
+                    ImNodes::MiniMap();
+                    ImNodes::EndNodeEditor();
+
+                    ImGui::End();
+                }
+            }
+
+
+            // #2 : nodes graph window
+            if ( ImGui::Begin( "node graph visualization" ) )
+            {
+                ImNodes::BeginNodeEditor();
+
+                ImVec2 cur_pos( 0.0f, 0.0f ) ;//= ImGui::GetCursorPos() ; 
+
+                // visualize tasks
+                {
+                    motor::hash_map< motor::wire::inode_mtr_t, int_t > nodes_to_ids ;
+
+                    int_t const num_nodes = int_t( _tier_builder_result_nodes.num_nodes ) ;
+
+                    // visualize tasks and collect info
+                    {
+                        int_t nid = 0 ;
+                        int_t tier_id = 0 ;
+
+                        for ( auto & tier : _tier_builder_result_nodes.tiers )
+                        {
+                            for ( auto * n : tier.nodes )
+                            {
+                                ImNodes::BeginNode( nid );
+
+                                ImNodes::BeginNodeTitleBar();
+                                ImGui::TextUnformatted( n->name().c_str() );
+                                ImNodes::EndNodeTitleBar();
+
+                                #if 0
+                                ImGui::Dummy( ImVec2() ) ;
+                                #else
+                                {
+                                    int_t const base_attr_id = num_nodes + nid * 2 ;
+                                    ImNodes::BeginInputAttribute( base_attr_id + 0 );
+                                    ImGui::Text( "input" );
+                                    ImNodes::EndInputAttribute();
+
+
+                                    ImNodes::BeginOutputAttribute( base_attr_id + 1 );
+                                    ImGui::Indent( 40 );
+                                    ImGui::Text( "output" );
+                                    ImNodes::EndOutputAttribute();
+                                }
+                                #endif
+
+                                ImNodes::EndNode();
+                                ImNodes::SetNodeGridSpacePos( nid, cur_pos ) ;
+
+                                nodes_to_ids[ n ] = nid ;
+
+                                ImVec2 const dims = ImNodes::GetNodeDimensions( nid ) ;
+
+                                cur_pos.y += dims.y * 2.0f ;
+
+                                ++nid ;
+                            }
+
+                            ImVec2 const dims( 50.0f, 1.0f ) ;
+                            cur_pos.x += dims.x * 3.0f ;
+                            cur_pos.y = 0.0f ;
                         }
+                    }
+
+                    // link all tasks
+                    {
+                        int_t link_id = 0 ;
+                        motor::wire::node::tier_builder_t::output_slot_walk( _tier_builder_result_nodes,
+                            [&] ( motor::wire::inode_mtr_t n_in, motor::wire::inode::nodes_in_t outputs )
+                        {
+                            int_t const tid = nodes_to_ids[ n_in ] ;
+
+                            for ( auto * n : outputs )
+                            {
+                                int_t const oid = nodes_to_ids[ n ] ;
+
+                                int_t const out_id = num_nodes + tid * 2 + 1 ;
+                                int_t const in_id = num_nodes + oid * 2 + 0 ;
+
+                                ImNodes::Link( link_id++, in_id, out_id ) ;
+                            }
+                        } ) ;
                     }
 
                     ImNodes::MiniMap();
                     ImNodes::EndNodeEditor();
+
+                    ImGui::End();
                 }
 
-                ImGui::End();
+
             }
+
             return true ; 
         }
 

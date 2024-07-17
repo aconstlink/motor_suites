@@ -66,7 +66,7 @@ namespace this_file
             static float_t pos_x = 0.0f ;
             static float_t pos_y = 0.0f ;
 
-            #if 0
+            #if 1
             {
                 if( ImGui::Begin("test window") ){}
                 ImGui::End() ;
