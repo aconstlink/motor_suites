@@ -88,6 +88,7 @@ namespace this_file
                     b->then( motor::share( f ) ) ;
                 }
                 {
+                    
                     _imn_wire.build( start ) ;
                 }
             }
@@ -116,25 +117,9 @@ namespace this_file
             // #1 : nodes graph window
             if ( ImGui::Begin( "node graph visualization" ) )
             {
-                ImNodes::BeginNodeEditor();
-                
-                {
-                    _imn_wire.visualize( 0 ) ;
-                }
-
-                ImNodes::MiniMap();
-                ImNodes::EndNodeEditor();
-
-                
-                {
-                    int_t link_id = 0 ;
-                    if( ImNodes::IsLinkDestroyed( &link_id ) )
-                    {
-                        int bp = 0 ;
-                    }
-
-                }
-
+                _imn_wire.begin() ;
+                _imn_wire.visualize( 0 ) ;
+                _imn_wire.end( true ) ;
                 
                 ImGui::End();
             }
