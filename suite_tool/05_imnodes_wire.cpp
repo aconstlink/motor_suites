@@ -5,6 +5,7 @@
 #include <motor/platform/global.h>
 
 #include <motor/wire/node/node.h>
+#include <motor/wire/node/node_disconnector.hpp>
 
 #include <motor/tool/imgui/imnodes_wire.h>
 
@@ -23,6 +24,7 @@ namespace this_file
         motor_this_typedefs( my_app ) ;
 
         motor::tool::imnodes_wire_t _imn_wire ;
+        motor::wire::inode_mtr_t _start ;
 
         virtual void_t on_init( void_t ) noexcept
         {
@@ -82,15 +84,18 @@ namespace this_file
                 //         '-(b)-'-----------'-(f)
 
                 {
-                    start->then( motor::share( a ) )->then( motor::share( c ) )->then( motor::share( d ) )->then( motor::share( f ) ) ;
-                    start->then( motor::share( b ) )->then( motor::share( c ) )->then( motor::share( e ) )->then( motor::share( f ) ) ;
+                    start->then( motor::move( a ) )->then( motor::share( c ) )->then( motor::move( d ) )->then( motor::share( f ) ) ;
+                    start->then( motor::share( b ) )->then( motor::move( c ) )->then( motor::move( e ) )->then( motor::share( f ) ) ;
                     
-                    b->then( motor::share( f ) ) ;
+                    b->then( motor::move( f ) ) ;
+                    
+                    motor::release( b ) ;
                 }
                 {
-                    
                     _imn_wire.build( start ) ;
                 }
+
+                _start = motor::move( start ) ;
             }
         }
 
@@ -129,7 +134,7 @@ namespace this_file
 
         virtual void_t on_shutdown( void_t ) noexcept 
         {
-            motor::wire::node::
+            motor::wire::node_disconnector_t::disconnect_everyting( motor::move( _start ) ) ;
         }
     };
 }
