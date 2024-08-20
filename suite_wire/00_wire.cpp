@@ -11,6 +11,7 @@ using namespace motor::core::types ;
 
 int main( int argc, char ** argv )
 {
+    // test input/output slots
     {
         auto sig = motor::shared( motor::wire::output_slot< float_t >(), "signal" ) ;
         auto slot = motor::shared( motor::wire::input_slot< float_t >(), "slot" ) ;
@@ -35,6 +36,7 @@ int main( int argc, char ** argv )
         motor::release( motor::move( slot ) ) ;
     }
 
+    // test sheets #1
     {
         motor::wire::sheet< motor::wire::ioutput_slot > outputs ;
         motor::wire::sheet< motor::wire::iinput_slot > inputs ;
@@ -49,6 +51,7 @@ int main( int argc, char ** argv )
         int bp = 0 ;
     }
 
+    // test sheets #2
     {
         motor::wire::outputs_t outputs ;
         motor::wire::inputs_t inputs ;
@@ -59,10 +62,6 @@ int main( int argc, char ** argv )
 
             assert( inputs.borrow( "a slot" )->connect( outputs.get( "a signal" ) ) ) ;
         }
-    }
-
-    {
-
     }
 
     motor::memory::global::dump_to_std() ;

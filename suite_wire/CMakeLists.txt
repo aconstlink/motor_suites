@@ -4,6 +4,7 @@ set( tests
     "00_wire.cpp"
     "01_wire_node.cpp"
     "02_wire_node.cpp"
+    "03_wire_node_w_slots.cpp"
     )
 
 foreach( _test ${tests} )
