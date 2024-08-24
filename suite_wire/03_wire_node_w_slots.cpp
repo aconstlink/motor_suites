@@ -27,10 +27,47 @@ namespace this_file
 
         motor::wire::output_slot< bool_t > * _output_slot1 = nullptr ;
         motor::wire::output_slot< int_t > * _output_slot2 = nullptr ;
+        motor::wire::output_slot< float_t > * _output_slot3 = nullptr ;
 
     public:
 
-        my_node( void_t ) noexcept
+        my_node( void_t ) noexcept : base_t( "my_node" )
+        {
+            this_t::init_slots() ;
+        }
+
+        my_node( motor::string_cref_t name ) noexcept : base_t( name )
+        {
+            this_t::init_slots() ;
+        }
+
+        my_node( this_rref_t rhv ) noexcept : base_t( std::move( rhv) ),
+            _input_slot1( motor::move( rhv._input_slot1 ) ), _input_slot2( motor::move( rhv._input_slot2 ) ),
+            _output_slot1( motor::move( rhv._output_slot1 ) ), _output_slot2( motor::move( rhv._output_slot2 ) ),
+            _output_slot3( motor::move( rhv._output_slot3 ) )
+        {
+        }
+
+        my_node( this_cref_t ) = delete ;
+
+        virtual ~my_node( void_t ) noexcept
+        {
+            // slots do not need to be released. That is done
+            // in the base class.
+        }
+
+        // the execute usually does some logic based on the input slots
+        // and outputs the result to the output slots.
+        virtual void_t execute( void_t ) noexcept
+        {
+            _output_slot1->set_value( _input_slot1->get_value() > 0.5f ) ;
+            _output_slot2->set_value( int_t( _input_slot2->get_value() ) ) ;
+            _output_slot3->set_value( _input_slot1->get_value() ) ;
+        }
+
+    private:
+
+        void_t init_slots( void_t ) noexcept
         {
             // make input slots
             // #1 define slots
@@ -49,32 +86,12 @@ namespace this_file
             {
                 this_t::outputs().add( "o1", motor::shared( motor::wire::output_slot< bool_t >( false ) ) ) ;
                 this_t::outputs().add( "o2", motor::shared( motor::wire::output_slot< int_t >( 100 ) ) ) ;
+                this_t::outputs().add( "o3", motor::shared( motor::wire::output_slot< float_t >( 0.0f ) ) ) ;
 
-                _output_slot1 = this_t::outputs().borrow_by_cast<decltype(_output_slot1)>("o1") ;
-                _output_slot2 = this_t::outputs().borrow_by_cast<decltype(_output_slot2)>("o2") ;
+                _output_slot1 = this_t::outputs().borrow_by_cast<decltype( _output_slot1 )>( "o1" ) ;
+                _output_slot2 = this_t::outputs().borrow_by_cast<decltype( _output_slot2 )>( "o2" ) ;
+                _output_slot3 = this_t::outputs().borrow_by_cast<decltype( _output_slot3 )>( "o3" ) ;
             }
-        }
-
-        my_node( this_rref_t rhv ) noexcept : base_t( std::move( rhv) ),
-            _input_slot1( motor::move( rhv._input_slot1 ) ), _input_slot2( motor::move( rhv._input_slot2 ) ),
-            _output_slot1( motor::move( rhv._output_slot1 ) ), _output_slot2( motor::move( rhv._output_slot2 ) )
-        {
-        }
-
-        my_node( this_cref_t ) = delete ;
-
-        virtual ~my_node( void_t ) noexcept
-        {
-            // slots do not need to be released. That is done
-            // in the base class.
-        }
-
-        // the execute usually does some logic based on the input slots
-        // and outputs the result to the output slots.
-        virtual void_t execute( void_t ) noexcept
-        {
-            _output_slot1->set_value( _input_slot1->get_value() > 0.5f ) ;
-            _output_slot2->set_value( int_t( _input_slot2->get_value() ) ) ;
         }
     };
     motor_typedef( my_node ) ;
@@ -92,11 +109,12 @@ int main( int argc, char ** argv )
         motor::wire::inode_mtr_t a = nullptr ;
         motor::wire::inode_mtr_t b = nullptr ;
         motor::wire::inode_mtr_t c = nullptr ;
+        motor::wire::inode_mtr_t d = nullptr ;
         
         // option #1: Search for slots 
         // Search for the slots by name within the lambda function.
         {
-            motor::shared( motor::wire::node( [=] ( motor::wire::node_ptr_t n )
+            start = motor::shared( motor::wire::node( [=] ( motor::wire::node_ptr_t n )
             {
                 if( auto output_slot = dynamic_cast<motor::wire::output_slot<float_t>*>( n->outputs().borrow("out") ); output_slot != nullptr ) 
                 {
@@ -120,7 +138,7 @@ int main( int argc, char ** argv )
             // capture slots
             a = motor::shared( motor::wire::node( [=] ( motor::wire::node_ptr_t n )
             {
-                float_t const value = input_slot->get_value() ;
+                float_t const value = input_slot->get_value() * 2.0f ;
                 output_slot->set_value( value ) ;
             } ) ) ;
 
@@ -128,24 +146,49 @@ int main( int argc, char ** argv )
             a->outputs().add( "out", motor::move( output_slot ) ) ;
             a->inputs().add( "in", motor::move( input_slot ) ) ;
         }
-        
 
+        // option #3 : Use Custom Node
         {
-            b = motor::shared( motor::wire::node( [=] ( motor::wire::node_ptr_t )
-            {
-                std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) ) ;
-                motor::log::global::status( "node b" ) ;
-            } ) ) ;
+            b = motor::shared( this_file::my_node( "my_custom_node") ) ;
         }
 
+        // as option #2
         {
-            c = motor::shared( motor::wire::node( [&] ( motor::wire::node_ptr_t )
+            auto input_slot1 = motor::shared( motor::wire::input_slot<float_t>( 0.0f ) ) ;
+            auto input_slot2 = motor::shared( motor::wire::input_slot<float_t>( 0.0f ) ) ;
+
+            c = motor::shared( motor::wire::node( [=] ( motor::wire::node_ptr_t )
+            {
+                auto const v1 = input_slot1->get_value() ;
+                auto const v2 = input_slot2->get_value() ;
+
+                motor::log::global::status( "In node c:" ) ;
+                motor::log::global_t::status( "slot 1: " + motor::to_string( v1 ) ) ;
+                motor::log::global_t::status( "slot 2: " + motor::to_string( v2 ) ) ;
+            } ) ) ;
+            c->inputs().add( "in1", motor::move( input_slot1 ) ) ;
+            c->inputs().add( "in2", motor::move( input_slot2 ) ) ;
+        }
+
+        // using a lambda node to shutdown the program
+        {
+            d = motor::shared( motor::wire::node( [&] ( motor::wire::node_ptr_t )
             {
                 run_loop = false ;
-                motor::log::global::status( "node c" ) ;
+                motor::log::global::status( "update ending" ) ;
             } ) ) ;
         }
 
+        // #slots
+        // connect all the slots
+        {
+            start->outputs().borrow( "out" )->connect( a->inputs().get("in" ) ) ;
+            start->outputs().borrow( "out" )->connect( b->inputs().get("in1" ) ) ;
+            start->outputs().borrow( "out" )->connect( c->inputs().get("in1" ) ) ;
+            
+            a->outputs().borrow( "out" )->connect( b->inputs().get( "in2" ) ) ;
+            a->outputs().borrow( "out" )->connect( c->inputs().get( "in2" ) ) ;
+        }
 
         // #graph
         //         .-(a)-.
@@ -153,7 +196,7 @@ int main( int argc, char ** argv )
         //         '-(b)-'
         {
             start->then( motor::move( a ) )->then( motor::share( c ) ) ;
-            start->then( motor::move( b ) )->then( motor::move( c ) ) ;
+            start->then( motor::move( b ) )->then( motor::move( c ) )->then( motor::move( d ) ) ;
         }
 
         // #execute round 1
