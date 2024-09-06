@@ -2,7 +2,7 @@
 #include <motor/platform/global.h>
 
 #include <motor/gfx/primitive/primitive_render_3d.h>
-#include <motor/gfx/camera/pinhole_camera.h>
+#include <motor/gfx/camera/generic_camera.h>
 
 #include <motor/math/utility/angle.hpp>
 #include <motor/math/utility/fn.hpp>
@@ -27,7 +27,7 @@ namespace this_file
         motor::graphics::state_object_t rs ;
 
         motor::gfx::primitive_render_3d_t pr ;
-        motor::gfx::pinhole_camera_t camera ;
+        motor::gfx::generic_camera_t camera ;
 
         virtual void_t on_init( void_t ) noexcept
         {
@@ -67,6 +67,7 @@ namespace this_file
 
 
             {
+                camera.set_dims( 1.0f, 1.0f, 1.0f, 1000.0f ) ;
                 camera.perspective_fov( motor::math::angle<float_t>::degree_to_radian( 45.0f ) ) ;
                 camera.look_at( motor::math::vec3f_t( -200.0f, 0.0f, -50.0f ),
                             motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 500.0f, 0.0f )) ;
@@ -111,6 +112,13 @@ namespace this_file
             {
                 motor::log::global_t::status("[my_app] : window closed") ;
                 this->close() ;
+            }
+            if ( sv.resize_changed )
+            {
+                float_t const w = float_t( sv.resize_msg.w ) ;
+                float_t const h = float_t( sv.resize_msg.h ) ;
+                camera.set_sensor_dims( w, h ) ;
+                camera.perspective_fov() ;
             }
         }
 

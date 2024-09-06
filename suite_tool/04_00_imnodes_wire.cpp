@@ -16,6 +16,7 @@ namespace this_file
 {
     using namespace motor::core::types ;
 
+    // simply testing basic functionality
     class my_app : public motor::application::app
     {
         motor_this_typedefs( my_app ) ;
@@ -62,7 +63,7 @@ namespace this_file
             MOTOR_PROBE( "application", "on_tool" ) ;
 
             // #1 : task graph window
-            if( ImGui::Begin( "task graph visualization" ) )
+            if( ImGui::Begin( "Testing ImNodes" ) )
             {
                 ImNodes::BeginNodeEditor();
 

@@ -8,7 +8,6 @@
 #include <motor/controls/types/three_mouse.hpp>
 
 #include <motor/scene/node/group/logic_group.h>
-#include <motor/scene/node/decorator/logic_decorator.h>
 #include <motor/scene/node/leaf/logic_leaf.h>
 #include <motor/scene/component/name_component.hpp>
 
@@ -54,7 +53,7 @@ namespace this_file
 
             // #2 : init scene tree
             {
-                motor::scene::logic_decorator_t root ;
+                motor::scene::logic_group_t root ;
                 root.add_component( motor::shared( motor::scene::name_component_t( "my root name" ) ) ) ;
 
                 {
@@ -72,7 +71,7 @@ namespace this_file
                         }
                     }
 
-                    root.set_decorated( motor::move( g ) ) ;
+                    root.add_child( motor::move( g ) ) ;
                 }
 
                 _root = motor::shared( std::move( root ) ) ;

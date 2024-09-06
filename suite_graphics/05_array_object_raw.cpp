@@ -9,7 +9,7 @@
 #include <motor/geometry/mesh/flat_tri_mesh.h>
 #include <motor/geometry/3d/cube.h>
 
-#include <motor/gfx/camera/pinhole_camera.h>
+#include <motor/gfx/camera/generic_camera.h>
 #include <motor/math/utility/3d/transformation.hpp>
 #include <motor/math/utility/angle.hpp>
 #include <motor/math/interpolation/interpolate.hpp>
@@ -50,7 +50,7 @@ namespace this_file
         motor::graphics::framebuffer_object_t fb_obj ;
         motor::graphics::geometry_object_t fb_geo ;
 
-        motor::gfx::pinhole_camera_t camera ;
+        motor::gfx::generic_camera_t camera ;
 
         virtual void_t on_init( void_t ) noexcept
         {
@@ -86,11 +86,13 @@ namespace this_file
             }
 
             {
+                camera.set_dims( 800.0f, 600.0f, 1.0f, 1000000.0f ) ;
+
                 camera.perspective_fov( motor::math::angle<float_t>::degree_to_radian( 90.0f ) ) ;
                     
                 camera.look_at( motor::math::vec3f_t( 100.0f, 4000.0f, 3000.0f ),
                     motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ;
-                camera.set_near_far( 1.0f, 1000000.0f ) ;
+                
             }
 
             {
@@ -614,6 +616,13 @@ namespace this_file
             {
                 motor::log::global_t::status("[my_app] : window closed") ;
                 this->close() ;
+            }
+            if ( sv.resize_changed )
+            {
+                float_t const w = float_t( sv.resize_msg.w ) ;
+                float_t const h = float_t( sv.resize_msg.h ) ;
+                camera.set_sensor_dims( w, h ) ;
+                camera.perspective_fov() ;
             }
         }
 

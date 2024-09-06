@@ -12,13 +12,13 @@
 #include <motor/controls/types/three_mouse.hpp>
 
 #include <motor/scene/node/group/logic_group.h>
-#include <motor/scene/node/decorator/logic_decorator.h>
 #include <motor/scene/node/leaf/logic_leaf.h>
 #include <motor/scene/component/name_component.hpp>
-#include <motor/scene/component/trafo_3d_component.hpp>
-#include <motor/scene/component/render/camera_component.h>
-#include <motor/scene/component/render/msl_component.h>
-#include <motor/scene/component/render/render_state_component.h>
+#include <motor/scene/component/trafo_components.hpp>
+#include <motor/scene/component/camera_component.h>
+#include <motor/scene/component/msl_component.h>
+#include <motor/scene/component/render_state_component.h>
+#include <motor/scene/visitor/trafo_visitor.h>
 
 #include <motor/tool/imgui/imgui_node_visitor.h>
 
@@ -108,60 +108,12 @@ namespace this_file
 
             // #2 : make msl objects
             {
-            }
-
-            // #3 : init scene tree
-            {
-                motor::scene::logic_decorator_t root ;
-                root.add_component( motor::shared( motor::scene::name_component_t( "my root name" ) ) ) ;
-
+                // msl object for scene
                 {
-                    auto g = motor::shared( motor::scene::logic_group() ) ;
-
-                    // add transformation to g
                     {
-                        g->add_component( motor::shared( motor::scene::trafo_3d_component_t(
-                            motor::math::m3d::trafof_t() ) ) ) ;
-                    }
+                        motor::graphics::msl_object_t mslo( "scene_obj" ) ;
 
-                    // add render state to g
-                    {
-                        motor::graphics::state_object_t scene_so ;
-                        {
-                            motor::graphics::render_state_sets_t rss ;
-
-                            rss.depth_s.do_change = true ;
-                            rss.depth_s.ss.do_activate = true ;
-                            rss.depth_s.ss.do_depth_write = true ;
-
-                            rss.polygon_s.do_change = true ;
-                            rss.polygon_s.ss.do_activate = true ;
-                            rss.polygon_s.ss.ff = motor::graphics::front_face::counter_clock_wise ;
-                            rss.polygon_s.ss.cm = motor::graphics::cull_mode::back ;
-                            rss.polygon_s.ss.fm = motor::graphics::fill_mode::fill ;
-
-                            rss.clear_s.do_change = true ;
-                            rss.clear_s.ss.do_activate = true ;
-                            rss.clear_s.ss.clear_color = motor::math::vec4f_t( 1.0f, 1.0f, 0.0f, 1.0f ) ;
-                            rss.clear_s.ss.do_color_clear = true ;
-                            rss.clear_s.ss.do_depth_clear = true ;
-
-                            rss.view_s.do_change = true ;
-                            rss.view_s.ss.do_activate = true ;
-                            rss.view_s.ss.vp = fb_dims ;
-
-                            scene_so = motor::graphics::state_object_t( "scene_render_states" ) ;
-                            scene_so.add_render_state_set( rss ) ;
-                        }
-                        g->add_component( motor::shared( motor::scene::render_state_component_t( std::move( scene_so ) ) ) ) ;
-                    }
-
-                    // msl object for scene
-                    {
-                        {
-                            motor::graphics::msl_object_t mslo( "scene_obj" ) ;
-
-                            mslo.add( motor::graphics::msl_api_type::msl_4_0, R"(
+                        mslo.add( motor::graphics::msl_api_type::msl_4_0, R"(
                             config just_render
                             {
                                 vertex_shader
@@ -209,44 +161,100 @@ namespace this_file
                                 }
                             })" ) ;
 
-                            mslo.link_geometry( { "cube" } ) ;
-                            
-                            msl_obj = std::move( mslo ) ;
+                        mslo.link_geometry( { "cube" } ) ;
+
+                        msl_obj = std::move( mslo ) ;
+                    }
+
+                    {
+                        motor::graphics::variable_set_t vars ;
+
+                        {
+                            auto * var = vars.data_variable< motor::math::vec4f_t >( "color" ) ;
+                            var->set( motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) ) ;
                         }
 
                         {
-                            motor::graphics::variable_set_t vars ;
-
-                            {
-                                auto * var = vars.data_variable< motor::math::vec4f_t >( "color" ) ;
-                                var->set( motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) ) ;
-                            }
-
-                            {
-                                auto * var = vars.data_variable< float_t >( "u_time" ) ;
-                                var->set( 0.0f ) ;
-                            }
-
-                            {
-                                auto * var = vars.texture_variable( "tex" ) ;
-                                var->set( "checker_board" ) ;
-                            }
-
-                            {
-                                auto * var = vars.data_variable< motor::math::mat4f_t >( "world" ) ;
-                                //var->set( trans.get_transformation() ) ;
-                            }
-                            
-                            msl_obj.add_variable_set( motor::memory::create_ptr( std::move( vars ), "a variable set" ) ) ;
+                            auto * var = vars.data_variable< float_t >( "u_time" ) ;
+                            var->set( 0.0f ) ;
                         }
+
+                        {
+                            auto * var = vars.texture_variable( "tex" ) ;
+                            var->set( "checker_board" ) ;
+                        }
+
+                        {
+                            auto * var = vars.data_variable< motor::math::mat4f_t >( "world" ) ;
+                            //var->set( trans.get_transformation() ) ;
+                        }
+
+                        msl_obj.add_variable_set( motor::memory::create_ptr( std::move( vars ), "a variable set" ) ) ;
+                    }
+                }
+            }
+
+            // #3 : init scene tree
+            {
+                motor::scene::logic_group_t root ;
+                root.add_component( motor::shared( motor::scene::name_component_t( "my root name" ) ) ) ;
+
+                {
+                    auto g = motor::shared( motor::scene::logic_group() ) ;
+
+                    // add transformation to g
+                    {
+                        g->add_component( motor::shared( motor::scene::trafo_3d_component_t(
+                            motor::math::m3d::trafof_t( 
+                                motor::math::vec3f_t(), 
+                                motor::math::vec3f_t(1.0f, 0.0f, 0.0f), 
+                                motor::math::vec3f_t(100.0f, 0.0f, 0.0f) ) ) ) ) ;
+                    }
+
+                    // add render state to g
+                    {
+                        motor::graphics::state_object_t scene_so ;
+                        {
+                            motor::graphics::render_state_sets_t rss ;
+
+                            rss.depth_s.do_change = true ;
+                            rss.depth_s.ss.do_activate = true ;
+                            rss.depth_s.ss.do_depth_write = true ;
+
+                            rss.polygon_s.do_change = true ;
+                            rss.polygon_s.ss.do_activate = true ;
+                            rss.polygon_s.ss.ff = motor::graphics::front_face::counter_clock_wise ;
+                            rss.polygon_s.ss.cm = motor::graphics::cull_mode::back ;
+                            rss.polygon_s.ss.fm = motor::graphics::fill_mode::fill ;
+
+                            rss.clear_s.do_change = true ;
+                            rss.clear_s.ss.do_activate = true ;
+                            rss.clear_s.ss.clear_color = motor::math::vec4f_t( 1.0f, 1.0f, 0.0f, 1.0f ) ;
+                            rss.clear_s.ss.do_color_clear = true ;
+                            rss.clear_s.ss.do_depth_clear = true ;
+
+                            rss.view_s.do_change = true ;
+                            rss.view_s.ss.do_activate = true ;
+                            rss.view_s.ss.vp = fb_dims ;
+
+                            scene_so = motor::graphics::state_object_t( "scene_render_states" ) ;
+                            scene_so.add_render_state_set( rss ) ;
+                        }
+                        g->add_component( motor::shared( motor::scene::render_state_component_t( std::move( scene_so ) ) ) ) ;
                     }
 
                     // add geometry 1
                     {
                         auto leaf = motor::shared( motor::scene::logic_leaf_t() ) ;
                         leaf->add_component( motor::shared( motor::scene::name_component_t( "geometry 1" ) ) ) ;
-                        leaf->add_component( motor::shared( motor::scene::trafo_3d_component_t( motor::math::m3d::trafof_t()  ) ) ) ;
-                        //leaf->add_component( motor::shared( motor::scene::msl_component_t() ) ) ;
+                        leaf->add_component( motor::shared( motor::scene::trafo_3d_component_t( 
+                            motor::math::m3d::trafof_t(
+                                motor::math::vec3f_t(),
+                                motor::math::vec3f_t( 1.0f, 0.0f, 0.0f ),
+                                motor::math::vec3f_t( 0.0f, 100.0f, 0.0f ) ) ) ) ) ;
+
+                        leaf->add_component( motor::shared( 
+                            motor::scene::msl_component_t( motor::shared( std::move(msl_obj) ) ) ) ) ;
 
                         g->add_child( motor::move( leaf ) ) ;
                     }
@@ -267,7 +275,7 @@ namespace this_file
                     }
                     #endif
 
-                    root.set_decorated( motor::move( g ) ) ;
+                    root.add_child( motor::move( g ) ) ;
                 }
 
                 _root = motor::shared( std::move( root ) ) ;
@@ -290,6 +298,17 @@ namespace this_file
                 this->close() ;
             }
         }
+
+        //******************************************************************************************************
+        virtual void_t on_update( motor::application::app::update_data_in_t ) noexcept 
+        {
+            MOTOR_PROBE( "application", "on_update" ) ;
+
+            {
+                motor::scene::trafo_visitor_t v ;
+                motor::scene::node_t::traverser( _root ).apply( &v ) ;
+            }
+        } 
 
         //******************************************************************************************************
         virtual bool_t on_tool( this_t::window_id_t const wid, motor::application::app::tool_data_ref_t ) noexcept 

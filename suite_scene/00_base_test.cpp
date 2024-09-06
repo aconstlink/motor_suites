@@ -1,6 +1,5 @@
 
 
-#include <motor/scene/node/decorator/logic_decorator.h>
 #include <motor/scene/node/group/logic_group.h>
 #include <motor/scene/node/group/switch_group.h>
 #include <motor/scene/node/leaf/logic_leaf.h>
@@ -18,7 +17,7 @@ int main( int argc, char ** argv )
 {
     // #1 : basic tree
     {
-        motor::scene::logic_decorator_t root ;
+        motor::scene::logic_group_t root ;
 
         {
             auto g = motor::shared( motor::scene::logic_group() ) ;
@@ -36,12 +35,12 @@ int main( int argc, char ** argv )
             g->add_child( motor::shared( motor::scene::logic_leaf_t() ) ) ;
 
             {
-                motor::scene::logic_decorator_t d ;
-                d.set_decorated( motor::shared( motor::scene::logic_leaf_t() ) ) ;
+                motor::scene::logic_group_t d ;
+                d.add_child( motor::shared( motor::scene::logic_leaf_t() ) ) ;
                 g->add_child( motor::shared( std::move( d ) ) ) ;
             }
 
-            root.set_decorated( motor::move( g ) ) ;
+            root.add_child( motor::move( g ) ) ;
         }
 
         // try log visitor and print the tree
@@ -53,7 +52,7 @@ int main( int argc, char ** argv )
 
     // #2 : try component
     {
-        motor::scene::logic_decorator_t root ;
+        motor::scene::logic_group_t root ;
 
         {
             auto g = motor::shared( motor::scene::logic_group() ) ;
@@ -85,7 +84,7 @@ int main( int argc, char ** argv )
                 } ) ) );
                 g->add_child( motor::move( l ) ) ;
             }
-            root.set_decorated( motor::move( g ) ) ;
+            root.add_child( motor::move( g ) ) ;
         }
 
         {

@@ -11,7 +11,7 @@
 #include <motor/geometry/mesh/flat_tri_mesh.h>
 #include <motor/geometry/3d/cube.h>
 
-#include <motor/gfx/camera/pinhole_camera.h>
+#include <motor/gfx/camera/generic_camera.h>
 #include <motor/math/utility/3d/transformation.hpp>
 #include <motor/math/utility/angle.hpp>
 
@@ -42,7 +42,7 @@ namespace this_file
         motor::graphics::framebuffer_object_t fb_obj ;
         motor::graphics::geometry_object_t fb_geo ;
 
-        motor::gfx::pinhole_camera_t camera ;
+        motor::gfx::generic_camera_t camera ;
 
         virtual void_t on_init( void_t ) noexcept
         {
@@ -454,6 +454,13 @@ namespace this_file
             {
                 motor::log::global_t::status("[my_app] : window closed") ;
                 this->close() ;
+            }
+            if( sv.resize_changed )
+            {
+                float_t const w = float_t(sv.resize_msg.w) ;
+                float_t const h = float_t(sv.resize_msg.h) ;
+                camera.set_dims( w, h, 1.0f, 100.0f ) ;
+                camera.perspective_fov() ;
             }
         }
 
