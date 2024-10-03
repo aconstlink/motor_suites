@@ -1,13 +1,15 @@
 
 
-#include <motor/scene/node/group/logic_group.h>
-#include <motor/scene/node/group/switch_group.h>
-#include <motor/scene/node/leaf/logic_leaf.h>
+#include <motor/scene/node/logic_group.h>
+#include <motor/scene/node/switch_group.h>
+#include <motor/scene/node/logic_leaf.h>
+#include <motor/scene/node/logic_decorator.h>
 
 #include <motor/scene/visitor/log_visitor.h>
 #include <motor/scene/visitor/code_exe_visitor.h>
 
 #include <motor/scene/component/code_component.h>
+#include <motor/scene/global.h>
 
 #include <motor/log/global.h>
 
@@ -15,6 +17,8 @@ using namespace motor::core::types ;
 
 int main( int argc, char ** argv )
 {
+    motor::scene::global::init() ;
+
     // #1 : basic tree
     {
         motor::scene::logic_group_t root ;
@@ -38,6 +42,11 @@ int main( int argc, char ** argv )
                 motor::scene::logic_group_t d ;
                 d.add_child( motor::shared( motor::scene::logic_leaf_t() ) ) ;
                 g->add_child( motor::shared( std::move( d ) ) ) ;
+            }
+
+            {
+                g->add_child( motor::shared( motor::scene::logic_decorator( 
+                    motor::shared( motor::scene::logic_leaf_t() ) ) ) ) ;
             }
 
             root.add_child( motor::move( g ) ) ;
@@ -87,12 +96,15 @@ int main( int argc, char ** argv )
             root.add_child( motor::move( g ) ) ;
         }
 
+        #if 0
         {
             motor::scene::code_exe_visitor_t v ;
             motor::scene::node_t::traverser( &root ).apply( &v ) ;
         }
+        #endif
     }
 
+    motor::scene::global::deinit() ;
     motor::log::global::deinit() ;
     motor::memory::global::dump_to_std() ;
 

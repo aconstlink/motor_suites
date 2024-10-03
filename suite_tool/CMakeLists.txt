@@ -7,6 +7,7 @@ set( tests
     "04_00_imnodes_wire.cpp"
     "04_01_imnodes_wire.cpp"
     "04_02_imnodes_wire.cpp"
+    "05_imgui_properties.cpp"
     "06_imgui_scene_visitor.cpp"
     )
 

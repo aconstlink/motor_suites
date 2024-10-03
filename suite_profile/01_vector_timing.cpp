@@ -1,5 +1,5 @@
 
-#include <motor/core/macros/typedef.h>
+#include <motor/base/macros/typedef.h>
 
 #include <motor/memory/global.h>
 #include <motor/std/vector>

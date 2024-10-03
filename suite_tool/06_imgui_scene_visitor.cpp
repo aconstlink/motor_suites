@@ -7,11 +7,11 @@
 #include <motor/controls/types/ascii_keyboard.hpp>
 #include <motor/controls/types/three_mouse.hpp>
 
-#include <motor/scene/node/group/logic_group.h>
-#include <motor/scene/node/leaf/logic_leaf.h>
+#include <motor/scene/node/logic_group.h>
+#include <motor/scene/node/logic_leaf.h>
 #include <motor/scene/component/name_component.hpp>
 
-#include <motor/tool/imgui/imgui_node_visitor.h>
+#include <motor/tool/imgui/node_kit/imgui_node_visitor.h>
 
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
@@ -28,10 +28,13 @@ namespace this_file
         motor_this_typedefs( my_app ) ;
 
         motor::scene::node_mtr_t _root ;
+        motor::scene::node_mtr_t _selected = nullptr ;
 
         //******************************************************************************************************
         virtual void_t on_init( void_t ) noexcept
         {
+            motor::tool::imgui_node_visitor_t::init_function_callbacks() ;
+
             MOTOR_PROBE( "application", "on_init" ) ;
 
             // #1 : init window
@@ -103,8 +106,9 @@ namespace this_file
             {
                 if( ImGui::Begin("test window") )
                 {
-                    motor::tool::imgui_node_visitor_t v ;
+                    motor::tool::imgui_node_visitor_t v( motor::move( _selected ) ) ;
                     motor::scene::node_t::traverser( _root ).apply( &v ) ;
+                    _selected = v.get_selected() ;
                 }
                 ImGui::End() ;
             }
@@ -112,7 +116,11 @@ namespace this_file
             return true ; 
         }
 
-        virtual void_t on_shutdown( void_t ) noexcept {}
+        virtual void_t on_shutdown( void_t ) noexcept 
+        {
+            motor::release( motor::move( _root ) ) ;
+            motor::release( motor::move( _selected ) ) ;
+        }
     };
 }
 
