@@ -371,7 +371,7 @@ namespace this_file
             {
                 auto dir2 = dir.xy().normalized().ortho() ;
                 motor::math::mat2f_t basis ;
-                basis.set_column( 0, dir ) ;
+                basis.set_column( 0, motor::math::vec2f_t( dir ) ) ;
                 basis.set_column( 1, dir2 ) ;
 
                 motor::math::vec2f_t p0 = basis * motor::math::vec2f_t(0.0f, -250.0f ) ;
