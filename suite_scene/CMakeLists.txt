@@ -3,6 +3,7 @@
 set( tests
     "00_base_test.cpp"
     "01_scene_render.cpp"
+    "02_scene_variables.cpp"
     )
 
 foreach( _test ${tests} )

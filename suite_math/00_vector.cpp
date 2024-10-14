@@ -13,7 +13,7 @@ namespace this_file
 
     static void_t some_funk( motor::math::is_normalized< motor::math::vec2f_t > const & nn ) noexcept
     {
-        motor::math::vec2f_t v = nn ;
+        motor::math::vec2f_t v = nn.get() ;
 
         assert( (v.normalized().length() - 1.0f) < std::numeric_limits< float_t >::epsilon() ) ; 
         
