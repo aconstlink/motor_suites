@@ -1,6 +1,6 @@
 # This starter workflow is for a CMake project running on multiple platforms. There is a different starter workflow if you just want a single platform.
 # See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-single-platform.yml
-name: CMake on multiple platforms
+name: CMake on Win32 with DirectX 11
 
 on:
   push:
@@ -23,19 +23,14 @@ jobs:
       #
       # To add more build types (Release, Debug, RelWithDebInfo, etc.) customize the build_type list.
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        build_type: [Release]
-        c_compiler: [gcc, cl] #, clang, cl]
+        #os: [ubuntu-latest, windows-latest]
+        os: [windows-latest]
+        build_type: [Debug, Release]
+        c_compiler: [cl] #, gcc, clang, cl]
         include:
           - os: windows-latest
             c_compiler: cl
             cpp_compiler: cl
-          - os: ubuntu-latest
-            c_compiler: gcc
-            cpp_compiler: g++
-          #- os: ubuntu-latest
-          #  c_compiler: clang
-          #  cpp_compiler: clang++
         exclude:
           - os: windows-latest
             c_compiler: gcc
@@ -49,11 +44,6 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Install required libs
-      if: runner.os == 'Linux'
-      run: sudo apt-get install -y libgl-dev 
-      #libgles-dev libegl-dev
-      
     - name: Set reusable strings
       # Turn repeated input strings (such as the build output directory) into step outputs. These step outputs can be used throughout the workflow file.
       id: strings
