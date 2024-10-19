@@ -1,6 +1,7 @@
 # motor_suites
 
-[![Appveyor](https://ci.appveyor.com/api/projects/status/cugulx7gm4pufjul?svg=true)](https://ci.appveyor.com/project/aconstlink/motor-suites)
+[![CMake on Linux with OpenGL](https://github.com/aconstlink/motor_suites/actions/workflows/cmake-lin-gcc-gl.yml/badge.svg)](https://github.com/aconstlink/motor_suites/actions/workflows/cmake-lin-gcc-gl.yml)
+[![CMake on Win32 with DirectX 11](https://github.com/aconstlink/motor_suites/actions/workflows/cmake-win32-dx11.yml/badge.svg)](https://github.com/aconstlink/motor_suites/actions/workflows/cmake-win32-dx11.yml)
 
 This is the sample project for the game/audio/visual software framework [motor](https://github.com/aconstlink/motor).
 
