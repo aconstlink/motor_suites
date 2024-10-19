@@ -49,7 +49,7 @@ namespace this_file
         return detail::__test_enum_strings__[ size_t(e) >= size_t(test_enum::max_entries) ? 0 : size_t(e) ]  ;
     }
 
-    static my_enum_property_t::strings_funk_t my_enum_strings_funk_t = [=] ( void_t )
+    static my_enum_property_t::strings_funk_t my_enum_strings_funk_t = [] ( void_t )
     {
         return std::make_pair( this_file::detail::__test_enum_strings__, this_file::detail::num_entries() ) ;
     } ;

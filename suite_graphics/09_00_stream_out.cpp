@@ -265,7 +265,7 @@ namespace this_file
 
                 // configure more details
                 {
-                    sc
+                    sc.shader_bindings()
                         .add_vertex_input_binding( motor::graphics::vertex_attribute::position, "in_pos" )
                         .add_vertex_input_binding( motor::graphics::vertex_attribute::color0, "in_color" )
                         .add_input_binding( motor::graphics::binding_point::world_matrix, "u_world" )
@@ -361,12 +361,13 @@ namespace this_file
 
                 // configure more details
                 {
-                    sc
+                    sc.shader_bindings()
                         .add_vertex_input_binding( motor::graphics::vertex_attribute::position, "in_pos" )
                         .add_vertex_input_binding( motor::graphics::vertex_attribute::color0, "in_color" )
                         .add_vertex_output_binding( motor::graphics::vertex_attribute::position, "out_pos" )
-                        .add_vertex_output_binding( motor::graphics::vertex_attribute::color0, "out_col" )
-                        .set_streamout_mode( motor::graphics::streamout_mode::interleaved ) ;
+                        .add_vertex_output_binding( motor::graphics::vertex_attribute::color0, "out_col" ) ;
+                    
+                    sc.set_streamout_mode( motor::graphics::streamout_mode::interleaved ) ;
                 }
 
                 sh_so_obj = std::move( sc ) ;

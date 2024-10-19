@@ -13,6 +13,9 @@
 #include <motor/memory/global.h>
 #include <motor/concurrent/global.h>
 
+#include <motor/math/camera/3d/orthographic_projection.hpp>
+#include <motor/math/camera/3d/perspective_fov.hpp>
+
 #include <future>
 
 namespace this_file
@@ -51,7 +54,7 @@ namespace this_file
                 this_t::send_window_message( this_t::create_window( wi ), [&]( motor::application::app::window_view & wnd )
                 {
                     wnd.send_message( motor::application::show_message( { true } ) ) ;
-                    wnd.send_message( motor::application::cursor_message_t( {false} ) ) ;
+                    wnd.send_message( motor::application::cursor_message_t( {true} ) ) ;
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
@@ -66,7 +69,7 @@ namespace this_file
                 this_t::send_window_message( this_t::create_window( wi ), [&]( motor::application::app::window_view & wnd )
                 {
                     wnd.send_message( motor::application::show_message( { true } ) ) ;
-                    wnd.send_message( motor::application::cursor_message_t( {false} ) ) ;
+                    wnd.send_message( motor::application::cursor_message_t( {true} ) ) ;
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
@@ -91,11 +94,12 @@ namespace this_file
                 motor::graphics::render_state_sets_t rss ;
                 rss.depth_s.do_change = true ;
                 rss.depth_s.ss.do_activate = false ;
-                rss.depth_s.ss.do_depth_write = true ;
+                rss.depth_s.ss.do_depth_write = false ;
                 rss.polygon_s.do_change = true ;
                 rss.polygon_s.ss.do_activate = true ;
                 rss.polygon_s.ss.ff = motor::graphics::front_face::clock_wise ;
                 rss.polygon_s.ss.cm = motor::graphics::cull_mode::back ;
+                rss.polygon_s.ss.fm = motor::graphics::fill_mode::fill ;
                 rss.clear_s.do_change = true ;
                 rss.clear_s.ss.clear_color = motor::math::vec4f_t(0.5f, 0.9f, 0.5f, 1.0f ) ;
                 rss.clear_s.ss.do_activate = true ;
@@ -134,10 +138,10 @@ namespace this_file
                     .add_layout_element( motor::graphics::vertex_attribute::color0, motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
                     .resize( 4 ).update<vertex>( [=] ( vertex* array, size_t const ne )
                 {
-                    array[ 0 ].pos = motor::math::vec4f_t( -0.5f, -0.5f, 0.0f, 1.0f ) ;
-                    array[ 1 ].pos = motor::math::vec4f_t( -0.5f, +0.5f, 0.0f, 1.0f ) ;
-                    array[ 2 ].pos = motor::math::vec4f_t( +0.5f, +0.5f, 0.0f, 1.0f ) ;
-                    array[ 3 ].pos = motor::math::vec4f_t( +0.5f, -0.5f, 0.0f, 1.0f ) ;
+                    array[ 0 ].pos = motor::math::vec4f_t( -0.5f, -0.5f, 1.5f, 1.0f ) ;
+                    array[ 1 ].pos = motor::math::vec4f_t( -0.5f, +0.5f, 1.5f, 1.0f ) ;
+                    array[ 2 ].pos = motor::math::vec4f_t( +0.5f, +0.5f, 1.5f, 1.0f ) ;
+                    array[ 3 ].pos = motor::math::vec4f_t( +0.5f, -0.5f, 1.5f, 1.0f ) ;
 
                     array[ 0 ].col = motor::math::vec4f_t( 1.0f, 0.0f,0.0f,1.0f ) ;
                     array[ 1 ].col = motor::math::vec4f_t( 1.0f, 0.0f,0.0f,1.0f ) ;
@@ -312,7 +316,7 @@ namespace this_file
                     motor::graphics::variable_set_t vars ;
                     msl_obj_scene.add_variable_set( motor::memory::create_ptr( std::move( vars ), "a variable set" ) ) ;
                 }
-                    
+                
                 {
                     motor::graphics::variable_set_t vars ;
                     msl_obj_scene.add_variable_set( motor::memory::create_ptr( std::move(vars), "a variable set" ) ) ;
@@ -398,7 +402,7 @@ namespace this_file
             {
                 float_t const w = float_t( sv.resize_msg.w ) ;
                 float_t const h = float_t( sv.resize_msg.h ) ;
-                camera.set_dims( w, h, 1.0f, 100.0f ) ;
+                camera.set_dims( w, h, 0.1f, 1000.0f ) ;
                 camera.perspective_fov() ;
             }
         }
@@ -433,13 +437,15 @@ namespace this_file
                     for( auto * vs : msl_obj_scene.borrow_varibale_sets() )
                     {
                         {
+                            auto * var = vs->data_variable<motor::math::mat4f_t>( "u_proj" ) ;
+                            var->set( camera.mat_proj() ) ;
+                        }
+                        
+                        {
                             auto * var = vs->data_variable<motor::math::mat4f_t>("u_view") ;
                             var->set( camera.mat_view() ) ;
                         }
-                        {
-                            auto * var = vs->data_variable<motor::math::mat4f_t>("u_proj") ;
-                            var->set( camera.mat_proj() ) ;
-                        }
+                        
                         {
                             auto const of = float_t(i) * 2.0 - 1.0 ;
                             motor::math::m3d::trafof_t t ;
@@ -449,10 +455,12 @@ namespace this_file
                             auto * var = vs->data_variable<motor::math::mat4f_t>("u_world") ;
                             var->set( t.get_transformation() ) ;
                         }
+                        
                         ++i ;
                     }
                 }
 
+                
                 fe->use( &fb_obj ) ;
                 fe->push( &scene_so ) ;
                 {

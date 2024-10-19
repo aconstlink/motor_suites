@@ -325,7 +325,7 @@ namespace this_file
 
                 // configure more details
                 {
-                    sc
+                    sc.shader_bindings()
                         .add_vertex_input_binding( motor::graphics::vertex_attribute::position, "in_pos" )
                         .add_vertex_input_binding( motor::graphics::vertex_attribute::color0, "in_color" )
                         .add_input_binding( motor::graphics::binding_point::world_matrix, "u_world" )

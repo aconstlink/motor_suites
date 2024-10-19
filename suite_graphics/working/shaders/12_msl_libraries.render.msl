@@ -10,7 +10,7 @@ config render
 
         vec3_t do_something( vec3_t p )
         {
-            return p + vec3_t(0.1, -0.1, 0.0) ;
+            return p + vec3_t(0.1, 0.1, 0.0) ;
         }
 
         void main()

@@ -460,7 +460,7 @@ namespace this_file
 
                 // configure more details
                 {
-                    sc
+                    sc.shader_bindings()
                         .add_vertex_input_binding( motor::graphics::vertex_attribute::position, "in_pos" )
                         .add_vertex_input_binding( motor::graphics::vertex_attribute::normal, "in_nrm" )
                         .add_vertex_input_binding( motor::graphics::vertex_attribute::texcoord0, "in_tx" )
