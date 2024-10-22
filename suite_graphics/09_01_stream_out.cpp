@@ -315,9 +315,9 @@ namespace this_file
                     sc.shader_bindings()
                         .add_vertex_input_binding( motor::graphics::vertex_attribute::position, "in_pos" )
                         .add_vertex_input_binding( motor::graphics::vertex_attribute::color0, "in_color" )
-                        .add_input_binding( motor::graphics::binding_point::world_matrix, "u_world" )
-                        .add_input_binding( motor::graphics::binding_point::view_matrix, "u_view" )
-                        .add_input_binding( motor::graphics::binding_point::projection_matrix, "u_proj" ) ;
+                        .add_variable_binding( motor::graphics::binding_point::world_matrix, "u_world" )
+                        .add_variable_binding( motor::graphics::binding_point::view_matrix, "u_view" )
+                        .add_variable_binding( motor::graphics::binding_point::projection_matrix, "u_proj" ) ;
                 }
 
                 sh_obj = std::move( sc ) ;

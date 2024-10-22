@@ -274,8 +274,8 @@ namespace this_file
                         shader_obj.shader_bindings()
                             .add_vertex_input_binding( motor::graphics::vertex_attribute::position, "in_pos" )
                             .add_vertex_input_binding( motor::graphics::vertex_attribute::texcoord0, "in_tx" )
-                            .add_input_binding( motor::graphics::binding_point::view_matrix, "u_view" )
-                            .add_input_binding( motor::graphics::binding_point::projection_matrix, "u_proj" ) ;
+                            .add_variable_binding( motor::graphics::binding_point::view_matrix, "u_view" )
+                            .add_variable_binding( motor::graphics::binding_point::projection_matrix, "u_proj" ) ;
                     }
                 }
 

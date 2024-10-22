@@ -59,8 +59,10 @@ namespace this_file
         motor::graphics::msl_object_mtr_t msl_obj ;
         motor::graphics::geometry_object_t geo_obj ;
 
-        // this is the free moving camera
-        motor::gfx::generic_camera_mtr_t _camera ;
+        size_t _cam_id = 0 ;
+        // 0 : this is the free moving camera
+        // 1 : second camera for testing shader variable bindings
+        motor::gfx::generic_camera_mtr_t _cameras[2] ;
 
         //******************************************************************************************************
         virtual void_t on_init( void_t ) noexcept
@@ -90,10 +92,20 @@ namespace this_file
             {
                 auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 1.0f, 100.0f ) ;
                 cam.perspective_fov( motor::math::angle<float_t>::degree_to_radian( 90.0f ) ) ;
-                cam.look_at( motor::math::vec3f_t( 0.0f, 60.0f, -50.0f ),
+                cam.look_at( motor::math::vec3f_t( 0.0f, 60.0f, -100.0f ),
                     motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ;
 
-                _camera = motor::shared( std::move( cam ) ) ;
+                _cameras[0] = motor::shared( std::move( cam ) ) ;
+            }
+
+            // camera
+            {
+                auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 1.0f, 100.0f ) ;
+                cam.perspective_fov( motor::math::angle<float_t>::degree_to_radian( 90.0f ) ) ;
+                cam.look_at( motor::math::vec3f_t( -50.0f, 20.0f, -100.0f ),
+                    motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ;
+
+                _cameras[1] = motor::shared( std::move( cam ) ) ;
             }
 
             // # : make geometry
@@ -174,19 +186,21 @@ namespace this_file
                             {
                                 tex2d_t tex ;
                                 vec4_t color ;
+                                vec3_t light_dir ;
 
                                 in vec2_t tx : texcoord ;
                                 in vec3_t nrm : normal ;
-                                out vec4_t color0 : color0 ;
-                                out vec4_t color1 : color1 ;
-                                out vec4_t color2 : color2 ;
+                                out vec4_t color : color0 ;
+                                //out vec4_t color1 : color1 ;
+                                //out vec4_t color2 : color2 ;
 
                                 void main()
                                 {
-                                    float_t light = dot( normalize( in.nrm ), normalize( vec3_t( 1.0, 1.0, 0.5) ) ) ;
-                                    out.color0 = color ' texture( tex, in.tx ) ;
-                                    out.color1 = vec4_t( in.nrm, 1.0 ) ;
-                                    out.color2 = vec4_t( light, light, light , 1.0 ) ;
+                                    float_t light = dot( normalize( in.nrm ), normalize( light_dir ) ) ;
+                                    out.color = vec4_t( light, light, light, 1.0 ) ;
+                                    //out.color = color ' texture( tex, in.tx ) ;
+                                    //out.color1 = vec4_t( in.nrm, 1.0 ) ;
+                                    //out.color2 = vec4_t( light, light, light , 1.0 ) ;
                                 }
                             }
                         })" ) ;
@@ -217,6 +231,7 @@ namespace this_file
                         var->set( t.get_transformation() ) ;
                     }
 
+                    #if 0
                     {
                         auto * var = vars.data_variable< motor::math::mat4f_t >( "view" ) ;
                         var->set( _camera->get_view_matrix() ) ;
@@ -225,6 +240,11 @@ namespace this_file
                     {
                         auto * var = vars.data_variable< motor::math::mat4f_t >( "proj" ) ;
                         var->set( _camera->get_proj_matrix() ) ;
+                    }
+                    #endif
+                    {
+                        auto * var = vars.data_variable< motor::math::vec3f_t >( "light_dir" ) ;
+                        var->set( motor::math::vec3f_t(1.0f,1.0f,0.5f) ) ;
                     }
 
                     msl_obj->add_variable_set( motor::memory::create_ptr( std::move( vars ), "a variable set" ) ) ;
@@ -251,6 +271,7 @@ namespace this_file
                         var->set( t.get_transformation() ) ;
                     }
 
+                    #if 0
                     {
                         auto * var = vars.data_variable< motor::math::mat4f_t >( "view" ) ;
                         var->set( _camera->get_view_matrix() ) ;
@@ -259,6 +280,12 @@ namespace this_file
                     {
                         auto * var = vars.data_variable< motor::math::mat4f_t >( "proj" ) ;
                         var->set( _camera->get_proj_matrix() ) ;
+                    }
+                    #endif
+
+                    {
+                        auto * var = vars.data_variable< motor::math::vec3f_t >( "light_dir" ) ;
+                        var->set( motor::math::vec3f_t( 1.0f, 1.0f, 0.5f ) ) ;
                     }
 
                     msl_obj->add_variable_set( motor::memory::create_ptr( std::move( vars ), "a variable set" ) ) ;
@@ -371,8 +398,12 @@ namespace this_file
             {
                 float_t const w = float_t( sv.resize_msg.w ) ;
                 float_t const h = float_t( sv.resize_msg.h ) ;
-                _camera->set_sensor_dims( w, h ) ;
-                _camera->perspective_fov() ;
+                for( size_t i=0; i<2; ++i )
+                {
+                    _cameras[ i ]->set_sensor_dims( w, h ) ;
+                    _cameras[ i ]->perspective_fov() ;
+                }
+
             }
         }
 
@@ -389,7 +420,7 @@ namespace this_file
             }
 
             {
-                motor::scene::render_visitor_t vis( fe ) ;
+                motor::scene::render_visitor_t vis( fe, _cameras[_cam_id] ) ;
                 motor::scene::node_t::traverser(_root).apply( &vis ) ;
             }
         }
@@ -418,6 +449,25 @@ namespace this_file
                     _selected = v.get_selected() ;
                 }
                 ImGui::End() ;
+
+                if ( ImGui::Begin( "Camera Window" ) )
+                {
+                    {
+                        int used_cam = int_t( _cam_id ) ;
+                        ImGui::SliderInt( "Choose Camera", &used_cam, 0, 1 ) ;
+                        _cam_id = std::min( size_t( used_cam ), size_t( 2 ) ) ;
+                    }
+
+                    {
+                        auto const cam_pos = _cameras[_cam_id]->get_position() ;
+                        float x = cam_pos.x() ;
+                        float y = cam_pos.y() ;
+                        ImGui::SliderFloat( "Cur Cam X", &x, -100.0f, 100.0f ) ;
+                        ImGui::SliderFloat( "Cur Cam Y", &y, -100.0f, 100.0f ) ;
+                        _cameras[_cam_id]->translate_to( motor::math::vec3f_t( x, y, cam_pos.z() ) ) ;
+                    }
+                }
+                ImGui::End() ;
             }
             
             return true ; 
@@ -429,7 +479,8 @@ namespace this_file
             motor::memory::release_ptr( _root ) ;
             motor::memory::release_ptr( root_so ) ;
             motor::memory::release_ptr( msl_obj ) ;
-            motor::memory::release_ptr( _camera ) ;
+            motor::memory::release_ptr( _cameras[0] ) ;
+            motor::memory::release_ptr( _cameras[1] ) ;
         }
     };
 }
