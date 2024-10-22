@@ -21,7 +21,7 @@ config render
         }
     }
 
-    pixel_shader  
+    pixel_shader
     {
         tex2d_t u_tex ;
 

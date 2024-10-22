@@ -18,7 +18,7 @@ config msl_quad
 
     pixel_shader
     {
-        tex2d_t u_tex ;
+        tex2d_t u_tex ; 
 
         in vec2_t tx : texcoord0 ;
         out vec4_t color : color ;

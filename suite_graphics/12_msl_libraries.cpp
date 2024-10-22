@@ -246,12 +246,24 @@ namespace this_file
         //***********************************************************************************
         virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
             motor::application::app::render_data_in_t rd ) noexcept 
-        {            
+        {
             if( rd.first_frame )
             {
                 fe->configure<motor::graphics::geometry_object_t>( &geo_obj ) ;
                 fe->configure<motor::graphics::image_object_t>( &img_obj ) ;
                 //fe->configure<motor::graphics::msl_object_t>( &msl_obj ) ;
+            }
+
+            // ask the default compilation listener
+            // if the compilation or the shader has changed.
+            // if so, grab the new shader bindings.
+            if( msl_obj.has_shader_changed() )
+            {
+                motor::graphics::shader_bindings_t sb ;
+                if( msl_obj.reset_and_successful( sb ) )
+                {
+                    int bp = 0 ;
+                }
             }
             
             for( auto * obj : reconfigs )
