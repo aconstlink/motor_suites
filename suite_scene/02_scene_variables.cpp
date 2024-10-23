@@ -88,11 +88,28 @@ namespace this_file
                 } ) ;
             }
 
+            // #2 : init window
+            {
+                motor::application::window_info_t wi ;
+                wi.x = 500 ;
+                wi.y = 100 ;
+                wi.w = 800 ;
+                wi.h = 600 ;
+                wi.gen = motor::application::graphics_generation::gen4_gl4 ;
+
+                this_t::send_window_message( this_t::create_window( wi ), [&] ( motor::application::app::window_view & wnd )
+                {
+                    wnd.send_message( motor::application::show_message( { true } ) ) ;
+                    wnd.send_message( motor::application::cursor_message_t( { true } ) ) ;
+                    wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
+                } ) ;
+            }
+
             // camera
             {
-                auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 1.0f, 100.0f ) ;
-                cam.perspective_fov( motor::math::angle<float_t>::degree_to_radian( 90.0f ) ) ;
-                cam.look_at( motor::math::vec3f_t( 0.0f, 60.0f, -100.0f ),
+                auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 0.1f, 500.0f ) ;
+                cam.perspective_fov( motor::math::angle<float_t>::degree_to_radian( 30.0f ) ) ;
+                cam.look_at( motor::math::vec3f_t( 0.0f, 0.0f, -400.0f ),
                     motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ;
 
                 _cameras[0] = motor::shared( std::move( cam ) ) ;
@@ -175,7 +192,7 @@ namespace this_file
                                 void main()
                                 {
                                     vec3_t pos = in.pos ;
-                                    pos.xyz = pos.xyz * 10.0 ;
+                                    pos.xyz = pos.xyz * 10.0;
                                     out.tx = in.tx ;
                                     out.pos = proj * view * world * vec4_t( pos, 1.0 ) ;
                                     out.nrm = normalize( world * vec4_t( in.nrm, 0.0 ) ).xyz ;
@@ -304,7 +321,7 @@ namespace this_file
                     rss.depth_s.ss.do_depth_write = true ;
                     rss.polygon_s.do_change = true ;
                     rss.polygon_s.ss.do_activate = true ;
-                    rss.polygon_s.ss.ff = motor::graphics::front_face::clock_wise ;
+                    rss.polygon_s.ss.ff = motor::graphics::front_face::counter_clock_wise ;
                     rss.polygon_s.ss.cm = motor::graphics::cull_mode::back ;
                     rss.clear_s.do_change = true ;
                     rss.clear_s.ss.clear_color = motor::math::vec4f_t( 0.5f, 0.9f, 0.5f, 1.0f ) ;
@@ -465,6 +482,7 @@ namespace this_file
                         ImGui::SliderFloat( "Cur Cam X", &x, -100.0f, 100.0f ) ;
                         ImGui::SliderFloat( "Cur Cam Y", &y, -100.0f, 100.0f ) ;
                         _cameras[_cam_id]->translate_to( motor::math::vec3f_t( x, y, cam_pos.z() ) ) ;
+                        
                     }
                 }
                 ImGui::End() ;
