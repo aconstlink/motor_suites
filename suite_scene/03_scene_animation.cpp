@@ -28,6 +28,7 @@
 #include <motor/scene/component/render_state_component.h>
 #include <motor/scene/visitor/trafo_visitor.h>
 #include <motor/scene/visitor/render_visitor.h>
+#include <motor/scene/visitor/variable_update_visitor.h>
 
 #include <motor/tool/imgui/node_kit/imgui_node_visitor.h>
 
@@ -444,6 +445,11 @@ namespace this_file
 
             {
                 motor::scene::trafo_visitor_t v ;
+                motor::scene::node_t::traverser( _root ).apply( &v ) ;
+            }
+
+            {
+                motor::scene::variable_update_visitor_t v ;
                 motor::scene::node_t::traverser( _root ).apply( &v ) ;
             }
         } 
