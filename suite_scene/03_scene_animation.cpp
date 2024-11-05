@@ -55,6 +55,8 @@ namespace this_file
         motor::graphics::msl_object_mtr_t msl_obj ;
         motor::graphics::geometry_object_t geo_obj ;
 
+        motor::wire::output_slot< float_t > * _time = motor::shared( motor::wire::output_slot< float_t >( 0.0f ) ) ;
+
         size_t _cam_id = 0 ;
         // 0 : this is the free moving camera
         // 1 : second camera for testing shader variable bindings
@@ -200,6 +202,7 @@ namespace this_file
                                 tex2d_t tex ;
                                 vec4_t color ;
                                 vec3_t light_dir ;
+                                float_t time ;
 
                                 in vec2_t tx : texcoord ;
                                 in vec3_t nrm : normal ;
@@ -210,7 +213,8 @@ namespace this_file
                                 void main()
                                 {
                                     float_t light = dot( normalize( in.nrm ), normalize( light_dir ) ) ;
-                                    out.color = vec4_t( light, light, light, 1.0 ) ;
+                                    out.color = vec4_t( light*time, light, light, 1.0 ) ;
+
                                     //out.color = color ' texture( tex, in.tx ) ;
                                     //out.color1 = vec4_t( in.nrm, 1.0 ) ;
                                     //out.color2 = vec4_t( light, light, light , 1.0 ) ;
@@ -221,87 +225,6 @@ namespace this_file
                     mslo.link_geometry( { "cube" } ) ;
 
                     msl_obj = motor::shared( motor::graphics::msl_object_t( std::move( mslo ) ) ) ;
-                }
-
-                {
-                    motor::graphics::variable_set_t vars ;
-
-                    {
-                        auto * var = vars.data_variable< motor::math::vec4f_t >( "color" ) ;
-                        var->set( motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) ) ;
-                    }
-
-                    {
-                        auto * var = vars.data_variable< float_t >( "u_time" ) ;
-                        var->set( 0.0f ) ;
-                    }
-
-                    {
-                        auto * var = vars.data_variable< motor::math::mat4f_t >( "world" ) ;
-
-                        motor::math::m3d::trafof_t t ;
-                        t.set_translation( motor::math::vec3f_t( -50.0f, 0.0f, 0.0f ) ) ;
-                        var->set( t.get_transformation() ) ;
-                    }
-
-                    #if 0
-                    {
-                        auto * var = vars.data_variable< motor::math::mat4f_t >( "view" ) ;
-                        var->set( _camera->get_view_matrix() ) ;
-                    }
-
-                    {
-                        auto * var = vars.data_variable< motor::math::mat4f_t >( "proj" ) ;
-                        var->set( _camera->get_proj_matrix() ) ;
-                    }
-                    #endif
-                    {
-                        auto * var = vars.data_variable< motor::math::vec3f_t >( "light_dir" ) ;
-                        var->set( motor::math::vec3f_t(1.0f,1.0f,0.5f) ) ;
-                    }
-
-                    msl_obj->add_variable_set( motor::memory::create_ptr( std::move( vars ), "a variable set" ) ) ;
-                }
-
-                {
-                    motor::graphics::variable_set_t vars ;
-
-                    {
-                        auto * var = vars.data_variable< motor::math::vec4f_t >( "color" ) ;
-                        var->set( motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) ) ;
-                    }
-
-                    {
-                        auto * var = vars.data_variable< float_t >( "u_time" ) ;
-                        var->set( 0.0f ) ;
-                    }
-
-                    {
-                        auto * var = vars.data_variable< motor::math::mat4f_t >( "world" ) ;
-
-                        motor::math::m3d::trafof_t t ;
-                        t.set_translation( motor::math::vec3f_t( 50.0f, 0.0f, 0.0f ) ) ;
-                        var->set( t.get_transformation() ) ;
-                    }
-
-                    #if 0
-                    {
-                        auto * var = vars.data_variable< motor::math::mat4f_t >( "view" ) ;
-                        var->set( _camera->get_view_matrix() ) ;
-                    }
-
-                    {
-                        auto * var = vars.data_variable< motor::math::mat4f_t >( "proj" ) ;
-                        var->set( _camera->get_proj_matrix() ) ;
-                    }
-                    #endif
-
-                    {
-                        auto * var = vars.data_variable< motor::math::vec3f_t >( "light_dir" ) ;
-                        var->set( motor::math::vec3f_t( 1.0f, 1.0f, 0.5f ) ) ;
-                    }
-
-                    msl_obj->add_variable_set( motor::memory::create_ptr( std::move( vars ), "a variable set" ) ) ;
                 }
             }
             
@@ -370,12 +293,64 @@ namespace this_file
                             {
                                 auto rn = motor::scene::render_node_t( motor::share(msl_obj), 0 ) ;
                                 rn.add_component( motor::shared( motor::scene::name_component_t( "Render Object 0" ) ) ) ;
+
+                                // add shader variable slots
+                                {
+                                    auto & inputs = *rn.borrow_shader_inputs() ;
+                                    {
+                                        auto s = motor::wire::input_slot( motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) ) ;
+                                        inputs.add( "color", motor::shared( std::move( s ) ) ) ;
+                                    }
+                                    {
+                                        auto s = motor::wire::input_slot( motor::math::vec3f_t( 1.0f, 1.0f, -0.5f ) ) ;
+                                        inputs.add( "light_dir", motor::shared( std::move( s ) ) ) ;
+                                    }
+                                    {
+                                        auto s = motor::shared( motor::wire::input_slot( 0.0f ) ) ;
+                                        s->connect( motor::share( _time ) ) ;
+                                        inputs.add( "time", motor::move( s ) ) ;
+                                    }
+                                    {
+                                        motor::math::m3d::trafof_t trafo ;
+                                        trafo.set_translation( motor::math::vec3f_t( -50.0f, 0.0f, 0.0f ) ) ;
+
+                                        auto s = motor::wire::input_slot( trafo.get_transformation() ) ;
+                                        inputs.add( "world", motor::shared( std::move( s ) ) ) ;
+                                    }
+                                }
+
                                 g.add_child( motor::shared( std::move( rn ) ) ) ;
                             }
 
                             {
                                 auto rn = motor::scene::render_node_t( motor::share( msl_obj ), 1 ) ;
                                 rn.add_component( motor::shared( motor::scene::name_component_t( "Render Object 1" ) ) ) ;
+
+                                // add shader variable slots
+                                {
+                                    auto & inputs = *rn.borrow_shader_inputs() ;
+                                    {
+                                        auto s = motor::wire::input_slot( motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) ) ;
+                                        inputs.add( "color", motor::shared( std::move( s ) ) ) ;
+                                    }
+                                    {
+                                        auto s = motor::wire::input_slot( motor::math::vec3f_t( 1.0f, 1.0f, -0.5f ) ) ;
+                                        inputs.add( "light_dir", motor::shared( std::move( s ) ) ) ;
+                                    }
+                                    {
+                                        auto s = motor::shared( motor::wire::input_slot( 0.0f ) ) ;
+                                        s->connect( motor::share( _time ) ) ;
+                                        inputs.add( "time", motor::move( s ) ) ;
+                                    }
+                                    {
+                                        motor::math::m3d::trafof_t trafo ;
+                                        trafo.set_translation( motor::math::vec3f_t( 50.0f, 0.0f, 0.0f ) ) ;
+
+                                        auto s = motor::wire::input_slot( trafo.get_transformation() ) ;
+                                        inputs.add( "world", motor::shared( std::move( s ) ) ) ;
+                                    }
+                                }
+
                                 g.add_child( motor::shared( std::move( rn ) ) ) ;
                             }
                             
@@ -416,9 +391,15 @@ namespace this_file
                     _cameras[ i ]->set_sensor_dims( w, h ) ;
                     _cameras[ i ]->perspective_fov() ;
                 }
-
             }
         }
+
+        //******************************************************************************************************
+        virtual void_t on_graphics( motor::application::app::graphics_data_in_t d ) noexcept 
+        {
+            float_t const t = _time->get_value() + d.sec_dt * 0.5f ;
+            _time->set_and_exchange( t > 1.0f ? 0.0f : t ) ;
+        } 
 
         //******************************************************************************************************
         virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
