@@ -1,0 +1,38 @@
+config render_shader
+{
+    vertex_shader
+    {
+        in vec3_t pos : position ;
+        in vec3_t nrm : normal ;
+        in vec2_t tx : texcoord0 ;
+
+        out vec2_t tx : texcoord0 ;
+        out vec4_t pos : position ;
+
+        mat4_t proj : projection ;
+        mat4_t view : view ;
+        mat4_t world : world ;
+
+        void main()
+        {
+            vec3_t pos = in.pos * 10.0 ;
+            out.pos = proj * view * vec4_t( pos, 1.0 ) ; 
+            out.tx = in.tx ;
+        }
+    }
+
+    pixel_shader
+    {
+        tex2d_t u_tex ; 
+
+        in vec2_t tx : texcoord0 ;
+        out vec4_t color : color ;
+
+        vec4_t u_color ;
+
+        void main()
+        {
+            out.color = texture( u_tex, in.tx )  ' u_color  ;
+        }
+    } 
+}

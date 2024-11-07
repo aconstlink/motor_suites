@@ -22,6 +22,7 @@ set( tests
     "13_msl_buildins_1.cpp"
     "13_msl_buildins_2.cpp"
     "14_noise_texture.cpp"
+    "15_wire_shader_slots.cpp"
     )
 
 foreach( _test ${tests} )
