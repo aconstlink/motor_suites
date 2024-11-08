@@ -16,7 +16,7 @@ config render_shader
         void main()
         {
             vec3_t pos = in.pos * 10.0 ;
-            out.pos = proj * view * vec4_t( pos, 1.0 ) ; 
+            out.pos = proj * view * world * vec4_t( pos, 1.0 ) ; 
             out.tx = in.tx ;
         }
     }

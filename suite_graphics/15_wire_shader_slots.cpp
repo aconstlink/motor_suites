@@ -14,7 +14,10 @@
 #include <motor/graphics/object/msl_object.h>
 #include <motor/graphics/variable/wire_variable_bridge.h>
 
+#include <motor/math/utility/3d/transformation.hpp>
 #include <motor/math/utility/angle.hpp>
+#include <motor/math/spline/linear_bezier_spline.hpp>
+#include <motor/math/animation/keyframe_sequence.hpp>
 
 #include <motor/io/database.h>
 #include <motor/log/global.h>
@@ -30,6 +33,8 @@ namespace this_file
     class my_app : public motor::application::app
     {
         motor_this_typedefs( my_app ) ;
+
+        motor::graphics::state_object_t scene_so ;
 
         motor::graphics::image_object_t img_obj ;
         motor::graphics::geometry_object_t geo_obj ;
@@ -49,12 +54,18 @@ namespace this_file
         // 1 : second camera for testing shader variable bindings
         motor::gfx::generic_camera_mtr_t _cameras[ 2 ] ;
 
-        motor::wire::output_slot< motor::math::mat4f_t > * _proj ;
-        motor::wire::output_slot< motor::math::mat4f_t > * _view ;
+        motor::wire::output_slot< motor::math::mat4f_t > * _proj = nullptr ;
+        motor::wire::output_slot< motor::math::mat4f_t > * _view = nullptr ;
+        motor::wire::output_slot< motor::math::mat4f_t > * _world = nullptr ;
+
+        motor::wire::output_slot< motor::math::vec4f_t > * _color = nullptr ;
+        
+        motor::math::m3d::trafof_t _trafo ;
 
         //************************************************************************************************
         virtual void_t on_init( void_t ) noexcept
         {
+           
             {
                 motor::application::window_info_t wi ;
                 wi.x = 100 ;
@@ -69,7 +80,6 @@ namespace this_file
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
-
             {
                 motor::application::window_info_t wi ;
                 wi.x = 400 ;
@@ -185,6 +195,41 @@ namespace this_file
                     .set_filter( motor::graphics::texture_filter_mode::mag_filter, motor::graphics::texture_filter_type::nearest );
             }
 
+            // render states
+            {
+                motor::graphics::render_state_sets_t rss ;
+
+                rss.depth_s.do_change = true ;
+                rss.depth_s.ss.do_activate = true ;
+                rss.depth_s.ss.do_depth_write = true ;
+
+                rss.polygon_s.do_change = true ;
+                rss.polygon_s.ss.do_activate = true ;
+                rss.polygon_s.ss.ff = motor::graphics::front_face::counter_clock_wise ;
+                rss.polygon_s.ss.cm = motor::graphics::cull_mode::back ;
+                rss.polygon_s.ss.fm = motor::graphics::fill_mode::fill ;
+
+                rss.clear_s.do_change = true ;
+                rss.clear_s.ss.do_activate = true ;
+                rss.clear_s.ss.clear_color = motor::math::vec4f_t( .2f, .2f, .2f, 1.0f ) ;
+                rss.clear_s.ss.do_color_clear = true ;
+                rss.clear_s.ss.do_depth_clear = true ;
+
+                #if 0
+                rss.view_s.do_change = false ;
+                rss.view_s.ss.do_activate = true ;
+                rss.view_s.ss.vp = fb_dims ;
+                #endif
+
+                scene_so = motor::graphics::state_object_t( "scene_render_states" ) ;
+                scene_so.add_render_state_set( rss ) ;
+            }
+            
+            {
+                 _color = motor::shared( motor::wire::output_slot< motor::math::vec4f_t >( motor::math::vec4f_t( 1.0f ) ) ) ;
+                 _world = motor::shared( motor::wire::output_slot< motor::math::mat4f_t >() ) ;
+            }
+
             // shader
             {
                 motor::graphics::msl_object_t mslo( "render" ) ;
@@ -202,13 +247,18 @@ namespace this_file
                 mslo.add( motor::graphics::msl_api_type::msl_4_0, shd ) ;
 
                 mslo.link_geometry( "cube" ) ;
-
+                
                 {
                     auto b = motor::shared( motor::graphics::wire_variable_bridge_t( mslo.get_varibale_set(0) ) ) ;
                     b->borrow_inputs()->add( "proj", motor::shared( motor::wire::input_slot< motor::math::mat4f_t >() ) ) ;
                     b->borrow_inputs()->add( "view", motor::shared( motor::wire::input_slot< motor::math::mat4f_t >() ) ) ;
-                    b->borrow_inputs()->add( "u_color", motor::shared( motor::wire::input_slot< motor::math::vec4f_t >( motor::math::vec4f_t(1.0f)) ) ) ;
                     b->borrow_inputs()->add( "u_tex", motor::shared( motor::wire::input_slot< motor::graphics::texture_variable_data >( "checker_board" ) ) ) ;
+
+                    {
+                        auto s = motor::shared( motor::wire::input_slot< motor::math::vec4f_t >( motor::math::vec4f_t(1.0f) ) ) ;
+                        _color->connect( motor::share( s ) ) ;
+                        b->borrow_inputs()->add( "u_color", motor::move( s ) ) ;
+                    }
                     b->update_bindings() ;
                     _bridges.emplace_back( motor::move( b ) ) ;
                 }
@@ -222,9 +272,9 @@ namespace this_file
                     _bridges.emplace_back( motor::move( b ) ) ;
                 }
 
-
                 _msl_obj = motor::shared( std::move( mslo ) ) ;
             }
+            
         }
 
         //************************************************************************************************
@@ -272,22 +322,24 @@ namespace this_file
         }
 
         //************************************************************************************************
-        virtual void_t on_graphics( motor::application::app::graphics_data_in_t ) noexcept 
+        virtual void_t on_graphics( motor::application::app::graphics_data_in_t gdata ) noexcept 
         {
             if( _msl_obj->has_shader_changed() )
             {
                 motor::graphics::shader_bindings_t sb ;
                 if( _msl_obj->reset_and_successful( sb ) )
                 {
+                    
                     motor::string_t name ;
 
                     for ( auto * b : _bridges )
                     {
+                        
                         if ( sb.has_variable_binding( motor::graphics::binding_point::projection_matrix, name ) )
                         {
-                            auto s = b->borrow_inputs()->get_or_add( name,
+                            auto s = b->borrow_inputs()->borrow_or_add( name,
                                 motor::shared( motor::wire::input_slot< motor::math::mat4f_t >() ) ) ;
-
+                            
                             if ( !s->connect( motor::share( _proj ) ) )
                             {
                                 motor::log::global::error( "slot type mismatch" ) ;
@@ -296,7 +348,7 @@ namespace this_file
 
                         if ( sb.has_variable_binding( motor::graphics::binding_point::view_matrix, name ) )
                         {
-                            auto s = b->borrow_inputs()->get_or_add( name,
+                            auto s = b->borrow_inputs()->borrow_or_add( name,
                                 motor::shared( motor::wire::input_slot< motor::math::mat4f_t >() ) ) ;
 
                             if ( !s->connect( motor::share( _view ) ) )
@@ -304,12 +356,17 @@ namespace this_file
                                 motor::log::global::error( "slot type mismatch" ) ;
                             }
                         }
-                    }
 
-                    
+                        if ( sb.has_variable_binding( motor::graphics::binding_point::world_matrix, name ) )
+                        {
+                            auto s = b->borrow_inputs()->borrow_or_add( name,
+                                motor::shared( motor::wire::input_slot< motor::math::mat4f_t >() ) ) ;
 
-                    if ( sb.has_variable_binding( motor::graphics::binding_point::world_matrix, name ) )
-                    {
+                            if ( !s->connect( motor::share( _world ) ) )
+                            {
+                                motor::log::global::error( "slot type mismatch" ) ;
+                            }
+                        }
                     }
                 }
 
@@ -321,6 +378,52 @@ namespace this_file
                 renderables.emplace_back( _msl_obj ) ;
             }
 
+            // update color 
+            {
+                using spline_t = motor::math::linear_bezier_spline<motor::math::vec4f_t> ;
+                using keys_t = motor::math::keyframe_sequence< spline_t  > ;
+                using keyframe_t = keys_t::keyframe_t ;
+
+                keys_t keys ;
+
+                keys.insert( keyframe_t( size_t(0), motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ) ) ;
+                keys.insert( keyframe_t( size_t(500), motor::math::vec4f_t( 0.0f, 0.0f, 0.0f, 1.0f ) ) ) ;
+                keys.insert( keyframe_t( size_t(1000), motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) ) ) ;
+                keys.insert( keyframe_t( size_t(1500), motor::math::vec4f_t( 0.0f, 1.0f, 0.0f, 1.0f ) ) ) ;
+                keys.insert( keyframe_t( size_t(2000), motor::math::vec4f_t( 0.0f, 0.0f, 1.0f, 1.0f ) ) ) ;
+                keys.insert( keyframe_t( size_t(2500), motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ) ) ;
+
+                static size_t time_ms = 0 ;
+                time_ms += gdata.milli_dt ;
+                if( time_ms > 2500 ) time_ms = 0 ;
+
+                _color->set_and_exchange( keys( time_ms ) ) ;
+            }
+
+            {
+                using spline_t = motor::math::linear_bezier_spline<motor::math::float_t > ;
+                using keys_t = motor::math::keyframe_sequence< spline_t  > ;
+                using keyframe_t = keys_t::keyframe_t ;
+
+                keys_t keys ;
+
+                float_t const step = motor::math::constants< float_t >::pix2() / 4.0f ;
+                keys.insert( keyframe_t( size_t( 0 ), 0.0f * step ) ) ;
+                keys.insert( keyframe_t( size_t( 100 ), 1.0f * step ) ) ;
+                keys.insert( keyframe_t( size_t( 200 ), 2.0f * step ) ) ;
+                keys.insert( keyframe_t( size_t( 900 ), 3.0f * step ) ) ;
+                keys.insert( keyframe_t( size_t( 1000 ), 4.0f * step ) ) ;
+
+                static size_t time_ms = 0 ;
+                time_ms += gdata.milli_dt ;
+                if ( time_ms > 1000 ) time_ms = 0 ;
+
+                motor::math::m3d::trafof_t trafo = _trafo ;
+                trafo.rotate_by_axis_fr( motor::math::vec3f_t(1.0f, 1.0f, 0.0f ).normalized(), keys( time_ms ) ) ;
+
+                _world->set_and_exchange( trafo.get_transformation() ) ;
+            }
+            
             _proj->set_and_exchange( _cameras[ _cam_id ]->get_proj_matrix() ) ;
             _view->set_and_exchange( _cameras[ _cam_id ]->get_view_matrix() ) ;
 
@@ -339,18 +442,21 @@ namespace this_file
                 fe->configure<motor::graphics::geometry_object_t>( &geo_obj ) ;
                 fe->configure<motor::graphics::image_object_t>( &img_obj ) ;
                 fe->configure<motor::graphics::msl_object_t>( _msl_obj ) ;
+                fe->configure<motor::graphics::state_object_t>( &scene_so ) ;
             }
-
+            
             for ( auto * obj : reconfigs )
             {
                 fe->configure<motor::graphics::msl_object_t>( obj ) ;
             }
 
+            fe->push( &scene_so ) ;
             for( auto * obj : renderables )
             {
                 motor::graphics::gen4::backend_t::render_detail_t detail ;
                 fe->render( obj, detail ) ;
             }
+            fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ;
         }
 
         //************************************************************************************************
@@ -378,6 +484,19 @@ namespace this_file
                     ImGui::SliderFloat( "Cur Cam Y", &y, -100.0f, 100.0f ) ;
                     _cameras[ _cam_id ]->translate_to( motor::math::vec3f_t( x, y, cam_pos.z() ) ) ;
 
+                }
+
+                {
+                }
+            }
+            ImGui::End() ;
+
+            if ( ImGui::Begin( "Object Window" ) )
+            {
+                {
+                    float_t v = _trafo.get_scale().x() ;
+                    ImGui::SliderFloat( "Linear Scale", &v, 1.0f, 10.0f ) ;
+                    _trafo.set_scale( v ) ;
                 }
             }
             ImGui::End() ;
