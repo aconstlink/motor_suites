@@ -356,11 +356,11 @@ namespace this_file
                                 motor::log::global::error( "slot type mismatch" ) ;
                             }
                         }
-
+                        
                         if ( sb.has_variable_binding( motor::graphics::binding_point::world_matrix, name ) )
                         {
                             auto s = b->borrow_inputs()->borrow_or_add( name,
-                                motor::shared( motor::wire::input_slot< motor::math::mat4f_t >() ) ) ;
+                                motor::shared( motor::wire::input_slot< motor::math::mat4f_t >(), "test" ) ) ;
 
                             if ( !s->connect( motor::share( _world ) ) )
                             {
@@ -520,6 +520,8 @@ namespace this_file
             motor::release( motor::move( _cameras[1] ) ) ;
             motor::release( motor::move( _proj ) ) ;
             motor::release( motor::move( _view ) ) ;
+            motor::release( motor::move( _world ) ) ;
+            motor::release( motor::move( _color ) ) ;
 
             db.detach( motor::move( mon )  ) ;
         } ;

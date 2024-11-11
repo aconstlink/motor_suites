@@ -274,9 +274,9 @@ namespace this_file
                     // add transformation node g
                     auto t = motor::shared( motor::scene::trafo3d_node_t( 
                         motor::math::m3d::trafof_t(
-                            motor::math::vec3f_t(),
-                            motor::math::vec3f_t( 1.0f, 0.0f, 0.0f ),
-                            motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ) ) ;
+                            motor::math::vec3f_t( 1.0f ),
+                            motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ),
+                            motor::math::vec3f_t( 0.0f, 100.0f, 0.0f ) ) ) ) ;
 
                     {
                         t->add_component( motor::shared( motor::scene::name_component_t( "trafo node 1" ) ) ) ;
@@ -289,8 +289,19 @@ namespace this_file
 
                         {
                             motor::scene::logic_group_t g ;
-                            
+
                             {
+                                // add transformation node g
+                                auto t2 = motor::shared( motor::scene::trafo3d_node_t(
+                                    motor::math::m3d::trafof_t(
+                                        motor::math::vec3f_t( 1.0f ),
+                                        motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ),
+                                        motor::math::vec3f_t( -50.0f, 0.0f, 0.0f ) ) ) ) ;
+                                
+                                {
+                                    t2->add_component( motor::shared( motor::scene::name_component_t( "trafo left" ) ) ) ;
+                                }
+
                                 auto rn = motor::scene::render_node_t( motor::share(msl_obj), 0 ) ;
                                 rn.add_component( motor::shared( motor::scene::name_component_t( "Render Object 0" ) ) ) ;
 
@@ -310,19 +321,34 @@ namespace this_file
                                         s->connect( motor::share( _time ) ) ;
                                         inputs.add( "time", motor::move( s ) ) ;
                                     }
+                                    #if 0
+                                    // @note will be set by transformation visitor
                                     {
                                         motor::math::m3d::trafof_t trafo ;
-                                        trafo.set_translation( motor::math::vec3f_t( -50.0f, 0.0f, 0.0f ) ) ;
+                                        trafo.set_translation( motor::math::vec3f_t( 50.0f, 0.0f, 0.0f ) ) ;
 
                                         auto s = motor::wire::input_slot( trafo.get_transformation() ) ;
                                         inputs.add( "world", motor::shared( std::move( s ) ) ) ;
                                     }
+                                    #endif
                                 }
 
-                                g.add_child( motor::shared( std::move( rn ) ) ) ;
+                                t2->set_decorated( motor::shared( std::move( rn ) ) ) ;
+                                g.add_child( motor::move( t2 ) ) ;
                             }
-
+                            
                             {
+                                // add transformation node g
+                                auto t2 = motor::shared( motor::scene::trafo3d_node_t(
+                                    motor::math::m3d::trafof_t(
+                                        motor::math::vec3f_t( 1.0f ),
+                                        motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ),
+                                        motor::math::vec3f_t( 50.0f, 0.0f, 0.0f ) ) ) ) ;
+                                
+                                {
+                                    t2->add_component( motor::shared( motor::scene::name_component_t( "trafo right" ) ) ) ;
+                                }
+
                                 auto rn = motor::scene::render_node_t( motor::share( msl_obj ), 1 ) ;
                                 rn.add_component( motor::shared( motor::scene::name_component_t( "Render Object 1" ) ) ) ;
 
@@ -342,6 +368,8 @@ namespace this_file
                                         s->connect( motor::share( _time ) ) ;
                                         inputs.add( "time", motor::move( s ) ) ;
                                     }
+                                    #if 0
+                                    // @note will be set by transformation visitor
                                     {
                                         motor::math::m3d::trafof_t trafo ;
                                         trafo.set_translation( motor::math::vec3f_t( 50.0f, 0.0f, 0.0f ) ) ;
@@ -349,9 +377,11 @@ namespace this_file
                                         auto s = motor::wire::input_slot( trafo.get_transformation() ) ;
                                         inputs.add( "world", motor::shared( std::move( s ) ) ) ;
                                     }
+                                    #endif
                                 }
 
-                                g.add_child( motor::shared( std::move( rn ) ) ) ;
+                                t2->set_decorated( motor::shared( std::move( rn ) ) ) ;
+                                g.add_child( motor::move( t2 ) ) ;
                             }
                             
                             rs->set_decorated(  motor::shared( std::move( g ) ) ) ;
@@ -412,7 +442,7 @@ namespace this_file
                 fe->configure<motor::graphics::geometry_object_t>( &geo_obj ) ;
                 fe->configure<motor::graphics::msl_object_t>( msl_obj ) ;
             }
-
+            
             {
                 motor::scene::render_visitor_t vis( fe, _cameras[_cam_id] ) ;
                 motor::scene::node_t::traverser(_root).apply( &vis ) ;
@@ -448,6 +478,7 @@ namespace this_file
                     _selected = v.get_selected() ;
                 }
                 ImGui::End() ;
+                
 
                 if ( ImGui::Begin( "Camera Window" ) )
                 {
@@ -475,12 +506,14 @@ namespace this_file
 
         virtual void_t on_shutdown( void_t ) noexcept 
         {
-            motor::memory::release_ptr( motor::move( _selected ) ) ;
-            motor::memory::release_ptr( _root ) ;
-            motor::memory::release_ptr( root_so ) ;
-            motor::memory::release_ptr( msl_obj ) ;
-            motor::memory::release_ptr( _cameras[0] ) ;
-            motor::memory::release_ptr( _cameras[1] ) ;
+            motor::release( motor::move( _time ) ) ;
+            motor::release( motor::move( _root ) ) ;
+            motor::release( motor::move( root_so ) ) ;
+            motor::release( motor::move( msl_obj ) ) ;
+
+            motor::release( motor::move( _selected ) ) ;
+            motor::release( motor::move( _cameras[0] ) ) ;
+            motor::release( motor::move( _cameras[1] ) ) ;
         }
     };
 }
