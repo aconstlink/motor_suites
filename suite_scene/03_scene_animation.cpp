@@ -32,6 +32,8 @@
 
 #include <motor/tool/imgui/node_kit/imgui_node_visitor.h>
 
+#include <motor/math/interpolation/interpolate.hpp>
+
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
 #include <motor/concurrent/global.h>
@@ -56,6 +58,9 @@ namespace this_file
         motor::graphics::geometry_object_t geo_obj ;
 
         motor::wire::output_slot< float_t > * _time = motor::shared( motor::wire::output_slot< float_t >( 0.0f ) ) ;
+
+        motor::wire::output_slot< motor::math::m3d::trafof_t > * _out_0 = nullptr ;
+        motor::wire::output_slot< motor::math::m3d::trafof_t > * _out_1 = nullptr ;
 
         size_t _cam_id = 0 ;
         // 0 : this is the free moving camera
@@ -256,6 +261,20 @@ namespace this_file
                 root_so = motor::shared( motor::graphics::state_object_t( std::move( so ) ) ) ;
             }
 
+            {
+                _out_0 = motor::shared( motor::wire::output_slot< motor::math::m3d::trafof_t >(), "output 0" ) ;
+                _out_0->set_value( motor::math::m3d::trafof_t(
+                    motor::math::vec3f_t( 1.0f ),
+                    motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ),
+                    motor::math::vec3f_t( -50.0f, 30.0f, 0.0f ) ) ) ;
+
+                _out_1 = motor::shared( motor::wire::output_slot< motor::math::m3d::trafof_t >(), "output 1" );
+                _out_1->set_value( motor::math::m3d::trafof_t(
+                    motor::math::vec3f_t( 1.0f ),
+                    motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ),
+                    motor::math::vec3f_t( 50.0f, 0.0f, 0.0f ) ) ) ;
+            }
+
             // #3 : init scene tree
             {
                 motor::scene::logic_group_t root ;
@@ -276,7 +295,7 @@ namespace this_file
                         motor::math::m3d::trafof_t(
                             motor::math::vec3f_t( 1.0f ),
                             motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ),
-                            motor::math::vec3f_t( 0.0f, 100.0f, 0.0f ) ) ) ) ;
+                            motor::math::vec3f_t( 0.0f, -10.0f, 0.0f ) ) ) ) ;
 
                     {
                         t->add_component( motor::shared( motor::scene::name_component_t( "trafo node 1" ) ) ) ;
@@ -292,14 +311,20 @@ namespace this_file
 
                             {
                                 // add transformation node g
-                                auto t2 = motor::shared( motor::scene::trafo3d_node_t(
-                                    motor::math::m3d::trafof_t(
-                                        motor::math::vec3f_t( 1.0f ),
-                                        motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ),
-                                        motor::math::vec3f_t( -50.0f, 0.0f, 0.0f ) ) ) ) ;
+                                auto t2 = motor::shared( motor::scene::trafo3d_node_t() ) ;
                                 
+                                // name component
                                 {
                                     t2->add_component( motor::shared( motor::scene::name_component_t( "trafo left" ) ) ) ;
+                                }
+
+                                // animation connect
+                                {
+                                    motor::wire::inputs_t inputs ;
+                                    if( t2->inputs( inputs ) ) 
+                                    {
+                                        inputs.connect( "trafo", motor::share( _out_0 ) ) ;
+                                    }
                                 }
 
                                 auto rn = motor::scene::render_node_t( motor::share(msl_obj), 0 ) ;
@@ -339,14 +364,19 @@ namespace this_file
                             
                             {
                                 // add transformation node g
-                                auto t2 = motor::shared( motor::scene::trafo3d_node_t(
-                                    motor::math::m3d::trafof_t(
-                                        motor::math::vec3f_t( 1.0f ),
-                                        motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ),
-                                        motor::math::vec3f_t( 50.0f, 0.0f, 0.0f ) ) ) ) ;
+                                auto t2 = motor::shared( motor::scene::trafo3d_node_t() ) ;
                                 
                                 {
                                     t2->add_component( motor::shared( motor::scene::name_component_t( "trafo right" ) ) ) ;
+                                }
+
+                                // animation connect
+                                {
+                                    motor::wire::inputs_t inputs ;
+                                    if ( t2->inputs( inputs ) )
+                                    {
+                                        inputs.connect( "trafo", motor::share( _out_1 ) ) ;
+                                    }
                                 }
 
                                 auto rn = motor::scene::render_node_t( motor::share( msl_obj ), 1 ) ;
@@ -427,8 +457,54 @@ namespace this_file
         //******************************************************************************************************
         virtual void_t on_graphics( motor::application::app::graphics_data_in_t d ) noexcept 
         {
-            float_t const t = _time->get_value() + d.sec_dt * 0.5f ;
-            _time->set_and_exchange( t > 1.0f ? 0.0f : t ) ;
+            {
+                float_t const t = _time->get_value() + d.sec_dt * 0.5f ;
+                _time->set_and_exchange( t > 1.0f ? 0.0f : t ) ;
+            }
+
+            {
+                auto * os = _out_0;
+
+                static float_t angle = 0.0f ;
+                angle += d.sec_dt * motor::math::constants<float_t>::pix2() ;
+                angle = angle > motor::math::constants<float_t>::pix2() ? 0.0f : angle ;
+
+                static float_t ts = 0.0f ;
+                ts += d.sec_dt * 0.5f ;
+                ts = ts > 1.0f ? 0.0f : ts ;
+
+                float_t const ani_t = 1.0f - motor::math::fn<float_t>::abs( ts * 2.0f - 1.0f ) ;
+
+                float_t const s = motor::math::interpolation<float_t>::linear( 1.0f, 5.0f, ani_t ) ;
+
+
+
+                motor::math::vec3f_t pos = os->get_value().get_translation() ;
+
+                motor::math::m3d::trafof_t const t( 
+                    motor::math::vec3f_t(s), 
+                    motor::math::vec3f_t(angle, 0.0f, angle),
+                    pos ) ;
+
+                os->set_and_exchange( t ) ;
+            }
+
+            {
+                auto * os = _out_1;
+
+                static float_t angle = 0.0f ;
+                angle += d.sec_dt * motor::math::constants<float_t>::pix2() ;
+                angle = angle > motor::math::constants<float_t>::pix2() ? 0.0f : angle ;
+
+                motor::math::vec3f_t pos = os->get_value().get_translation() ;
+
+                motor::math::m3d::trafof_t const t(
+                    motor::math::vec3f_t( 1.0f ),
+                    motor::math::vec3f_t( angle*0.347f, angle, 0.0f ),
+                    pos ) ;
+
+                os->set_and_exchange( t ) ;
+            }
         } 
 
         //******************************************************************************************************
@@ -514,6 +590,9 @@ namespace this_file
             motor::release( motor::move( _selected ) ) ;
             motor::release( motor::move( _cameras[0] ) ) ;
             motor::release( motor::move( _cameras[1] ) ) ;
+
+            motor::release( motor::move( _out_0 ) ) ;
+            motor::release( motor::move( _out_1 ) ) ;
         }
     };
 }
