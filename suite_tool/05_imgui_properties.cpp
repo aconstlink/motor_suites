@@ -6,6 +6,8 @@
 
 #include <motor/platform/global.h>
 
+#include <motor/wire/slot/output_slot.h>
+
 #include <motor/controls/types/ascii_keyboard.hpp>
 #include <motor/controls/types/three_mouse.hpp>
 
@@ -66,6 +68,11 @@ namespace this_file
         motor::property::property_sheet_t _props1 ;
         motor::property::property_sheet_t _props2 ;
 
+        motor::wire::output_slot< int_t > * _int_os = motor::shared( motor::wire::output_slot< int_t >() ) ;
+        
+        motor::wire::input_slot< float_t > * _float_is = motor::shared( motor::wire::input_slot< float_t >() ) ;
+        motor::wire::output_slot< float_t > * _float_os = motor::shared( motor::wire::output_slot< float_t >() ) ;
+
         //******************************************************************************************************
         virtual void_t on_init( void_t ) noexcept
         {
@@ -102,6 +109,27 @@ namespace this_file
                 _props2.add_property( "my_enum", this_file::my_enum_property_t( this_file::test_enum::enum_3 ) ) ;
                 _props2.add_property( "my_string", motor::property::string_property_t( "Hello World again" ) ) ;
             }
+
+            // test input sloted properties
+            // will take the internal input slot of the generic property and
+            // test the output slot connection
+            {
+                _props1.add_property( "some_int_value_as_is", motor::property::int_is_property_t( 7, { -10, 100 } ) ) ;
+                auto * p = _props1.borrow_property< motor::wire::input_slot<int_t> >( "some_int_value_as_is" ) ;
+                auto const b = p->borrow_is()->connect( motor::share( _int_os ) ) ;
+                assert( b == true ) ;
+            }
+
+            // test input slotted property
+            // here the input slot is coming from somewhere else.
+            // in this case the property is used as a representative
+            // for the input slot
+            {
+                _props1.add_property( "some_float_value_as_is", 
+                    motor::property::float_is_property_t( motor::share( _float_is ), { -100.0f, 100.0f } ) ) ;
+                
+                _float_os->connect( motor::share( _float_is ) ) ;
+            }
         }
 
         //******************************************************************************************************
@@ -118,6 +146,16 @@ namespace this_file
                 this->close() ;
             }
         }
+
+        //******************************************************************************************************
+        virtual void_t on_update( motor::application::app::update_data_in_t ud ) noexcept 
+        {
+            static float_t some_float = -100.0f ;
+            some_float += ud.sec_dt ;
+            if( some_float >= 100.0f ) some_float = -100.0f ;
+
+            _float_os->set_and_exchange( some_float ) ;
+        } 
 
         //******************************************************************************************************
         virtual bool_t on_tool( this_t::window_id_t const wid, motor::application::app::tool_data_ref_t ) noexcept 
@@ -142,7 +180,15 @@ namespace this_file
         }
 
         //******************************************************************************************************
-        virtual void_t on_shutdown( void_t ) noexcept {}
+        virtual void_t on_shutdown( void_t ) noexcept 
+        {
+            _int_os->disconnect() ;
+            _float_os->disconnect() ;
+
+            motor::release( motor::move( _int_os ) ) ;
+            motor::release( motor::move( _float_os ) ) ;
+            motor::release( motor::move( _float_is ) ) ;
+        }
     };
 }
 
