@@ -3,6 +3,7 @@
 #include <motor/application/window/window_message_listener.h>
 
 #include <motor/tool/imgui/custom_widgets.h>
+#include <motor/tool/imgui/imgui_property.h>
 
 #include <motor/geometry/mesh/tri_mesh.h>
 #include <motor/geometry/mesh/flat_tri_mesh.h>
@@ -30,6 +31,31 @@ namespace this_file
 {
     using namespace motor::core::types ;
 
+    template< typename T >
+    class test : public motor::property::numerical_traits< T >
+    {
+        T value ;
+
+    public:
+
+        test( void_t ) noexcept {}
+        virtual ~test( void_t ) noexcept{}
+
+        virtual void_t set( value_cref_t ) noexcept final{
+            
+        }
+
+        virtual value_cref_t get( void_t ) const noexcept final
+        {
+            return value;
+        }
+    } ;
+}
+
+namespace this_file
+{
+    using namespace motor::core::types ;
+
     class my_app : public motor::application::app
     {
         motor_this_typedefs( my_app ) ;
@@ -39,6 +65,7 @@ namespace this_file
         motor::graphics::image_object_t img_obj ;
         motor::graphics::geometry_object_t geo_obj ;
         motor::graphics::msl_object_mtr_t _msl_obj ;
+        size_t _render_vs = 0 ;
 
         motor::io::monitor_mtr_t mon = motor::shared( motor::io::monitor_t(), "DB monitor" ) ;
         motor::io::database db = motor::io::database( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
@@ -454,6 +481,7 @@ namespace this_file
             for( auto * obj : renderables )
             {
                 motor::graphics::gen4::backend_t::render_detail_t detail ;
+                detail.varset = _render_vs ;
                 fe->render( obj, detail ) ;
             }
             fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ;
@@ -485,9 +513,6 @@ namespace this_file
                     _cameras[ _cam_id ]->translate_to( motor::math::vec3f_t( x, y, cam_pos.z() ) ) ;
 
                 }
-
-                {
-                }
             }
             ImGui::End() ;
 
@@ -497,6 +522,32 @@ namespace this_file
                     float_t v = _trafo.get_scale().x() ;
                     ImGui::SliderFloat( "Linear Scale", &v, 1.0f, 10.0f ) ;
                     _trafo.set_scale( v ) ;
+                }
+            }
+            ImGui::End() ;
+
+
+
+            if ( ImGui::Begin( "Property Window" ) )
+            {
+                {
+                    static motor::property::property_sheet_t props ;
+                    
+                    for( auto * b : _bridges )
+                    {
+                        auto * inputs = b->borrow_inputs() ;
+                        inputs->for_each_slot( [&]( motor::string_in_t name, motor::wire::iinput_slot_ptr_t is )
+                        {
+                            if( motor::property::add_is_property< float_t >( name, is, props ) ) return ;
+                            if( motor::property::add_is_property< int_t >( name, is, props ) ) return ;
+                            if( motor::property::add_is_property< motor::math::vec2f_t >( name, is, props ) ) return ;
+                            if( motor::property::add_is_property< motor::math::vec3f_t >( name, is, props ) ) return ;
+                            if( motor::property::add_is_property< motor::math::vec4f_t >( name, is, props ) ) return ;
+                        } ) ;
+                        
+                    }
+
+                    motor::tool::imgui_property::handle( "Property Sheet #1", props ) ;
                 }
             }
             ImGui::End() ;

@@ -29,10 +29,13 @@ config render_shader
         out vec4_t color : color ;
 
         vec4_t u_color ;
+        vec2_t u_offset ;
+        vec2_t u_tx_scale ;
 
         void main()
         {
-            out.color = texture( u_tex, in.tx )  ' u_color  ;
+            vec2_t tx_off = in.tx ' u_tx_scale + u_offset ;
+            out.color = texture( u_tex, tx_off )  ' u_color  ;
         }
     } 
 }
