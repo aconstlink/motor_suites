@@ -31,31 +31,6 @@ namespace this_file
 {
     using namespace motor::core::types ;
 
-    template< typename T >
-    class test : public motor::property::numerical_traits< T >
-    {
-        T value ;
-
-    public:
-
-        test( void_t ) noexcept {}
-        virtual ~test( void_t ) noexcept{}
-
-        virtual void_t set( value_cref_t ) noexcept final{
-            
-        }
-
-        virtual value_cref_t get( void_t ) const noexcept final
-        {
-            return value;
-        }
-    } ;
-}
-
-namespace this_file
-{
-    using namespace motor::core::types ;
-
     class my_app : public motor::application::app
     {
         motor_this_typedefs( my_app ) ;
@@ -88,6 +63,8 @@ namespace this_file
         motor::wire::output_slot< motor::math::vec4f_t > * _color = nullptr ;
         
         motor::math::m3d::trafof_t _trafo ;
+
+        motor::property::property_sheet_t _props ;
 
         //************************************************************************************************
         virtual void_t on_init( void_t ) noexcept
@@ -531,23 +508,21 @@ namespace this_file
             if ( ImGui::Begin( "Property Window" ) )
             {
                 {
-                    static motor::property::property_sheet_t props ;
-                    
                     for( auto * b : _bridges )
                     {
                         auto * inputs = b->borrow_inputs() ;
                         inputs->for_each_slot( [&]( motor::string_in_t name, motor::wire::iinput_slot_ptr_t is )
                         {
-                            if( motor::property::add_is_property< float_t >( name, is, props ) ) return ;
-                            if( motor::property::add_is_property< int_t >( name, is, props ) ) return ;
-                            if( motor::property::add_is_property< motor::math::vec2f_t >( name, is, props ) ) return ;
-                            if( motor::property::add_is_property< motor::math::vec3f_t >( name, is, props ) ) return ;
-                            if( motor::property::add_is_property< motor::math::vec4f_t >( name, is, props ) ) return ;
+                            if( motor::property::add_is_property< float_t >( name, is, _props ) ) return ;
+                            if( motor::property::add_is_property< int_t >( name, is, _props ) ) return ;
+                            if( motor::property::add_is_property< motor::math::vec2f_t >( name, is, _props ) ) return ;
+                            if( motor::property::add_is_property< motor::math::vec3f_t >( name, is, _props ) ) return ;
+                            if( motor::property::add_is_property< motor::math::vec4f_t >( name, is, _props ) ) return ;
                         } ) ;
                         
                     }
 
-                    motor::tool::imgui_property::handle( "Property Sheet #1", props ) ;
+                    motor::tool::imgui_property::handle( "Property Sheet #1", _props ) ;
                 }
             }
             ImGui::End() ;
