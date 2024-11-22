@@ -279,6 +279,16 @@ namespace this_file
                 _msl_obj = motor::shared( std::move( mslo ) ) ;
             }
             
+            {
+                using is_t = motor::wire::input_slot<motor::math::vec2f_t> ;
+                using prop_t = motor::property::generic_property< is_t > ;
+                using mm_t = prop_t::min_max_t ;
+
+                auto p = prop_t( motor::shared( is_t( motor::math::vec2f_t( 0.25f, 0.5f ) ) ), 
+                    mm_t( motor::math::vec2f_t(0.0f, 0.0f), motor::math::vec2f_t(1.0f, 1.0f) ) ) ;
+
+                _props.add_property( "u_tx_scale", std::move( p ) ) ;
+            }
         }
 
         //************************************************************************************************
@@ -508,14 +518,21 @@ namespace this_file
             if ( ImGui::Begin( "Property Window" ) )
             {
                 {
-                    for( auto * b : _bridges )
+                    auto * b = _bridges[ _render_vs ]  ;
                     {
                         auto * inputs = b->borrow_inputs() ;
                         inputs->for_each_slot( [&]( motor::string_in_t name, motor::wire::iinput_slot_ptr_t is )
                         {
                             if( motor::property::add_is_property< float_t >( name, is, _props ) ) return ;
                             if( motor::property::add_is_property< int_t >( name, is, _props ) ) return ;
-                            if( motor::property::add_is_property< motor::math::vec2f_t >( name, is, _props ) ) return ;
+                            if( motor::property::add_is_property< motor::math::vec2f_t >( name, is, _props ) )
+                            {
+                                using is_t = motor::wire::input_slot<motor::math::vec2f_t> ;
+                                auto p = _props.borrow_property<is_t>(name) ;
+                                p->replace_is( motor::share( is ), true ) ;
+
+                                return ;
+                            }
                             if( motor::property::add_is_property< motor::math::vec3f_t >( name, is, _props ) ) return ;
                             if( motor::property::add_is_property< motor::math::vec4f_t >( name, is, _props ) ) return ;
                         } ) ;
@@ -550,6 +567,8 @@ namespace this_file
             motor::release( motor::move( _color ) ) ;
 
             db.detach( motor::move( mon )  ) ;
+
+            _props.clear() ;
         } ;
     };
 }
