@@ -91,10 +91,11 @@ int main( int argc, char ** argv )
             }
         }
 
+        
         {
             motor::wire::node_disconnector_t::disconnect_everyting( motor::move( start ) ) ;
         }
-
+        
         lts.deinit() ;
     }
 

@@ -4,6 +4,9 @@
 
 #include <motor/profiling/probe_guard.hpp>
 
+#include <motor/tool/imgui/node_kit/imgui_node_visitor.h>
+#include <motor/tool/imgui/imgui_property.h>
+
 #include <motor/platform/global.h>
 
 #include <motor/geometry/mesh/tri_mesh.h>
@@ -30,7 +33,8 @@
 #include <motor/scene/visitor/render_visitor.h>
 #include <motor/scene/visitor/variable_update_visitor.h>
 
-#include <motor/tool/imgui/node_kit/imgui_node_visitor.h>
+#include <motor/wire/variables/trafo_variables.hpp>
+#include <motor/wire/variables/vector_variables.hpp>
 
 #include <motor/math/interpolation/interpolate.hpp>
 
@@ -52,6 +56,7 @@ namespace this_file
 
         motor::scene::node_mtr_t _root ;
         motor::scene::node_mtr_t _selected = nullptr ;
+        motor::property::property_sheet_t _props ;
 
         motor::graphics::state_object_mtr_t root_so ;
         motor::graphics::msl_object_mtr_t msl_obj ;
@@ -62,10 +67,15 @@ namespace this_file
         motor::wire::output_slot< motor::math::m3d::trafof_t > * _out_0 = nullptr ;
         motor::wire::output_slot< motor::math::m3d::trafof_t > * _out_1 = nullptr ;
 
+        motor::wire::trafo3fv_t _trafo = motor::wire::trafo3fv_t("trafo") ;
+        motor::wire::vec3fv_t _pos = motor::wire::vec3fv_t("position") ;
+
         size_t _cam_id = 0 ;
+
         // 0 : this is the free moving camera
         // 1 : second camera for testing shader variable bindings
         motor::gfx::generic_camera_mtr_t _cameras[2] ;
+
 
         //******************************************************************************************************
         virtual void_t on_init( void_t ) noexcept
@@ -273,6 +283,12 @@ namespace this_file
                     motor::math::vec3f_t( 1.0f ),
                     motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ),
                     motor::math::vec3f_t( 50.0f, 0.0f, 0.0f ) ) ) ;
+
+
+                _pos = motor::wire::vec3fv_t( "position", _trafo.get_value().get_translation() ) ;
+
+                _trafo.connect( motor::share( _out_1 ) ) ;
+                _trafo.inputs().connect( "trafo.position", _pos.get_os() ) ;
             }
 
             // #3 : init scene tree
@@ -375,7 +391,8 @@ namespace this_file
                                     motor::wire::inputs_t inputs ;
                                     if ( t2->inputs( inputs ) )
                                     {
-                                        inputs.connect( "trafo", motor::share( _out_1 ) ) ;
+                                        //inputs.connect( "trafo", motor::share( _out_1 ) ) ;
+                                        inputs.connect("trafo", _trafo.get_value_os() ) ;
                                     }
                                 }
 
@@ -477,8 +494,6 @@ namespace this_file
 
                 float_t const s = motor::math::interpolation<float_t>::linear( 1.0f, 5.0f, ani_t ) ;
 
-
-
                 motor::math::vec3f_t pos = os->get_value().get_translation() ;
 
                 motor::math::m3d::trafof_t const t( 
@@ -503,7 +518,25 @@ namespace this_file
                     motor::math::vec3f_t( angle*0.347f, angle, 0.0f ),
                     pos ) ;
 
-                os->set_and_exchange( t ) ;
+                // disabled because this slot is connected to the 
+                // trafo variable which is tested below.
+                //os->set_and_exchange( t ) ;
+            }
+
+            {
+                static float_t angle = 0.0f ;
+                angle += d.sec_dt * motor::math::constants<float_t>::pix2() ;
+                angle = angle > motor::math::constants<float_t>::pix2() ? 0.0f : angle ;
+
+                motor::math::vec3f_t pos = _pos.get_value() ;
+
+                pos.x( motor::math::fn< float_t >::sin( angle ) * 10.0f ) ;
+                _pos.set_value( pos ) ;
+            }
+
+            {
+                _pos.update() ;
+                _trafo.update() ;
             }
         } 
 
@@ -575,6 +608,37 @@ namespace this_file
                     }
                 }
                 ImGui::End() ;
+
+
+                // property window
+                {
+                    if ( ImGui::Begin( "Property Window" ) )
+                    {
+                        motor::wire::inputs_t inps ;
+
+                        if( _selected != nullptr && _selected->inputs( inps ) )
+                        {
+                            inps.for_each_slot( [&] ( motor::string_in_t name, motor::wire::iinput_slot_ptr_t is )
+                            {
+                                if ( motor::property::add_is_property< float_t >( name, is, _props ) ) return ;
+                                if ( motor::property::add_is_property< int_t >( name, is, _props ) ) return ;
+                                if ( motor::property::add_is_property< motor::math::vec2f_t >( name, is, _props ) )
+                                {
+                                    using is_t = motor::wire::input_slot<motor::math::vec2f_t> ;
+                                    auto p = _props.borrow_property<is_t>( name ) ;
+                                    p->replace_is( motor::share( is ), true ) ;
+
+                                    return ;
+                                }
+                                if ( motor::property::add_is_property< motor::math::vec3f_t >( name, is, _props ) ) return ;
+                                if ( motor::property::add_is_property< motor::math::vec4f_t >( name, is, _props ) ) return ;
+                            } ) ;
+
+                            motor::tool::imgui_property::handle( "Property Sheet", _props ) ;
+                        }
+                    }
+                    ImGui::End() ;
+                }
             }
             
             return true ; 
