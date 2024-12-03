@@ -38,8 +38,8 @@ add_subdirectory( "suite_network" )
 add_subdirectory( "suite_social" )
 add_subdirectory( "suite_scene" )
 add_subdirectory( "suite_wire" )
+add_subdirectory( "techniques" )
 
 
 install( EXPORT suites-targets DESTINATION "cmake" )
-
 
