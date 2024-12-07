@@ -318,9 +318,17 @@ namespace this_file
 
             // change other camera
             {
-                //typedef motor::math::linear_bezier_spline< motor::math::vec3f_t > splinef_t ;
+                typedef motor::math::linear_bezier_spline< motor::math::vec3f_t > linearf_t ;
                 typedef motor::math::cubic_hermit_spline< motor::math::vec3f_t > splinef_t ;
+
                 typedef motor::math::keyframe_sequence< splinef_t > keyframe_sequencef_t ;
+                typedef motor::math::keyframe_sequence< splinef_t > keyframe_sequencef_t ;
+
+                keyframe_sequencef_t kf( motor::math::time_remap_funk_type::cycle ) ;
+                kf.insert( keyframe_sequencef_t::keyframe_t( 0, motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ) ;
+                kf.insert( keyframe_sequencef_t::keyframe_t( 1000, motor::math::vec3f_t( 1000.0f, 0.0f, 0.0f ) ) ) ;
+                kf.insert( keyframe_sequencef_t::keyframe_t( 3000, motor::math::vec3f_t( 0.0f, 500.0f, 0.0f ) ) ) ;
+                kf.insert( keyframe_sequencef_t::keyframe_t( 3500, motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ) ;
 
                 keyframe_sequencef_t kf2( motor::math::time_remap_funk_type::cycle ) ;
                 kf2.insert( keyframe_sequencef_t::keyframe_t( 0, motor::math::vec3f_t( 0.0f, 0.0f, -1000.0f ) ) ) ;
@@ -330,8 +338,7 @@ namespace this_file
                 kf2.insert( keyframe_sequencef_t::keyframe_t( 6500, motor::math::vec3f_t( 0.0f, 0.0f, -1000.0f ) ) ) ;
 
                 motor::math::vec3f_t const up = motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ).normalized() ;
-                camera[ 1 ].look_at( kf2( time ), up , 
-                    motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ;
+                camera[ 1 ].look_at( kf2( time ), up , kf(time) ) ;
 
                 // draw keyframe sequance as path
                 if( cam_idx == 0 )
@@ -372,6 +379,92 @@ namespace this_file
                 }
             }
 
+            // draw camera view volume
+            if( cam_idx != 1 )
+            {
+                motor::gfx::generic_camera_ptr_t cam = &camera[1] ;
+
+                // 0-3 : front plane
+                // 4-7 : back plane
+                motor::math::vec3f_t points[8] ;
+
+                if( cam->is_perspective() )
+                {
+                    auto const frust = cam->get_frustum() ;
+
+                    //auto const nf = cam->get_near_far() ;
+                    auto const nf = motor::math::vec2f_t( 50.0f, 1000.0f ) ;
+
+                    auto const cs = cam->near_far_plane_half_dims( nf ) ;
+                    {
+                        motor::math::vec3f_t const scale( cs.x(), cs.y(), nf.x() ) ;
+                        points[ 0 ] = motor::math::vec3f_t( -1.0f, -1.0f, 1.0f ) * scale ;
+                        points[ 1 ] = motor::math::vec3f_t( -1.0f, +1.0f, 1.0f ) * scale ;
+                        points[ 2 ] = motor::math::vec3f_t( +1.0f, +1.0f, 1.0f ) * scale ;
+                        points[ 3 ] = motor::math::vec3f_t( +1.0f, -1.0f, 1.0f ) * scale ;
+                    }
+
+                    {
+                        motor::math::vec3f_t const scale( cs.z(), cs.w(), nf.y() ) ;
+                        points[ 4 ] = motor::math::vec3f_t( -1.0f, -1.0f, 1.0f ) * scale ;
+                        points[ 5 ] = motor::math::vec3f_t( -1.0f, +1.0f, 1.0f ) * scale ;
+                        points[ 6 ] = motor::math::vec3f_t( +1.0f, +1.0f, 1.0f ) * scale ;
+                        points[ 7 ] = motor::math::vec3f_t( +1.0f, -1.0f, 1.0f ) * scale ;
+                    }
+                }
+                else if( cam->is_orthographic() )
+                {
+                    auto const nf = motor::math::vec2f_t( 50.0f, 1000.0f ) ;
+
+                    auto const cs = cam->get_dims().xy() * motor::math::vec2f_t(0.5f) ;
+                    {
+                        motor::math::vec3f_t const scale( cs.x(), cs.y(), nf.x() ) ;
+                        points[ 0 ] = motor::math::vec3f_t( -1.0f, -1.0f, 1.0f ) * scale ;
+                        points[ 1 ] = motor::math::vec3f_t( -1.0f, +1.0f, 1.0f ) * scale ;
+                        points[ 2 ] = motor::math::vec3f_t( +1.0f, +1.0f, 1.0f ) * scale ;
+                        points[ 3 ] = motor::math::vec3f_t( +1.0f, -1.0f, 1.0f ) * scale ;
+                    }
+
+                    {
+                        motor::math::vec3f_t const scale( cs.x(), cs.y(), nf.y() ) ;
+                        points[ 4 ] = motor::math::vec3f_t( -1.0f, -1.0f, 1.0f ) * scale ;
+                        points[ 5 ] = motor::math::vec3f_t( -1.0f, +1.0f, 1.0f ) * scale ;
+                        points[ 6 ] = motor::math::vec3f_t( +1.0f, +1.0f, 1.0f ) * scale ;
+                        points[ 7 ] = motor::math::vec3f_t( +1.0f, -1.0f, 1.0f ) * scale ;
+                    }
+                }
+
+                for( size_t i=0; i<8; ++i )
+                {
+                    points[i] = (cam->get_transformation().get_transformation() * motor::math::vec4f_t( points[i], 1.0f )).xyz() ;
+                }
+
+                // front
+                for( size_t i=0; i<4; ++i )
+                {
+                    size_t const i0 = i + 0 ;
+                    size_t const i1 = (i + 1) % 4 ;
+                    pr.draw_line( points[ i0 ], points[ i1 ], motor::math::vec4f_t( 1.0f ) ) ;
+                }
+
+                // back
+                for ( size_t i = 0; i < 4; ++i )
+                {
+                    size_t const i0 = (i + 0) + 4;
+                    size_t const i1 = (( i + 1 ) % 4) + 4 ;
+                    pr.draw_line( points[ i0 ], points[ i1 ], motor::math::vec4f_t( 1.0f ) ) ;
+                }
+
+
+                // sides
+                for ( size_t i = 0; i < 4; ++i )
+                {
+                    size_t const i0 = ( i + 0 ) ;
+                    size_t const i1 = ( i + 4 ) % 8 ;
+                    pr.draw_line( points[ i0 ], points[ i1 ], motor::math::vec4f_t( 1.0f ) ) ;
+                }
+            }
+
             // 
             {
                 typedef motor::math::cubic_hermit_spline< motor::math::vec3f_t > spline_t ;
@@ -407,7 +500,7 @@ namespace this_file
                     float_t const step = 1.0f / ne ;
                     for ( size_t i = 0; i < ne; ++i )
                     {
-                        float_t const i_f = float_t( i ) * step ; ;
+                        float_t const i_f = float_t( i ) * step ; 
                         float_t const sin_y = motor::math::fn<float_t>::sin( i_f * 2.0f * motor::math::constants<float_t>::pi() ) ;
                         motor::math::vec3f_t const off( 0.0f, 200.0f * sin_y, 0.0f ) ;
                         motor::math::vec3f_t pos = start + off + motor::math::vec3f_t( float_t( i ), 1.0f, 1.0f ) * motor::math::vec3f_t( 10.0f, 1.0f, 1.0f ) ;
@@ -458,8 +551,8 @@ namespace this_file
                 pr.draw_circle(
                     ( camera[cam_idx].get_transformation() ).get_rotation_matrix(), kf( ltime ), kf2( ltime2 ), color, color, 10 ) ;
             }
-            pr.set_view_proj( camera[cam_idx].mat_view(), camera[cam_idx].mat_proj() ) ;
 
+            pr.set_view_proj( camera[cam_idx].mat_view(), camera[cam_idx].mat_proj() ) ;
             pr.prepare_for_rendering() ;
         }
 
@@ -500,6 +593,17 @@ namespace this_file
                     ImGui::SliderFloat( "Cur Cam X", &x, -100.0f, 100.0f ) ;
                     ImGui::SliderFloat( "Cur Cam Y", &y, -100.0f, 100.0f ) ;
                     camera[ cam_idx ].translate_to( motor::math::vec3f_t( x, y, cam_pos.z() ) ) ;
+
+                }
+
+                {
+                    bool_t ortho = camera[ cam_idx ].is_orthographic() ;
+                    if( ImGui::Checkbox( "Orthographic", &ortho ) )
+                    {
+                        if( ortho ) camera[ cam_idx ].orthographic() ;
+                        else camera[ cam_idx ].perspective_fov() ;
+                    }
+                    
 
                 }
             }
