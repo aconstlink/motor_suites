@@ -1,10 +1,6 @@
 
-
 set( tests
-    "00_format_load.cpp"
-    "01_sprite_sheet.cpp"
-    "02_aseprite_json_import.cpp"
-    "03_wavefront_obj.cpp"
+    "00_wavefront_obj_rendering.cpp"
     )
 
 foreach( _test ${tests} )
@@ -20,11 +16,18 @@ foreach( _test ${tests} )
 
     add_executable( ${app_name} ${_test} ) 
     target_link_libraries( ${app_name} 
-      PRIVATE motor::format
+      PRIVATE motor::io 
       PRIVATE motor::concurrent 
-      PRIVATE motor::memory )
+      PRIVATE motor::memory
+      PRIVATE motor::application
+      PRIVATE motor::graphics
+      PRIVATE motor::platform
+      PRIVATE motor::gfx
+      PRIVATE motor::property
+      PRIVATE motor::format
+      )
 
-    set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_format" )
+    set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_various" )
 
     set( data_path ${CMAKE_CURRENT_LIST_DIR} ) 
     target_compile_definitions( ${app_name} PRIVATE -DDATAPATH="${data_path}")

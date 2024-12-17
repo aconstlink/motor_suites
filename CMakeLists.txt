@@ -38,6 +38,7 @@ add_subdirectory( "suite_network" )
 add_subdirectory( "suite_social" )
 add_subdirectory( "suite_scene" )
 add_subdirectory( "suite_wire" )
+add_subdirectory( "suite_various" )
 add_subdirectory( "techniques" )
 
 
