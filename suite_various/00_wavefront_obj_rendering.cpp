@@ -66,9 +66,10 @@ namespace this_file
             motor::property::property_sheet_t sheet ;
             sheet.set_value("normalize_coordinate", true ) ;
             motor::io::database_t db = motor::io::database_t( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
-            auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.digger.obj" ), "wavefront", &db, 
+            auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.giraffe.obj" ), "wavefront", &db, 
                 motor::shared( std::move( sheet ) ) ) ;
 
+            #if 0
             {
                 motor::application::window_info_t wi ;
                 wi.x = 100 ;
@@ -84,7 +85,8 @@ namespace this_file
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
-           
+            #endif
+            #if 1
             {
                 motor::application::window_info_t wi ;
                 wi.x = 400 ;
@@ -100,7 +102,7 @@ namespace this_file
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
-
+            #endif
             {
                 motor::graphics::state_object_t so = motor::graphics::state_object_t(
                     "root_render_states" ) ;
@@ -114,7 +116,7 @@ namespace this_file
                     rss.polygon_s.ss.do_activate = true ;
                     rss.polygon_s.ss.ff = motor::graphics::front_face::clock_wise ;
                     rss.polygon_s.ss.cm = motor::graphics::cull_mode::back ;
-                    rss.polygon_s.ss.fm = motor::graphics::fill_mode::fill ;
+                    rss.polygon_s.ss.fm = motor::graphics::fill_mode::line ;
                     rss.clear_s.do_change = true ;
                     rss.clear_s.ss.clear_color = motor::math::vec4f_t( 0.5f, 0.2f, 0.2f, 1.0f ) ;
                     rss.clear_s.ss.do_activate = true ;
