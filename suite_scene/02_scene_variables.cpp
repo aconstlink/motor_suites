@@ -355,7 +355,7 @@ namespace this_file
                     // add transformation node g
                     auto t = motor::shared( motor::scene::trafo3d_node_t( 
                         motor::math::m3d::trafof_t(
-                            motor::math::vec3f_t(),
+                            motor::math::vec3f_t( 1.0f, 1.0f, 1.0f),
                             motor::math::vec3f_t( 1.0f, 0.0f, 0.0f ),
                             motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ) ) ;
 
