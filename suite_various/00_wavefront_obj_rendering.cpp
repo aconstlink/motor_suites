@@ -66,7 +66,7 @@ namespace this_file
             motor::property::property_sheet_t sheet ;
             sheet.set_value("normalize_coordinate", true ) ;
             motor::io::database_t db = motor::io::database_t( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
-            auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.sponza.obj" ), "wavefront", &db, 
+            auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.house.obj" ), "wavefront", &db, 
                 motor::shared( std::move( sheet ) ) ) ;
 
             #if 0

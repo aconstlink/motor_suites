@@ -37,12 +37,17 @@ int main( int argc, char ** argv )
     {
         motor::core::document rd ;
 
-        rd.println( "hello line" ) ;
+        rd.println( "hello line   " ) ;
+        rd.println( "" ) ;
+        rd.println( "in vec3_t pos : position ;" ) ;
+        rd.println( " " ) ;
+        rd.println( "{" ) ;
         {
             rd.section_open() ;
             rd.println( "hello another line " ) ;
             rd.section_close() ;
         }
+        rd.println( "}" ) ;
 
         // token by token
         rd.for_each_token( [&] ( size_t const ln, size_t const tn, std::string_view const & token )
