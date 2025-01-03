@@ -171,15 +171,12 @@ namespace this_file
                                 in vec2_t tx : texcoord ;
                                 in vec3_t nrm : normal ;
                                 out vec4_t color0 : color0 ;
-                                out vec4_t color1 : color1 ;
-                                out vec4_t color2 : color2 ;
 
                                 void main()
                                 {
                                     float_t light = dot( normalize( in.nrm ), normalize( vec3_t( 1.0, 1.0, 0.5) ) ) ;
-                                    out.color0 = color ' texture( tex, in.tx ) ;
-                                    out.color1 = vec4_t( in.nrm, 1.0 ) ;
-                                    out.color2 = vec4_t( light, light, light , 1.0 ) ;
+                                    out.color0 = vec4_t( light, light, light, 1.0 ) ;
+                                    
                                 }
                             }
                         })" ) ;
@@ -304,7 +301,7 @@ namespace this_file
                     // add transformation node g
                     auto t = motor::shared( motor::scene::trafo3d_node_t( 
                         motor::math::m3d::trafof_t(
-                            motor::math::vec3f_t(),
+                            motor::math::vec3f_t( 1.0f, 1.0f, 1.0f ),
                             motor::math::vec3f_t( 1.0f, 0.0f, 0.0f ),
                             motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ) ) ;
 
@@ -403,6 +400,7 @@ namespace this_file
         { 
             MOTOR_PROBE( "application", "on_tool" ) ;
 
+            #if 0
             {
                 if( ImGui::Begin("Scene Graph Window") )
                 {
@@ -412,7 +410,7 @@ namespace this_file
                 }
                 ImGui::End() ;
             }
-            
+            #endif
             return true ; 
         }
 
