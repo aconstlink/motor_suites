@@ -10,6 +10,7 @@ set( subdirs
     "05_static_ids"
     "06_00_double_dispatch"
     "06_01_double_dispatch"
+    "07_document"
     )
 
 if( WIN32 )

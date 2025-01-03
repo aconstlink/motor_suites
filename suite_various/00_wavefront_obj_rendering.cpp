@@ -66,7 +66,7 @@ namespace this_file
             motor::property::property_sheet_t sheet ;
             sheet.set_value("normalize_coordinate", true ) ;
             motor::io::database_t db = motor::io::database_t( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
-            auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.giraffe.obj" ), "wavefront", &db, 
+            auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.sponza.obj" ), "wavefront", &db, 
                 motor::shared( std::move( sheet ) ) ) ;
 
             #if 0
@@ -169,7 +169,7 @@ namespace this_file
 
                 {
                     auto * mat = vs.data_variable<motor::math::mat4f_t>( "world" ) ;
-                    mat->set( motor::math::mat4f_t::make_scaling(motor::math::vec3f_t(50.0f)) ) ;
+                    mat->set( motor::math::mat4f_t::make_scaling(motor::math::vec3f_t(100.0f)) ) ;
                 }
 
                 {
