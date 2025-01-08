@@ -63,13 +63,14 @@ namespace this_file
             mod_reg = motor::format::global::register_default_modules(
                 motor::shared( motor::format::module_registry_t(), "mod registry" ) ) ;
 
+            
             motor::property::property_sheet_t sheet ;
             sheet.set_value("normalize_coordinate", true ) ;
             motor::io::database_t db = motor::io::database_t( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
             auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.house.obj" ), "wavefront", &db, 
                 motor::shared( std::move( sheet ) ) ) ;
 
-            #if 0
+            #if 1
             {
                 motor::application::window_info_t wi ;
                 wi.x = 100 ;
@@ -82,11 +83,11 @@ namespace this_file
                 {
                     wnd.send_message( motor::application::show_message( { true } ) ) ;
                     wnd.send_message( motor::application::cursor_message_t( { true } ) ) ;
-                    wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
+                    wnd.send_message( motor::application::vsync_message_t( { false } ) ) ;
                 } ) ;
             }
             #endif
-            #if 1
+            #if 0
             {
                 motor::application::window_info_t wi ;
                 wi.x = 400 ;
@@ -130,9 +131,10 @@ namespace this_file
 
                 rs = std::move( so ) ;
             }
-
+            
             {
-                if( auto * item = dynamic_cast< motor::format::mesh_item_mtr_t >( obj_import.get() ); item != nullptr )
+                auto * iitem = obj_import.get() ;
+                if( auto * item = dynamic_cast< motor::format::mesh_item_mtr_t >( iitem ); item != nullptr )
                 {
                     for( auto const & g : item->geos )
                     {
@@ -148,10 +150,9 @@ namespace this_file
                 else
                 {
                     // not a mesh item
-                    motor::release( motor::move( item ) ) ;
+                    motor::release( motor::move( iitem ) ) ;
                 }
             }
-
             // camera
             {
                 auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 1.0f, 10000.0f ) ;
@@ -186,6 +187,7 @@ namespace this_file
                     auto * v = vs.data_variable<motor::math::vec3f_t>( "light_dir" );
                     v->set( motor::math::vec3f_t(-1.0f).normalized() ) ;
                 }
+
 
                 g.msl_obj.add_variable_set( motor::shared( std::move(vs) ) ) ;
             }
@@ -351,8 +353,17 @@ namespace this_file
             for( auto & g : geos )
             {
                 auto * vs = g.msl_obj.borrow_varibale_set(0) ;
-                auto * mat = vs->data_variable<motor::math::mat4f_t>( "view" );
-                mat->set( _camera.get_view_matrix() ) ;
+                {
+                    auto * mat = vs->data_variable<motor::math::mat4f_t>( "view" );
+                    mat->set( _camera.get_view_matrix() ) ;
+                }
+
+                #if 0
+                {
+                    auto * mat = vs->data_variable<motor::math::vec3f_t>( "Kd" );
+                    mat->set( motor::math::vec3f_t( 0.5f, 0.0f, 0.0f ) ) ;
+                }
+                #endif
             }
         }
 

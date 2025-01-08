@@ -215,8 +215,8 @@ namespace this_file
                             pixel_shader
                             {
                                 tex2d_t tex ;
-                                vec4_t color ;
                                 vec3_t light_dir ;
+                                vec4_t color ;
                                 float_t time ;
 
                                 in vec2_t tx : texcoord ;
