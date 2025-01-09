@@ -67,9 +67,21 @@ namespace this_file
             motor::property::property_sheet_t sheet ;
             sheet.set_value("normalize_coordinate", true ) ;
             motor::io::database_t db = motor::io::database_t( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
-            auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.house.obj" ), "wavefront", &db, 
+
+            #if 1
+            auto obj_import = mod_reg->import_from( motor::io::location_t( "included.text.obj" ), "wavefront", &db,
                 motor::shared( std::move( sheet ) ) ) ;
 
+            #elif 0
+            auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.rungholt.obj" ), "wavefront", &db,
+                motor::shared( std::move( sheet ) ) ) ;
+            #elif 0
+            auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.viper.Viper_mk_IV_fighter.obj" ), "wavefront", &db,
+                motor::shared( std::move( sheet ) ) ) ;
+            #else
+            auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.house.obj" ), "wavefront", &db, 
+                motor::shared( std::move( sheet ) ) ) ;
+            #endif
             #if 1
             {
                 motor::application::window_info_t wi ;
