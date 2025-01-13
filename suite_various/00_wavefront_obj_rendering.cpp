@@ -1,6 +1,8 @@
 
 #include <motor/platform/global.h>
 
+#include <motor/graphics/object/image_object.h>
+
 #include <motor/controls/types/ascii_keyboard.hpp>
 #include <motor/controls/types/three_mouse.hpp>
 
@@ -34,6 +36,13 @@ namespace this_file
         motor::vector< geometry > geos ;
 
         motor::graphics::state_object_t rs ;
+        
+        struct image
+        {
+            motor::string_t name ;
+            motor::graphics::image_object_mtr_t io ;
+        };
+        motor::vector< image > images ;
 
         motor::format::module_registry_mtr_t mod_reg = nullptr ;
         size_t cur_time = 0 ;
@@ -68,15 +77,19 @@ namespace this_file
             sheet.set_value("normalize_coordinate", true ) ;
             motor::io::database_t db = motor::io::database_t( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
 
-            #if 1
-            auto obj_import = mod_reg->import_from( motor::io::location_t( "included.text.obj" ), "wavefront", &db,
+            #if 0
+            auto obj_import = mod_reg->import_from( motor::io::location_t( "included.mitsuba.mitsuba-sphere.obj" ), "wavefront", &db,
                 motor::shared( std::move( sheet ) ) ) ;
 
             #elif 0
-            auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.rungholt.obj" ), "wavefront", &db,
+            auto obj_import = mod_reg->import_from( motor::io::location_t( "included.teapot.teapot.obj" ), "wavefront", &db,
+                motor::shared( std::move( sheet ) ) ) ;
+
+            #elif 0
+            auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.rungholt.rungholt.obj" ), "wavefront", &db,
                 motor::shared( std::move( sheet ) ) ) ;
             #elif 0
-            auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.viper.Viper_mk_IV_fighter.obj" ), "wavefront", &db,
+            auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.viper.Viper-mk-IV-fighter.obj" ), "wavefront", &db,
                 motor::shared( std::move( sheet ) ) ) ;
             #else
             auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.house.obj" ), "wavefront", &db, 
@@ -99,7 +112,7 @@ namespace this_file
                 } ) ;
             }
             #endif
-            #if 0
+            #if 1
             {
                 motor::application::window_info_t wi ;
                 wi.x = 400 ;
@@ -129,7 +142,7 @@ namespace this_file
                     rss.polygon_s.ss.do_activate = true ;
                     rss.polygon_s.ss.ff = motor::graphics::front_face::clock_wise ;
                     rss.polygon_s.ss.cm = motor::graphics::cull_mode::back ;
-                    rss.polygon_s.ss.fm = motor::graphics::fill_mode::line ;
+                    rss.polygon_s.ss.fm = motor::graphics::fill_mode::fill;
                     rss.clear_s.do_change = true ;
                     rss.clear_s.ss.clear_color = motor::math::vec4f_t( 0.5f, 0.2f, 0.2f, 1.0f ) ;
                     rss.clear_s.ss.do_activate = true ;
@@ -157,6 +170,14 @@ namespace this_file
                         geos.emplace_back( this_t::geometry { std::move( msl_obj ), std::move( geo_obj ) } ) ;
                     }
 
+                    for( auto & i : item->images )
+                    {
+                        motor::graphics::image_object_t io( i.name, std::move( *i.img_ptr ) ) ;
+                        
+                        images.emplace_back( image{ i.name, motor::shared( std::move( io ) ) } ) ;
+                    }
+
+                    
                     motor::release( motor::move( item ) ) ;
                 }
                 else
@@ -386,7 +407,10 @@ namespace this_file
             if ( rd.first_frame )
             {
                 fe->configure< motor::graphics::state_object_t>( &rs ) ;
-                
+                for( auto & i : images )
+                {
+                    fe->configure< motor::graphics::image_object_t>( i.io ) ;
+                }
                 for( auto & g : geos )
                 {
                     fe->configure< motor::graphics::geometry_object_t>( &g.geo_obj ) ;
