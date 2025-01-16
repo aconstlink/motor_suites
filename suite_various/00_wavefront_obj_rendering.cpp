@@ -28,12 +28,8 @@ namespace this_file
     {
         motor_this_typedefs( my_app ) ;
 
-        struct geometry
-        {
-            motor::graphics::msl_object_t msl_obj ;
-            motor::graphics::geometry_object_t geo_obj ;
-        };
-        motor::vector< geometry > geos ;
+        motor::vector< motor::graphics::msl_object_mtr_t > materials ;
+        motor::vector< motor::graphics::geometry_object_mtr_t > geometries ;
 
         motor::graphics::state_object_t rs ;
         
@@ -80,7 +76,13 @@ namespace this_file
             #if 0
             auto obj_import = mod_reg->import_from( motor::io::location_t( "included.mitsuba.mitsuba-sphere.obj" ), "wavefront", &db,
                 motor::shared( std::move( sheet ) ) ) ;
+            #elif 0 // many materials
+            auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.sibenik.sibenik.obj" ), "wavefront", &db,
+                motor::shared( std::move( sheet ) ) ) ;
 
+            #elif 0
+            auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.sponza.sponza.obj" ), "wavefront", &db,
+                motor::shared( std::move( sheet ) ) ) ;
             #elif 0
             auto obj_import = mod_reg->import_from( motor::io::location_t( "included.teapot.teapot.obj" ), "wavefront", &db,
                 motor::shared( std::move( sheet ) ) ) ;
@@ -157,26 +159,57 @@ namespace this_file
                 rs = std::move( so ) ;
             }
             
+            // analyse the import result
             {
                 auto * iitem = obj_import.get() ;
                 if( auto * item = dynamic_cast< motor::format::mesh_item_mtr_t >( iitem ); item != nullptr )
                 {
-                    for( auto const & g : item->geos )
+                    auto tp_begin = std::chrono::high_resolution_clock::now() ;
+
+                    // #1 create msl object for material
+                    for( auto const & m : item->materials )
                     {
-                        auto geo_obj = motor::graphics::geometry_object::create( g.name, g.poly ) ;
-                        auto msl_obj = motor::graphics::msl_object_t( g.name ) ;
-                        msl_obj.add( motor::graphics::msl_api_type::msl_4_0, g.shader ) ;
-                        msl_obj.link_geometry( { g.name } ) ;
-                        geos.emplace_back( this_t::geometry { std::move( msl_obj ), std::move( geo_obj ) } ) ;
+                        auto msl_obj = motor::graphics::msl_object_t( m.material_name ) ;
+                        msl_obj.add( motor::graphics::msl_api_type::msl_4_0, m.shader ) ;
+                        materials.emplace_back( motor::shared( std::move( msl_obj ) ) ) ;
                     }
 
+                    // #2 create a geometry object for each geometric mesh imported
+                    // and link that geometry object to its proper material(msl_object)
+                    for ( auto const & g : item->geos )
+                    {
+                        auto geo_obj = motor::graphics::geometry_object::create( g.name, g.poly ) ;
+
+                        if( g.material_idx != size_t(-1) )
+                        {
+                            auto * msl_obj = materials[g.material_idx] ;
+                            msl_obj->link_geometry( g.name ) ;
+                            msl_obj->add_variable_set( motor::shared( motor::graphics::variable_set_t() ) ) ;
+                        }
+
+                        geometries.emplace_back( motor::shared( std::move( geo_obj ) ) ) ;
+                    }
+
+                    // - timing ends here
+                    {
+                        size_t const milli = std::chrono::duration_cast<std::chrono::milliseconds>
+                            ( std::chrono::high_resolution_clock::now() - tp_begin ).count() ;
+
+                        motor::log::global_t::status( "[application] : generating geometry took " +
+                            motor::to_string( milli ) + " ms." ) ;
+                    }
+                    
+                    // #3 create all required image objects
                     for( auto & i : item->images )
                     {
                         motor::graphics::image_object_t io( i.name, std::move( *i.img_ptr ) ) ;
-                        
+                        io.set_wrap( motor::graphics::texture_wrap_mode::wrap_s, 
+                            motor::graphics::texture_wrap_type::repeat ) ;
+                        io.set_wrap( motor::graphics::texture_wrap_mode::wrap_t,
+                            motor::graphics::texture_wrap_type::repeat ) ;
                         images.emplace_back( image{ i.name, motor::shared( std::move( io ) ) } ) ;
+                        motor::release( motor::move( i.img_ptr) ) ;
                     }
-
                     
                     motor::release( motor::move( item ) ) ;
                 }
@@ -197,32 +230,34 @@ namespace this_file
             }
 
             // link shader variables
-            for( auto & g : geos )
+            for( auto * ptr : materials )
             {
-                auto vs = motor::graphics::variable_set_t() ;
-
+                for ( size_t i = 0; i < ptr->borrow_varibale_sets().size(); ++i )
                 {
-                    auto * mat = vs.data_variable<motor::math::mat4f_t>( "world" ) ;
-                    mat->set( motor::math::mat4f_t::make_scaling(motor::math::vec3f_t(100.0f)) ) ;
+                    auto & vs = *ptr->borrow_varibale_set(i) ;
+                
+
+                    {
+                        auto * mat = vs.data_variable<motor::math::mat4f_t>( "world" ) ;
+                        mat->set( motor::math::mat4f_t::make_scaling( motor::math::vec3f_t( 100.0f ) ) ) ;
+                    }
+
+                    {
+                        auto * mat = vs.data_variable<motor::math::mat4f_t>( "view" );
+                        mat->set( _camera.get_view_matrix() ) ;
+                    }
+
+                    {
+                        auto * mat = vs.data_variable<motor::math::mat4f_t>( "proj" );
+                        mat->set( _camera.get_proj_matrix() ) ;
+                    }
+
+                    {
+                        auto * v = vs.data_variable<motor::math::vec3f_t>( "light_dir" );
+                        v->set( motor::math::vec3f_t( -1.0f ).normalized() ) ;
+                    }
+
                 }
-
-                {
-                    auto * mat = vs.data_variable<motor::math::mat4f_t>("view");
-                    mat->set( _camera.get_view_matrix() ) ;
-                }
-
-                {
-                    auto * mat = vs.data_variable<motor::math::mat4f_t>( "proj" );
-                    mat->set( _camera.get_proj_matrix() ) ;
-                }
-
-                {
-                    auto * v = vs.data_variable<motor::math::vec3f_t>( "light_dir" );
-                    v->set( motor::math::vec3f_t(-1.0f).normalized() ) ;
-                }
-
-
-                g.msl_obj.add_variable_set( motor::shared( std::move(vs) ) ) ;
             }
         }
 
@@ -383,20 +418,14 @@ namespace this_file
                 }
             }
 
-            for( auto & g : geos )
+            for ( auto * ptr : materials )
             {
-                auto * vs = g.msl_obj.borrow_varibale_set(0) ;
+                for ( size_t i = 0; i < ptr->borrow_varibale_sets().size(); ++i )
                 {
+                    auto * vs = ptr->borrow_varibale_set( i ) ;
                     auto * mat = vs->data_variable<motor::math::mat4f_t>( "view" );
                     mat->set( _camera.get_view_matrix() ) ;
                 }
-
-                #if 0
-                {
-                    auto * mat = vs->data_variable<motor::math::vec3f_t>( "Kd" );
-                    mat->set( motor::math::vec3f_t( 0.5f, 0.0f, 0.0f ) ) ;
-                }
-                #endif
             }
         }
 
@@ -404,6 +433,7 @@ namespace this_file
         virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
             motor::application::app::render_data_in_t rd ) noexcept
         {
+            // rd.first_frame helps in hit and run apps
             if ( rd.first_frame )
             {
                 fe->configure< motor::graphics::state_object_t>( &rs ) ;
@@ -411,18 +441,41 @@ namespace this_file
                 {
                     fe->configure< motor::graphics::image_object_t>( i.io ) ;
                 }
-                for( auto & g : geos )
+
+                for( auto * ptr : geometries )
                 {
-                    fe->configure< motor::graphics::geometry_object_t>( &g.geo_obj ) ;
-                    fe->configure< motor::graphics::msl_object_t>( &g.msl_obj ) ;
+                    fe->configure< motor::graphics::geometry_object_t>( ptr ) ;
                 }
-                
+
+                for ( auto * ptr : materials )
+                {
+                    fe->configure< motor::graphics::msl_object_t>( ptr ) ;
+                }
             }
             
             {
                 fe->push( &rs ) ;
-                for( auto & g : geos )
-                    fe->render( &g.msl_obj, motor::graphics::gen4::backend::render_detail() ) ;
+
+                // geometry is attached to a msl object
+                // so go over all materials(msl objects) and 
+                // render those. Geometry to variable set is 1:1.
+                // see loading above.
+                for( auto * ptr : materials )
+                {
+                    for( size_t i=0; i<ptr->borrow_varibale_sets().size(); ++i )
+                    {
+                        motor::graphics::gen4::backend::render_detail det = 
+                        { 
+                            0, // start elem
+                            size_t( -1 ), // num elems
+                            i, // variable set index
+                            i, // geo index
+                            size_t( -1 ), false, false
+                        } ;
+                        fe->render( ptr, det ) ;
+                    }
+                }
+
                 fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ;
             }
         }
@@ -436,6 +489,20 @@ namespace this_file
         //******************************************************************************************************
         virtual void_t on_shutdown( void_t ) noexcept
         {
+            for( auto * ptr : materials )
+            {
+                motor::release( motor::move( ptr ) ) ;
+            }
+
+            for ( auto * ptr : geometries )
+            {
+                motor::release( motor::move( ptr ) ) ;
+            }
+
+            for( auto & i : images )
+            {
+                motor::release( motor::move( i.io ) ) ;
+            }
             motor::release( motor::move( mod_reg ) ) ;
         }
     };

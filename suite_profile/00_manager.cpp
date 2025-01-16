@@ -8,13 +8,16 @@
 
 void some_funk( void )
 {
+    #if 0
     motor::profiling::global_t::push("some_funk") ;
 
     motor::profiling::global_t::pop() ;
+    #endif
 }
 
 int main( int argc, char ** argv )
 {
+    #if 0
     {
         motor::profiling::global_t::push( "main #1" ) ;
 
@@ -50,6 +53,7 @@ int main( int argc, char ** argv )
 
         for ( auto & fut : asyncs ) fut.wait() ;
     }
+    #endif
 
     #if MOTOR_PROFILING
 

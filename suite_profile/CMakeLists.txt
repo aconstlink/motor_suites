@@ -2,6 +2,7 @@
 set( tests
     "00_manager.cpp"
     "01_vector_timing.cpp"
+    "02_hierarchy.cpp"
     )
 
 foreach( _test ${tests} )
