@@ -97,7 +97,7 @@ namespace this_file
 
             // image configuration
             {
-                motor::graphics::image_t img = motor::graphics::image_t( motor::graphics::image_t::dims_t( 100, 100 ) )
+                motor::graphics::image_t img = motor::graphics::image_t( motor::graphics::image_t::dims_t( 1024, 1024 ) )
                     .update( [&]( motor::graphics::image_ptr_t, motor::graphics::image_t::dims_in_t dims, void_ptr_t data_in )
                 {
                     typedef motor::math::vector4< uint8_t > rgba_t ;
@@ -114,7 +114,7 @@ namespace this_file
                         {
                             bool_t const even = ( x / w ) & 1 ;
 
-                            data[ i++ ] = even || odd ? rgba_t( 255 ) : rgba_t( 0, 0, 0, 255 );
+                            data[ i++ ] = even || odd ? rgba_t( 255 ) : rgba_t( 10, 10, 255, 255 );
                             //data[ i++ ] = rgba_t(255) ;
                         }
                     }
@@ -182,7 +182,7 @@ namespace this_file
                     motor::graphics::variable_set_t vars ;
                     {
                         auto* var = vars.data_variable< motor::math::vec4f_t >( "u_color" ) ;
-                        var->set( motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) ) ;
+                        var->set( motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ) ;
                     }
 
                     {
