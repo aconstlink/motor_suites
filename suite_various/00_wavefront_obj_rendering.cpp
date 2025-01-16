@@ -28,10 +28,16 @@ namespace this_file
     {
         motor_this_typedefs( my_app ) ;
 
-        motor::vector< motor::graphics::msl_object_mtr_t > materials ;
+        struct per_material_info
+        {
+            bool_t alpha_blending ;
+            motor::graphics::msl_object_mtr_t msl ;
+        };
+        motor::vector< per_material_info > materials;
         motor::vector< motor::graphics::geometry_object_mtr_t > geometries ;
 
-        motor::graphics::state_object_t rs ;
+        motor::graphics::state_object_t rs_solid ;
+        motor::graphics::state_object_t rs_alpha ;
         
         struct image
         {
@@ -114,7 +120,7 @@ namespace this_file
                 } ) ;
             }
             #endif
-            #if 1
+            #if 0
             {
                 motor::application::window_info_t wi ;
                 wi.x = 400 ;
@@ -131,9 +137,12 @@ namespace this_file
                 } ) ;
             }
             #endif
+
+            // render states for solid objects
+            // must be called first, because this is clearing the buffers.
             {
                 motor::graphics::state_object_t so = motor::graphics::state_object_t(
-                    "root_render_states" ) ;
+                    "solid_rs" ) ;
 
                 {
                     motor::graphics::render_state_sets_t rss ;
@@ -152,11 +161,42 @@ namespace this_file
                     rss.clear_s.ss.do_depth_clear = true ;
                     rss.view_s.do_change = false ;
                     rss.view_s.ss.do_activate = false ;
+
                     rss.view_s.ss.vp = motor::math::vec4ui_t( 0, 0, 500, 500 ) ;
                     so.add_render_state_set( rss ) ;
                 }
 
-                rs = std::move( so ) ;
+                rs_solid = std::move( so ) ;
+            }
+
+            // render states for transparent objects
+            {
+                motor::graphics::state_object_t so = motor::graphics::state_object_t(
+                    "transparent_rs" ) ;
+
+                {
+                    motor::graphics::render_state_sets_t rss ;
+                    rss.depth_s.do_change = true ;
+                    rss.depth_s.ss.do_activate = true ;
+                    rss.depth_s.ss.do_depth_write = false ;
+                    rss.polygon_s.do_change = true ;
+                    rss.polygon_s.ss.do_activate = true ;
+                    rss.polygon_s.ss.ff = motor::graphics::front_face::clock_wise ;
+                    rss.polygon_s.ss.cm = motor::graphics::cull_mode::back ;
+                    rss.polygon_s.ss.fm = motor::graphics::fill_mode::fill;
+                    rss.clear_s.do_change = false ;
+                                        
+                    rss.blend_s.do_change = true ;
+                    rss.blend_s.ss.do_activate = true ;
+                    rss.blend_s.ss.blend_func = motor::graphics::blend_function::add ;
+                    rss.blend_s.ss.src_blend_factor = motor::graphics::blend_factor::src_alpha ;
+                    rss.blend_s.ss.dst_blend_factor = motor::graphics::blend_factor::one_minus_src_alpha ;
+                    
+                    rss.view_s.ss.vp = motor::math::vec4ui_t( 0, 0, 500, 500 ) ;
+                    so.add_render_state_set( rss ) ;
+                }
+
+                rs_alpha = std::move( so ) ;
             }
             
             // analyse the import result
@@ -171,7 +211,9 @@ namespace this_file
                     {
                         auto msl_obj = motor::graphics::msl_object_t( m.material_name ) ;
                         msl_obj.add( motor::graphics::msl_api_type::msl_4_0, m.shader ) ;
-                        materials.emplace_back( motor::shared( std::move( msl_obj ) ) ) ;
+
+                        materials.emplace_back( this_t::per_material_info{ 
+                            m.alpha_blending, motor::shared( std::move( msl_obj ) ) } ) ;
                     }
 
                     // #2 create a geometry object for each geometric mesh imported
@@ -182,7 +224,7 @@ namespace this_file
 
                         if( g.material_idx != size_t(-1) )
                         {
-                            auto * msl_obj = materials[g.material_idx] ;
+                            auto * msl_obj = materials[g.material_idx].msl ;
                             msl_obj->link_geometry( g.name ) ;
                             msl_obj->add_variable_set( motor::shared( motor::graphics::variable_set_t() ) ) ;
                         }
@@ -219,6 +261,7 @@ namespace this_file
                     motor::release( motor::move( iitem ) ) ;
                 }
             }
+
             // camera
             {
                 auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 1.0f, 10000.0f ) ;
@@ -229,13 +272,14 @@ namespace this_file
                 _camera = std::move( cam ) ;
             }
 
-            // link shader variables
-            for( auto * ptr : materials )
+            // fill shader variables with some default value
+            for ( auto & pmi : materials )
             {
+                auto * ptr = pmi.msl ;
+
                 for ( size_t i = 0; i < ptr->borrow_varibale_sets().size(); ++i )
                 {
                     auto & vs = *ptr->borrow_varibale_set(i) ;
-                
 
                     {
                         auto * mat = vs.data_variable<motor::math::mat4f_t>( "world" ) ;
@@ -256,7 +300,6 @@ namespace this_file
                         auto * v = vs.data_variable<motor::math::vec3f_t>( "light_dir" );
                         v->set( motor::math::vec3f_t( -1.0f ).normalized() ) ;
                     }
-
                 }
             }
         }
@@ -278,7 +321,6 @@ namespace this_file
             {
                 float_t const w = float_t( sv.resize_msg.w ) ;
                 float_t const h = float_t( sv.resize_msg.h ) ;
-
             }
         }
 
@@ -418,8 +460,10 @@ namespace this_file
                 }
             }
 
-            for ( auto * ptr : materials )
+            for ( auto & pmi : materials )
             {
+                auto * ptr = pmi.msl ;
+
                 for ( size_t i = 0; i < ptr->borrow_varibale_sets().size(); ++i )
                 {
                     auto * vs = ptr->borrow_varibale_set( i ) ;
@@ -434,9 +478,12 @@ namespace this_file
             motor::application::app::render_data_in_t rd ) noexcept
         {
             // rd.first_frame helps in hit and run apps
+            // just initialize all the used objects
             if ( rd.first_frame )
             {
-                fe->configure< motor::graphics::state_object_t>( &rs ) ;
+                fe->configure< motor::graphics::state_object_t>( &rs_solid ) ;
+                fe->configure< motor::graphics::state_object_t>( &rs_alpha ) ;
+
                 for( auto & i : images )
                 {
                     fe->configure< motor::graphics::image_object_t>( i.io ) ;
@@ -447,25 +494,65 @@ namespace this_file
                     fe->configure< motor::graphics::geometry_object_t>( ptr ) ;
                 }
 
-                for ( auto * ptr : materials )
+                for ( auto & pmi : materials )
                 {
+                    auto * ptr = pmi.msl ;
                     fe->configure< motor::graphics::msl_object_t>( ptr ) ;
                 }
             }
             
+            // render all solid objects first
+            // fills the depth buffer
             {
-                fe->push( &rs ) ;
+                fe->push( &rs_solid ) ;
 
                 // geometry is attached to a msl object
                 // so go over all materials(msl objects) and 
                 // render those. Geometry to variable set is 1:1.
                 // see loading above.
-                for( auto * ptr : materials )
+                for( auto & pmi : materials )
                 {
+                    if( pmi.alpha_blending ) continue ;
+
+                    auto * ptr = pmi.msl ;
+
                     for( size_t i=0; i<ptr->borrow_varibale_sets().size(); ++i )
                     {
                         motor::graphics::gen4::backend::render_detail det = 
                         { 
+                            0, // start elem
+                            size_t( -1 ), // num elems
+                            i, // variable set index
+                            i, // geo index
+                            size_t( -1 ), false, false
+                        } ;
+                        fe->render( ptr, det ) ;
+                    }
+                }
+
+                fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ;
+            }
+
+            // render all transparent object using
+            // depth test only -> no depth write
+            // alpha blending enabled
+            {
+                fe->push( &rs_alpha ) ;
+
+                // geometry is attached to a msl object
+                // so go over all materials(msl objects) and 
+                // render those. Geometry to variable set is 1:1.
+                // see loading above.
+                for ( auto & pmi : materials )
+                {
+                    if ( !pmi.alpha_blending ) continue ;
+
+                    auto * ptr = pmi.msl ;
+
+                    for ( size_t i = 0; i < ptr->borrow_varibale_sets().size(); ++i )
+                    {
+                        motor::graphics::gen4::backend::render_detail det =
+                        {
                             0, // start elem
                             size_t( -1 ), // num elems
                             i, // variable set index
@@ -489,9 +576,9 @@ namespace this_file
         //******************************************************************************************************
         virtual void_t on_shutdown( void_t ) noexcept
         {
-            for( auto * ptr : materials )
+            for( auto & pmi : materials )
             {
-                motor::release( motor::move( ptr ) ) ;
+                motor::release( motor::move( pmi.msl ) ) ;
             }
 
             for ( auto * ptr : geometries )
