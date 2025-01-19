@@ -85,14 +85,18 @@ namespace this_file
             #elif 0 // many materials
             auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.sibenik.sibenik.obj" ), "wavefront", &db,
                 motor::shared( std::move( sheet ) ) ) ;
-
+            #elif 0
+            auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.dragon.obj" ), "wavefront", &db,
+                motor::shared( std::move( sheet ) ) ) ;
             #elif 0
             auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.sponza.sponza.obj" ), "wavefront", &db,
                 motor::shared( std::move( sheet ) ) ) ;
             #elif 0
             auto obj_import = mod_reg->import_from( motor::io::location_t( "included.teapot.teapot.obj" ), "wavefront", &db,
                 motor::shared( std::move( sheet ) ) ) ;
-
+            #elif 0
+            auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.buddha.obj" ), "wavefront", &db,
+                motor::shared( std::move( sheet ) ) ) ;
             #elif 0
             auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.rungholt.rungholt.obj" ), "wavefront", &db,
                 motor::shared( std::move( sheet ) ) ) ;
@@ -120,7 +124,7 @@ namespace this_file
                 } ) ;
             }
             #endif
-            #if 0
+            #if 1
             {
                 motor::application::window_info_t wi ;
                 wi.x = 400 ;
@@ -570,6 +574,28 @@ namespace this_file
         //******************************************************************************************************
         virtual bool_t on_tool( this_t::window_id_t const wid, motor::application::app::tool_data_ref_t td ) noexcept 
         { 
+            if( ImGui::Begin( "Control" ) )
+            {
+                bool_t do_wire ;
+                rs_solid.access_render_state( 0, [&] ( motor::graphics::render_state_sets_ref_t ss )
+                {
+                    do_wire = ss.polygon_s.ss.fm == motor::graphics::fill_mode::line ;
+                    return false ;
+                } ) ;
+
+                
+                if( ImGui::Checkbox( "Wire", &do_wire ) )
+                {
+                    rs_solid.access_render_state( 0, [&] ( motor::graphics::render_state_sets_ref_t ss )
+                    {
+                        ss.polygon_s.ss.fm = do_wire ? motor::graphics::fill_mode::line :
+                            motor::graphics::fill_mode::fill ;
+                        return true ;
+                    } ) ;
+                }
+            }
+            ImGui::End() ;
+
             return true ; 
         }
 
