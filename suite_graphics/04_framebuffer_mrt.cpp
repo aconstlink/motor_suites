@@ -573,7 +573,10 @@ namespace this_file
         //******************************************************************************************************
         virtual bool_t on_tool( this_t::window_id_t const wid, motor::application::app::tool_data_ref_t td ) noexcept
         {
-            ImGui::Image( td.imgui->texture( "the_scene.depth" ), ImVec2(100, 100) ) ;
+            if( ImGui::Begin("LookiLooki" ) )
+            {
+                ImGui::Image( td.imgui->texture( "the_scene.0" ), ImGui::GetWindowSize() ) ;
+            }
             return true ;
         }
 
