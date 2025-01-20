@@ -1,6 +1,8 @@
 
 set( tests
     "00_wavefront_obj_rendering.cpp"
+    "01_picking_2d.cpp"
+    "02_branching_spline.cpp"
     )
 
 foreach( _test ${tests} )
