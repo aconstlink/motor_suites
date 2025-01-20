@@ -59,7 +59,7 @@ namespace this_file
                 this_t::send_window_message( this_t::create_window( wi ), [&]( motor::application::app::window_view & wnd )
                 {
                     wnd.send_message( motor::application::show_message( { true } ) ) ;
-                    wnd.send_message( motor::application::cursor_message_t( {false} ) ) ;
+                    wnd.send_message( motor::application::cursor_message_t( {true} ) ) ;
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
@@ -74,7 +74,7 @@ namespace this_file
                 this_t::send_window_message( this_t::create_window( wi ), [&]( motor::application::app::window_view & wnd )
                 {
                     wnd.send_message( motor::application::show_message( { true } ) ) ;
-                    wnd.send_message( motor::application::cursor_message_t( {false} ) ) ;
+                    wnd.send_message( motor::application::cursor_message_t( {true} ) ) ;
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
@@ -637,6 +637,7 @@ namespace this_file
             }
         }
 
+        virtual bool_t on_tool( this_t::window_id_t const, motor::application::app::tool_data_ref_t ) noexcept { return true ; }
         virtual void_t on_shutdown( void_t ) noexcept {}
     };
 }

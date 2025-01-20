@@ -15,6 +15,8 @@
 #include <motor/math/utility/3d/transformation.hpp>
 #include <motor/math/utility/angle.hpp>
 
+#include <motor/tool/imgui/imgui.h>
+
 #include <motor/concurrent/global.h>
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
@@ -57,7 +59,7 @@ namespace this_file
                 this_t::send_window_message( this_t::create_window( wi ), [&]( motor::application::app::window_view & wnd )
                 {
                     wnd.send_message( motor::application::show_message( { true } ) ) ;
-                    wnd.send_message( motor::application::cursor_message_t( {false} ) ) ;
+                    wnd.send_message( motor::application::cursor_message_t( {true} ) ) ;
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
@@ -72,7 +74,7 @@ namespace this_file
                 this_t::send_window_message( this_t::create_window( wi ), [&]( motor::application::app::window_view & wnd )
                 {
                     wnd.send_message( motor::application::show_message( { true } ) ) ;
-                    wnd.send_message( motor::application::cursor_message_t( {false} ) ) ;
+                    wnd.send_message( motor::application::cursor_message_t( {true} ) ) ;
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
@@ -566,6 +568,13 @@ namespace this_file
                 fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ;
                 fe->fence( [=]( void_t ){} ) ;
             }
+        }
+
+        //******************************************************************************************************
+        virtual bool_t on_tool( this_t::window_id_t const wid, motor::application::app::tool_data_ref_t td ) noexcept
+        {
+            ImGui::Image( td.imgui->texture( "the_scene.depth" ), ImVec2(100, 100) ) ;
+            return true ;
         }
 
         virtual void_t on_shutdown( void_t ) noexcept {}

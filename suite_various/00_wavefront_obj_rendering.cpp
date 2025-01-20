@@ -97,7 +97,7 @@ namespace this_file
             #elif 0
             auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.buddha.obj" ), "wavefront", &db,
                 motor::shared( std::move( sheet ) ) ) ;
-            #elif 0
+            #elif 1
             auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.rungholt.rungholt.obj" ), "wavefront", &db,
                 motor::shared( std::move( sheet ) ) ) ;
             #elif 0
@@ -124,7 +124,7 @@ namespace this_file
                 } ) ;
             }
             #endif
-            #if 1
+            #if 0
             {
                 motor::application::window_info_t wi ;
                 wi.x = 400 ;
