@@ -38,6 +38,16 @@ int main( int argc, char ** argv )
         }
     }
 
+    // erase entry
+    {
+        motor::vector_pod< size_t > some_value { 1, 2, 3, 4, 5, 6, 7, 8 } ;
+        for( size_t i=0; i<some_value.size(); ++i ) std::printf( "%zx,", some_value[i] ) ;
+        std::printf( "\n" ) ;
+        some_value.erase( 5 ) ;
+        for( size_t i=0; i<some_value.size(); ++i ) std::printf( "%zx,", some_value[i] ) ;
+        std::printf( "\n" ) ;
+    }
+
     motor::memory::global::dump_to_std() ;
     return 0 ;
 }

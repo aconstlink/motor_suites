@@ -58,6 +58,7 @@ int main( int argc, char ** argv )
         motor::concurrent::loose_thread_scheduler lts ;
         lts.init() ;
         
+        motor::log::global::status("----- 1st run ----- ") ;
         {
             lts.schedule( motor::share( t0 ) ) ;
 
@@ -69,6 +70,7 @@ int main( int argc, char ** argv )
 
         run_loop = true ;
 
+        motor::log::global::status("----- 2nd run ----- ") ;
         {
             lts.schedule( motor::share( t0 ) ) ;
 

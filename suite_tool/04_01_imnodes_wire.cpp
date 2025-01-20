@@ -151,8 +151,10 @@ namespace this_file
                         
                         for ( auto & tier : _tier_builder_result.tiers )
                         {
-                            for ( auto * t : tier.tasks )
+                            for( size_t i=0; i<tier.tasks.size(); ++i )
                             {
+                                auto * t = tier.tasks[i] ;
+
                                 ImNodes::BeginNode( nid );
 
                                 ImNodes::BeginNodeTitleBar();
@@ -202,8 +204,10 @@ namespace this_file
                         {
                             int_t const tid = tasks_to_ids[ t_in ] ;
 
-                            for ( auto * t : outputs )
+                            for( size_t i=0; i<outputs.size(); ++i )
                             {
+                                auto * t = outputs[i] ;
+
                                 int_t const oid = tasks_to_ids[ t ] ;
 
                                 int_t const out_id = num_nodes + tid * 2 + 1 ;
