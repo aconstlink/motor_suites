@@ -577,6 +577,7 @@ namespace this_file
             {
                 ImGui::Image( td.imgui->texture( "the_scene.0" ), ImGui::GetWindowSize() ) ;
             }
+            ImGui::End() ;
             return true ;
         }
 
