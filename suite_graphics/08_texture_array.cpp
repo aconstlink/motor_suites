@@ -186,7 +186,7 @@ namespace this_file
 
                         void main()
                         {
-                            vec2_t offset = { vec2_t(-0.5, 0.0), vec2_t(0.5,0.0) } ;
+                            vec2_t offset = { vec2_t(-0.5,0.0), vec2_t(0.5,0.0) } ;
                             out.pos = vec4_t( in.pos.xy ' as_vec2(0.85) + offset[quad], 0.0, 1.0 ) ;
                             out.tx = sign( in.pos.xy ) ' as_vec2(0.5) + as_vec2( 0.5 ) ;
                         }

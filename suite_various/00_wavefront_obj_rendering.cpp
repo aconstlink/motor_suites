@@ -68,6 +68,12 @@ namespace this_file
 
         cam_control _cc ;
 
+    private: // tmp render window
+
+        size_t _rwid = size_t(-1) ;
+
+    private:
+
         //******************************************************************************************************
         virtual void_t on_init( void_t ) noexcept
         {
@@ -318,8 +324,16 @@ namespace this_file
             }
             if ( sv.close_changed )
             {
-                motor::log::global_t::status( "[my_app] : window closed" ) ;
-                this->close() ;
+                if( wid == _rwid )
+                {
+                    motor::log::global_t::status( "[my_app] : window closed" ) ;
+                    _rwid = size_t( -1 ) ;
+                }
+                else
+                {
+                    motor::log::global_t::status( "[my_app] : window closed" ) ;
+                    this->close() ;
+                }
             }
             if ( sv.resize_changed )
             {
@@ -390,6 +404,45 @@ namespace this_file
                 _cc.rotate_x = r ? int_t( -motor::math::fn<float_t>::sign( dif.y() ) ) : 0 ;
                 _cc.rotate_y = r ? int_t( +motor::math::fn<float_t>::sign( dif.x() ) ) : 0 ;
                 _cc.rotate_z = ctrl ? int_t( +motor::math::fn<float_t>::sign( dif.x() ) ) : 0 ;
+            }
+
+            {
+                motor::controls::types::ascii_keyboard_t keyboard( dd.ascii ) ;
+
+                using layout_t = motor::controls::types::ascii_keyboard_t ;
+                using key_t = layout_t::ascii_key ;
+
+                if ( keyboard.get_state( key_t::f3 ) == motor::controls::components::key_state::released && 
+                    _rwid == size_t( -1 ) )
+                {
+                    motor::application::window_info_t wi ;
+                    wi.x = 900 ;
+                    wi.y = 500 ;
+                    wi.w = 800 ;
+                    wi.h = 600 ;
+                    wi.gen = motor::application::graphics_generation::gen4_gl4 ;
+
+                    _rwid = this_t::create_window( wi ) ;
+
+                    this_t::send_window_message( _rwid, [&] ( motor::application::app::window_view & wnd )
+                    {
+                        wnd.send_message( motor::application::show_message( { true } ) ) ;
+                        wnd.send_message( motor::application::cursor_message_t( { false } ) ) ;
+                        wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
+                    } ) ;
+                }
+                else if ( keyboard.get_state( key_t::f4 ) == motor::controls::components::key_state::released &&
+                    _rwid != size_t( -1 ) )
+                {
+                    this_t::send_window_message( _rwid, [&] ( motor::application::app::window_view & wnd )
+                    {
+                        wnd.send_message( motor::application::fullscreen_message( 
+                            { 
+                                motor::application::three_state::toggle,
+                                motor::application::three_state::toggle
+                            } ) ) ;
+                    } );
+                }
             }
         }
 
