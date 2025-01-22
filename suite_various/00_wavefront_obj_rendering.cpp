@@ -97,7 +97,7 @@ namespace this_file
             #elif 0
             auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.buddha.obj" ), "wavefront", &db,
                 motor::shared( std::move( sheet ) ) ) ;
-            #elif 1
+            #elif 0
             auto obj_import = mod_reg->import_from( motor::io::location_t( "meshes.rungholt.rungholt.obj" ), "wavefront", &db,
                 motor::shared( std::move( sheet ) ) ) ;
             #elif 0

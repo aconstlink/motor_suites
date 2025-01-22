@@ -52,6 +52,7 @@ namespace this_file
                 } ) ;
             }
 
+            #if 0
             {
                 motor::application::window_info_t wi ;
                 wi.x = 400 ;
@@ -65,7 +66,7 @@ namespace this_file
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
-
+            #endif
             {
                 motor::graphics::render_state_sets_t rss ;
 
