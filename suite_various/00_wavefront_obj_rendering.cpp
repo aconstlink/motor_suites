@@ -412,24 +412,33 @@ namespace this_file
                 using layout_t = motor::controls::types::ascii_keyboard_t ;
                 using key_t = layout_t::ascii_key ;
 
-                if ( keyboard.get_state( key_t::f3 ) == motor::controls::components::key_state::released && 
-                    _rwid == size_t( -1 ) )
+                if ( keyboard.get_state( key_t::f3 ) == motor::controls::components::key_state::released )
                 {
-                    motor::application::window_info_t wi ;
-                    wi.x = 900 ;
-                    wi.y = 500 ;
-                    wi.w = 800 ;
-                    wi.h = 600 ;
-                    wi.gen = motor::application::graphics_generation::gen4_gl4 ;
-
-                    _rwid = this_t::create_window( wi ) ;
-
-                    this_t::send_window_message( _rwid, [&] ( motor::application::app::window_view & wnd )
+                    if( _rwid == size_t( -1 ) )
                     {
-                        wnd.send_message( motor::application::show_message( { true } ) ) ;
-                        wnd.send_message( motor::application::cursor_message_t( { false } ) ) ;
-                        wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
-                    } ) ;
+                        motor::application::window_info_t wi ;
+                        wi.x = 900 ;
+                        wi.y = 500 ;
+                        wi.w = 800 ;
+                        wi.h = 600 ;
+                        wi.gen = motor::application::graphics_generation::gen4_gl4 ;
+
+                        _rwid = this_t::create_window( wi ) ;
+
+                        this_t::send_window_message( _rwid, [&] ( motor::application::app::window_view & wnd )
+                        {
+                            wnd.send_message( motor::application::show_message( { true } ) ) ;
+                            wnd.send_message( motor::application::cursor_message_t( { false } ) ) ;
+                            wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
+                        } ) ;
+                    }
+                    else
+                    {
+                        this_t::send_window_message( _rwid, [&] ( motor::application::app::window_view & wnd )
+                        {
+                            wnd.send_message( motor::application::close_message( { true } ) ) ;
+                        } ) ;
+                    }
                 }
                 else if ( keyboard.get_state( key_t::f4 ) == motor::controls::components::key_state::released &&
                     _rwid != size_t( -1 ) )
