@@ -99,6 +99,17 @@ namespace this_file
             return *this ;
         }
 
+        ~test_particle_effect( void_t ) noexcept
+        {
+            motor::release( motor::move( emitter ) ) ;
+            motor::release( motor::move( lemitter ) ) ;
+            motor::release( motor::move( wind ) ) ;
+            motor::release( motor::move( g ) ) ;
+            motor::release( motor::move( current_emitter ) ) ;
+            motor::release( motor::move( friction ) ) ;
+            motor::release( motor::move( viscosity ) ) ;
+        }
+
         void_t update( float_t const dt ) noexcept
         {
             flakes.update( dt ) ;
@@ -106,10 +117,34 @@ namespace this_file
 
         void_t render( motor::gfx::primitive_render_2d_mtr_t pr )
         {
-            flakes.on_particles( [&] ( motor::vector< motor::physics::particle_t > const & particles )
+            flakes.on_particles( [&] ( motor::vector_pod< motor::physics::particle_t > const & particles )
             {
-                size_t i = 0 ;
+                #if 1
+                pr->draw_rects( 0, particles.size(), [&]( size_t const i )
+                {
+                    auto & p = particles[ i ] ;
 
+                    motor::math::vec2f_t const pos = p.pos ;
+                    float_t const s = p.mass * 1.0f;
+
+                    motor::math::vec2f_t const points[] =
+                    {
+                        pos + motor::math::vec2f_t( -s, -s ),
+                        pos + motor::math::vec2f_t( -s, +s ),
+                        pos + motor::math::vec2f_t( +s, +s ),
+                        pos + motor::math::vec2f_t( +s, -s )
+                    } ;
+
+                    float_t const life = p.age / emitter->get_age() ;
+                    float_t const alpha = motor::math::fn<float_t>::smooth_pulse( life, 0.1f, 0.7f ) ;
+
+                    return motor::gfx::primitive_render_2d_t::rect_t{ 
+                        {points[0], points[1], points[2], points[3]}, 
+                        motor::math::vec4f_t( 0.0f, 0.0f, 0.5f, alpha ),
+                        motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, alpha ) } ;
+                } ) ;
+                #else
+                size_t i = 0 ;
                 motor::concurrent::parallel_for<size_t>( motor::concurrent::range_1d<size_t>( 0, particles.size() ),
                     [&] ( motor::concurrent::range_1d<size_t> const & r )
                 {
@@ -141,7 +176,7 @@ namespace this_file
                         #endif
                     }
                 } ) ;
-
+                #endif
 
             } ) ;
         }
@@ -156,6 +191,7 @@ namespace this_file
 
         motor::gfx::primitive_render_2d_t pr ;
         this_file::test_particle_effect_t _spe ;
+        motor::graphics::state_object_t root_so ;
 
         motor::gfx::generic_camera_t camera ;
 
@@ -195,6 +231,31 @@ namespace this_file
             }
             #endif
 
+            {
+                motor::graphics::render_state_sets_t rss ;
+
+                rss.depth_s.do_change = true ;
+                rss.depth_s.ss.do_activate = false ;
+
+                rss.polygon_s.do_change = true ;
+                rss.polygon_s.ss.do_activate = true ;
+                rss.polygon_s.ss.ff = motor::graphics::front_face::counter_clock_wise ;
+                rss.polygon_s.ss.cm = motor::graphics::cull_mode::back ;
+                rss.polygon_s.ss.fm = motor::graphics::fill_mode::fill ;
+
+                rss.clear_s.do_change = true ;
+                rss.clear_s.ss.do_activate = true ;
+                rss.clear_s.ss.clear_color = motor::math::vec4f_t( 1.0f, 1.0f, 0.0f, 1.0f ) ;
+                rss.clear_s.ss.do_color_clear = true ;
+                rss.clear_s.ss.do_depth_clear = true ;
+
+                rss.view_s.do_change = false ;
+                
+
+                root_so = motor::graphics::state_object_t( "root_render_states" ) ;
+                root_so.add_render_state_set( rss ) ;
+            }
+
             pr.init( "my_prim_render" ) ;
 
             {
@@ -222,7 +283,7 @@ namespace this_file
                 float_t const w = float_t( sv.resize_msg.w ) ;
                 float_t const h = float_t( sv.resize_msg.h ) ;
                 camera.set_sensor_dims( w, h ) ;
-                camera.perspective_fov() ;
+                camera.orthographic() ;
             }
         }
 
@@ -266,6 +327,7 @@ namespace this_file
             if ( rd.first_frame )
             {
                 pr.configure( fe ) ;
+                fe->configure<motor::graphics::state_object>( &root_so );
             }
 
             // render text layer 0 to screen
@@ -273,17 +335,15 @@ namespace this_file
                 pr.prepare_for_rendering( fe ) ;
                 for( size_t i=0; i<100; ++i )
                 {
-                    pr.render( fe, 0 ) ;
-                    pr.render( fe, 1 ) ;
+                    pr.render( fe, i ) ;
                 }
             }
         }
 
-
         virtual bool_t on_tool( this_t::window_id_t const, motor::application::app::tool_data_ref_t ) noexcept
         {
             ImGui::Begin( "Control Particle System" ) ;
-
+            ImGui::Text( "Num Particles : %d",_spe.flakes.get_num_particles() ) ;
             static int item_current = 0 ;
             bool_t item_changed = false ;
             {
@@ -467,6 +527,11 @@ namespace this_file
 
             return true ;
         }
+
+        virtual void_t on_shutdown( void_t ) noexcept 
+        {
+
+        } 
     };
 }
 
