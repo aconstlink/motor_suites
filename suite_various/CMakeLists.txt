@@ -3,6 +3,7 @@ set( tests
     "00_wavefront_obj_rendering.cpp"
     "01_picking_2d.cpp"
     "02_branching_spline.cpp"
+    "03_particle_system.cpp"
     )
 
 foreach( _test ${tests} )
@@ -27,6 +28,7 @@ foreach( _test ${tests} )
       PRIVATE motor::gfx
       PRIVATE motor::property
       PRIVATE motor::format
+      PRIVATE motor::physics
       )
 
     set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_various" )
