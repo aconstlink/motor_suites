@@ -133,6 +133,7 @@ namespace this_file
 
         virtual void_t on_init( void_t ) noexcept
         {
+            #if 1
             {
                 motor::application::window_info_t wi ;
                 wi.x = 500 ;
@@ -148,6 +149,7 @@ namespace this_file
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
+            #elif 1
             {
                 motor::application::window_info_t wi ;
                 wi.x = 500 ;
@@ -163,6 +165,7 @@ namespace this_file
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
+            #endif
         }
 
         virtual void_t on_audio( motor::audio::frontend_ptr_t fptr, audio_data_in_t ad ) noexcept
