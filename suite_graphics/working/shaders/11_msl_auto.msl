@@ -11,8 +11,9 @@ config msl_quad
         void main()
         {
             //vec3_t p = msl.lib_a.myfunk( vec3_t( 1.0, 1.0, 1.0 ), in.pos, vec3_t( 0.5 ) ) ;
+            vec3_t p = in.pos + vec3_t(0.15, 0.1, 0.0) ;
             out.tx = in.tx ;
-            out.pos = vec4_t( in.pos, 1.0 ) ; 
+            out.pos = vec4_t( p, 1.0 ) ; 
         }
     }
 

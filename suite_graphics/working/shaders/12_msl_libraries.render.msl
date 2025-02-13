@@ -2,8 +2,9 @@ config render
 {
     vertex_shader
     {
+    in vec2_t tx : texcoord0 ;
         in vec3_t pos : position ;
-        in vec2_t tx : texcoord0 ;
+        
 
         out vec2_t tx : texcoord0 ;
         out vec4_t pos : position ;

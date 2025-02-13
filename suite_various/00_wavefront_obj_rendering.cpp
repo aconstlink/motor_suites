@@ -126,7 +126,7 @@ namespace this_file
                 {
                     wnd.send_message( motor::application::show_message( { true } ) ) ;
                     wnd.send_message( motor::application::cursor_message_t( { true } ) ) ;
-                    wnd.send_message( motor::application::vsync_message_t( { false } ) ) ;
+                    wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
             #endif
