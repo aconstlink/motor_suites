@@ -32,8 +32,8 @@ namespace this_file
 
         motor::graphics::image_object_t img_obj ;
         motor::graphics::geometry_object_t geo_obj ;
-        motor::graphics::msl_object_t msl_obj ;
-        motor::graphics::msl_object_t msl_lib_obj ;
+        motor::graphics::msl_object_mtr_t msl_obj ;
+        motor::graphics::msl_object_mtr_t msl_lib_obj ;
 
         motor::io::monitor_mtr_t mon ;
         motor::io::database db ;
@@ -169,8 +169,8 @@ namespace this_file
                         }
                     }
 
-                    msl_lib_obj = std::move( mslo ) ;
-                    reconfigs.emplace_back( &msl_lib_obj ) ;
+                    msl_lib_obj = motor::shared( std::move( mslo ) ) ;
+                    reconfigs.emplace_back( msl_lib_obj ) ;
                 }
 
                 // render shader
@@ -208,8 +208,8 @@ namespace this_file
                         mslo.add_variable_set( motor::memory::create_ptr( std::move( vars ), "a variable set from app" ) ) ;
                     }
 
-                    msl_obj = std::move( mslo ) ;
-                    reconfigs.emplace_back( &msl_obj ) ;
+                    msl_obj = motor::shared( std::move( mslo ) ) ;
+                    reconfigs.emplace_back( msl_obj ) ;
                 }
             }
         }
@@ -242,9 +242,9 @@ namespace this_file
                     shd = motor::string_t( data, sib ) ;
                 } ) ;
 
-                msl_lib_obj.clear_shaders().add( motor::graphics::msl_api_type::msl_4_0, shd ) ;
+                msl_lib_obj->clear_shaders().add( motor::graphics::msl_api_type::msl_4_0, shd ) ;
 
-                reconfigs.push_back( &msl_lib_obj ) ;
+                reconfigs.push_back( msl_lib_obj ) ;
             }) ;
         }
 
@@ -273,7 +273,7 @@ namespace this_file
                 my_layer = motor::math::interpolation<float_t>::linear( 1.0f, 20.0f, t2 ) ;
             }
 
-            msl_obj.for_each( [&]( size_t const, motor::graphics::variable_set_mtr_t vs )
+            msl_obj->for_each( [&]( size_t const, motor::graphics::variable_set_mtr_t vs )
             {
                 {
                     auto * var = vs->data_variable<float_t>( "u_mult" ) ;
@@ -311,7 +311,7 @@ namespace this_file
 
             {
                 motor::graphics::gen4::backend_t::render_detail_t detail ;
-                fe->render( &msl_obj, detail ) ;
+                fe->render( msl_obj, detail ) ;
             }
         }
 
@@ -338,6 +338,13 @@ namespace this_file
             }
             ImGui::End() ;
             return true ; 
+        }
+
+        //******************************************************************************************************
+        virtual void_t on_shutdown( void_t ) noexcept
+        {
+            motor::release( motor::move( msl_obj ) ) ;
+            motor::release( motor::move( msl_lib_obj ) ) ;
         }
     };
 }

@@ -30,7 +30,7 @@ namespace this_file
         motor::graphics::geometry_object_t geo_obj ;
         motor::graphics::image_object_t img_obj ;
         motor::graphics::shader_object_t sh_obj ;
-        motor::graphics::msl_object_t msl_obj ;
+        motor::graphics::msl_object_mtr_t msl_obj ;
 
         int_t max_textures = 3 ;
         int_t used_texture = 0 ;
@@ -216,7 +216,7 @@ namespace this_file
                         
                 mslo.link_geometry({"quad"}) ;
 
-                msl_obj = std::move( mslo ) ;
+                msl_obj = motor::shared( std::move( mslo ) ) ;
             }
             
 
@@ -241,7 +241,7 @@ namespace this_file
                         var->set( 0 ) ;
                     }
 
-                    msl_obj.add_variable_set( motor::shared( std::move( vars ) ) ) ;
+                    msl_obj->add_variable_set( motor::shared( std::move( vars ) ) ) ;
                 }
 
                 {
@@ -262,7 +262,7 @@ namespace this_file
                         var->set( 0 ) ;
                     }
 
-                    msl_obj.add_variable_set( motor::shared( std::move( vars ) ) ) ;
+                    msl_obj->add_variable_set( motor::shared( std::move( vars ) ) ) ;
                 }
             }
         }
@@ -295,10 +295,10 @@ namespace this_file
                 fe->configure<motor::graphics::geometry_object_t>( &geo_obj ) ;
                 fe->configure<motor::graphics::image_object_t>( &img_obj ) ;
                 fe->configure<motor::graphics::shader_object_t>( &sh_obj ) ;
-                fe->configure<motor::graphics::msl_object_t>( &msl_obj ) ;
+                fe->configure<motor::graphics::msl_object_t>( msl_obj ) ;
             }
 
-            msl_obj.for_each( [&] ( size_t const i, motor::graphics::variable_set_mtr_t vs )
+            msl_obj->for_each( [&] ( size_t const i, motor::graphics::variable_set_mtr_t vs )
             {
                 {
                     auto* var = vs->data_variable< int32_t >( "tx_id" ) ;
@@ -311,13 +311,13 @@ namespace this_file
                 {
                     motor::graphics::gen4::backend_t::render_detail_t detail ;
                     detail.varset = 0 ;
-                    fe->render( &msl_obj, detail ) ;
+                    fe->render( msl_obj, detail ) ;
                 }
                 // right quad
                 {
                     motor::graphics::gen4::backend_t::render_detail_t detail ;
                     detail.varset = 1 ;
-                    fe->render( &msl_obj, detail ) ;
+                    fe->render( msl_obj, detail ) ;
                 }
             }
         }
@@ -333,7 +333,10 @@ namespace this_file
             return true ;
         }
 
-        virtual void_t on_shutdown( void_t ) noexcept {}
+        virtual void_t on_shutdown( void_t ) noexcept 
+        {
+            motor::release( motor::move( msl_obj ) ) ;
+        }
     };
 }
 

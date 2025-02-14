@@ -23,7 +23,7 @@ namespace this_file
         motor_this_typedefs( my_app ) ;
 
         motor::graphics::geometry_object_t geo_obj ;
-        motor::graphics::msl_object_t msl_obj ;
+        motor::graphics::msl_object_mtr_t msl_obj ;
 
 
         virtual void_t on_init( void_t ) noexcept
@@ -189,7 +189,7 @@ namespace this_file
                     mslo.add_variable_set( motor::shared( std::move( vars ) ) ) ;
                 }
 
-                msl_obj = std::move( mslo ) ;
+                msl_obj = motor::shared( std::move( mslo ) ) ;
             }
         }
 
@@ -213,14 +213,20 @@ namespace this_file
             if( rd.first_frame )
             {
                 fe->configure<motor::graphics::geometry_object_t>( &geo_obj ) ;
-                fe->configure<motor::graphics::msl_object_t>( &msl_obj ) ;
+                fe->configure<motor::graphics::msl_object_t>( msl_obj ) ;
             }
             
             {
                 motor::graphics::gen4::backend_t::render_detail_t detail ;
                 detail.feed_from_streamout = false ;
-                fe->render( &msl_obj, detail ) ;
+                fe->render( msl_obj, detail ) ;
             }
+        }
+
+        //******************************************************************************************************
+        virtual void_t on_shutdown( void_t ) noexcept
+        {
+            motor::release( motor::move( msl_obj ) ) ;
         }
     };
 }

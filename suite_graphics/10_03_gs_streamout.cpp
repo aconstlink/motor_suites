@@ -25,8 +25,8 @@ namespace this_file
 
         motor::graphics::streamout_object_t so_obj ;
         motor::graphics::geometry_object_t geo_pts_obj ;
-        motor::graphics::msl_object_t msl_filter_obj ;
-        motor::graphics::msl_object_t msl_obj ;
+        motor::graphics::msl_object_mtr_t msl_filter_obj ;
+        motor::graphics::msl_object_mtr_t msl_obj ;
 
         motor::math::vec3f_t dir = motor::math::vec3f_t( -1.0f, 0.0f, 0.0f ) ;
 
@@ -206,7 +206,7 @@ namespace this_file
                     mslo.add_variable_set( motor::shared( std::move( vars ) ) ) ;
                 }
 
-                msl_filter_obj = std::move( mslo ) ;
+                msl_filter_obj = motor::shared( std::move( mslo ) ) ;
             }
 
             // render shader
@@ -320,7 +320,7 @@ namespace this_file
                     mslo.add_variable_set( motor::shared( std::move( vars ) ) ) ;
                 }
 
-                msl_obj = std::move( mslo ) ;
+                msl_obj = motor::shared( std::move( mslo ) ) ;
             }
         }
 
@@ -347,14 +347,14 @@ namespace this_file
             {
                 fe->configure<motor::graphics::geometry_object_t>( &geo_pts_obj ) ;
                 fe->configure<motor::graphics::streamout_object_t>( &so_obj ) ;
-                fe->configure<motor::graphics::msl_object_t>( &msl_filter_obj ) ;
-                fe->configure<motor::graphics::msl_object_t>( &msl_obj ) ;
+                fe->configure<motor::graphics::msl_object_t>( msl_filter_obj ) ;
+                fe->configure<motor::graphics::msl_object_t>( msl_obj ) ;
 
                 // do initial streamout pass 
                 // in order to fill the buffer
                 {
                     fe->use( &so_obj ) ;
-                    fe->render( &msl_filter_obj, motor::graphics::gen4::backend::render_detail_t() ) ;
+                    fe->render( msl_filter_obj, motor::graphics::gen4::backend::render_detail_t() ) ;
                     fe->unuse( motor::graphics::gen4::backend::unuse_type::streamout ) ;
                 }
             }
@@ -363,7 +363,7 @@ namespace this_file
                 fe->use( &so_obj ) ;
                 motor::graphics::gen4::backend::render_detail_t detail ;
                 detail.feed_from_streamout = false ;
-                fe->render( &msl_filter_obj, detail ) ;
+                fe->render( msl_filter_obj, detail ) ;
                 fe->unuse( motor::graphics::gen4::backend::unuse_type::streamout ) ;
             }
 
@@ -380,7 +380,7 @@ namespace this_file
                 //_ae.get_prim_render()->draw_line( 0, p0, p1, motor::math::vec4f_t( 0.0f, 1.0f, 0.0f, 1.0f ) ) ;
             }
 
-            msl_filter_obj.for_each( [&] ( size_t const i, motor::graphics::variable_set_mtr_t vs )
+            msl_filter_obj->for_each( [&] ( size_t const i, motor::graphics::variable_set_mtr_t vs )
             {
                 auto * var = vs->data_variable<motor::math::vec3f_t>("plane") ;
                 var->set( dir ) ;
@@ -390,7 +390,7 @@ namespace this_file
                 motor::graphics::gen4::backend_t::render_detail_t detail ;
                 detail.feed_from_streamout = false ;
                 detail.use_streamout_count = true ;
-                fe->render( &msl_obj, detail ) ;
+                fe->render( msl_obj, detail ) ;
             }
         }
 
@@ -411,6 +411,13 @@ namespace this_file
             ImGui::End() ;
             
             return true ;
+        }
+
+        //******************************************************************************************************
+        virtual void_t on_shutdown( void_t ) noexcept
+        {
+            motor::release( motor::move( msl_obj ) ) ;
+            motor::release( motor::move( msl_filter_obj ) ) ;
         }
     };
 }

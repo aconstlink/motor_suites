@@ -45,7 +45,7 @@ namespace this_file
         motor::graphics::render_object_t rd_obj ;
         motor::graphics::array_object_t ar_obj ;
 
-        motor::graphics::msl_object_t fb_msl ;
+        motor::graphics::msl_object_mtr_t fb_msl ;
         motor::graphics::state_object_t fb_so ;
         motor::graphics::framebuffer_object_t fb_obj ;
         motor::graphics::geometry_object_t fb_geo ;
@@ -548,7 +548,7 @@ namespace this_file
 
                     mslo.link_geometry("quad") ;
 
-                    fb_msl = std::move( mslo ) ;
+                    fb_msl = motor::shared( std::move( mslo ) ) ;
                 }
 
                 // variable sets
@@ -560,7 +560,7 @@ namespace this_file
                         var->set( "the_scene.0" ) ;
                     }
 
-                    fb_msl.add_variable_set( motor::memory::create_ptr( std::move(vars), "a variable set" ) ) ;
+                    fb_msl->add_variable_set( motor::memory::create_ptr( std::move(vars), "a variable set" ) ) ;
                 }
             }
 
@@ -769,7 +769,7 @@ namespace this_file
                 {
                     fe->configure<motor::graphics::geometry_object_t>( &fb_geo ) ;
                     fe->configure<motor::graphics::framebuffer_object_t>( &fb_obj ) ;
-                    fe->configure<motor::graphics::msl_object_t>( &fb_msl ) ;
+                    fe->configure<motor::graphics::msl_object_t>( fb_msl ) ;
                 }
             }
 
@@ -795,14 +795,17 @@ namespace this_file
                 {
                     motor::graphics::gen4::backend_t::render_detail_t detail ;
                     detail.varset = 0 ;
-                    fe->render(  &fb_msl, detail ) ;
+                    fe->render(  fb_msl, detail ) ;
                 }
                 fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ;
                 fe->fence( [=]( void_t ){} ) ;
             }
         }
 
-        virtual void_t on_shutdown( void_t ) noexcept {}
+        virtual void_t on_shutdown( void_t ) noexcept 
+        {
+            motor::release( motor::move( fb_msl ) ) ;
+        }
     };
 }
 

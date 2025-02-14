@@ -34,12 +34,12 @@ namespace this_file
         motor::math::vec4ui_t fb_dims = motor::math::vec4ui_t( 0, 0, 1920, 1080 ) ;
 
         motor::graphics::state_object_t scene_so ;
-        motor::graphics::msl_object_t msl_obj ;
+        motor::graphics::msl_object_mtr_t msl_obj ;
         motor::graphics::geometry_object_t geo_obj ;
         motor::graphics::image_object_t img_obj ;
         motor::graphics::array_object_t ar_obj ;
 
-        motor::graphics::msl_object_t fb_msl ;
+        motor::graphics::msl_object_mtr_t fb_msl ;
         motor::graphics::state_object_t fb_so ;
         motor::graphics::framebuffer_object_t fb_obj ;
         motor::graphics::geometry_object_t fb_geo ;
@@ -313,7 +313,7 @@ namespace this_file
                         
                     mslo.link_geometry({"cubes"}) ;
 
-                    msl_obj = std::move( mslo ) ;
+                    msl_obj = motor::shared( std::move( mslo ) ) ;
                 }
             
                 // add variable set 
@@ -339,7 +339,7 @@ namespace this_file
                         var->set( "object_data" ) ;
                     }
 
-                    msl_obj.add_variable_set( motor::shared( std::move( vars ) ) ) ;
+                    msl_obj->add_variable_set( motor::shared( std::move( vars ) ) ) ;
                 }
             }
 
@@ -382,7 +382,7 @@ namespace this_file
 
                     mslo.link_geometry("quad") ;
 
-                    fb_msl = std::move( mslo ) ;
+                    fb_msl = motor::shared( std::move( mslo ) ) ;
                 }
 
                 // variable sets
@@ -394,7 +394,7 @@ namespace this_file
                         var->set( "the_scene.0" ) ;
                     }
 
-                    fb_msl.add_variable_set( motor::memory::create_ptr( std::move(vars), "a variable set" ) ) ;
+                    fb_msl->add_variable_set( motor::memory::create_ptr( std::move(vars), "a variable set" ) ) ;
                 }
             }
 
@@ -545,7 +545,7 @@ namespace this_file
             // update render object variable sets
             {
                 size_t i = 0 ;
-                for( auto * vs : msl_obj.borrow_varibale_sets() )
+                for( auto * vs : msl_obj->borrow_varibale_sets() )
                 {
                     {
                         auto * var = vs->data_variable< motor::math::mat4f_t>("view") ;
@@ -597,14 +597,14 @@ namespace this_file
                     //fe->configure<motor::graphics::msl_object_t>( &msl_obj ) ;
                     fe->configure<motor::graphics::array_object_t>( &ar_obj ) ;
                     //fe->configure<motor::graphics::shader_object_t>( &sh_obj ) ;
-                    fe->configure<motor::graphics::msl_object_t>( &msl_obj ) ;
+                    fe->configure<motor::graphics::msl_object_t>( msl_obj ) ;
                         
                 }
 
                 {
                     fe->configure<motor::graphics::geometry_object_t>( &fb_geo ) ;
                     fe->configure<motor::graphics::framebuffer_object_t>( &fb_obj ) ;
-                    fe->configure<motor::graphics::msl_object_t>( &fb_msl ) ;
+                    fe->configure<motor::graphics::msl_object_t>( fb_msl ) ;
                 }
             }
 
@@ -620,7 +620,7 @@ namespace this_file
                     detail.start = 0 ;
                     detail.num_elems = num_objects * 36 ;
                     detail.varset = 0 ;
-                    fe->render(  &msl_obj, detail ) ;
+                    fe->render(  msl_obj, detail ) ;
                 }
 
                 fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ; 
@@ -630,7 +630,7 @@ namespace this_file
                 {
                     motor::graphics::gen4::backend_t::render_detail_t detail ;
                     detail.varset = 0 ;
-                    fe->render(  &fb_msl, detail ) ;
+                    fe->render(  fb_msl, detail ) ;
                 }
                 fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ;
                 fe->fence( [=]( void_t ){} ) ;
@@ -638,7 +638,11 @@ namespace this_file
         }
 
         virtual bool_t on_tool( this_t::window_id_t const, motor::application::app::tool_data_ref_t ) noexcept { return true ; }
-        virtual void_t on_shutdown( void_t ) noexcept {}
+        virtual void_t on_shutdown( void_t ) noexcept 
+        {
+            motor::release( motor::move( msl_obj ) ) ;
+            motor::release( motor::move( fb_msl ) ) ;
+        }
     };
 }
 

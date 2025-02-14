@@ -29,7 +29,7 @@ namespace this_file
 
         motor::graphics::image_object_t img_obj ;
         motor::graphics::geometry_object_t geo_obj ;
-        motor::graphics::msl_object_t msl_obj ;
+        motor::graphics::msl_object_mtr_t msl_obj ;
 
         motor::io::monitor_mtr_t mon = motor::memory::create_ptr( motor::io::monitor_t() ) ;
         motor::io::database db = motor::io::database( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
@@ -173,7 +173,7 @@ namespace this_file
                         mslo.add_variable_set( motor::memory::create_ptr( std::move( vars ), "a variable set" ) ) ;
                     }
 
-                    msl_obj = std::move( mslo ) ;
+                    msl_obj = motor::shared( std::move( mslo ) ) ;
                 }
             }
         }
@@ -204,9 +204,9 @@ namespace this_file
                     shd = motor::string_t( data, sib ) ;
                 } ) ;
 
-                msl_obj.clear_shaders().add( motor::graphics::msl_api_type::msl_4_0, shd ) ;
+                msl_obj->clear_shaders().add( motor::graphics::msl_api_type::msl_4_0, shd ) ;
 
-                reconfigs.push_back( &msl_obj ) ;
+                reconfigs.push_back( msl_obj ) ;
             }) ;
         }
 
@@ -217,7 +217,7 @@ namespace this_file
             {
                 fe->configure<motor::graphics::geometry_object_t>( &geo_obj ) ;
                 fe->configure<motor::graphics::image_object_t>( &img_obj ) ;
-                fe->configure<motor::graphics::msl_object_t>( &msl_obj ) ;
+                fe->configure<motor::graphics::msl_object_t>( msl_obj ) ;
             }
             
             for( auto * obj : reconfigs )
@@ -227,7 +227,7 @@ namespace this_file
 
             {
                 motor::graphics::gen4::backend_t::render_detail_t detail ;
-                fe->render( &msl_obj, detail ) ;
+                fe->render( msl_obj, detail ) ;
             }
         }
 
@@ -235,6 +235,12 @@ namespace this_file
         {
             reconfigs.clear() ;
         } 
+
+        //******************************************************************************************************
+        virtual void_t on_shutdown( void_t ) noexcept
+        {
+            motor::release( motor::move( msl_obj ) ) ;
+        }
     };
 }
 

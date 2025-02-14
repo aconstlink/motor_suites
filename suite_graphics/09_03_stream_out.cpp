@@ -20,7 +20,7 @@ namespace this_file
     {
         motor_this_typedefs( my_app ) ;
 
-        motor::graphics::state_object_t scene_so ;
+        //motor::graphics::state_object_t scene_so ;
         motor::graphics::geometry_object_t quad_geo ;
         motor::graphics::geometry_object_t points_geo ;
 
@@ -28,10 +28,10 @@ namespace this_file
         motor::graphics::streamout_object_t so_obj ;
 
         // render object : doing stream out
-        motor::graphics::msl_object_t msl_so_obj ;
+        motor::graphics::msl_object_mtr_t msl_so_obj ;
 
         // render object : rendering original geometry
-        motor::graphics::msl_object_t msl_orig_obj ;
+        motor::graphics::msl_object_mtr_t msl_orig_obj ;
 
         motor::math::vec4f_t particle_bounds = motor::math::vec4f_t( -1000.0f, -1000.0f, 1000.0f, 1000.0f ) ;
         size_t num_particles = 1000 ;
@@ -211,7 +211,7 @@ namespace this_file
                     mslo.add_variable_set( motor::shared( std::move( vars ) ) ) ;
                 }
 
-                msl_orig_obj = std::move( mslo ) ;
+                msl_orig_obj = motor::shared( std::move( mslo ) ) ;
             }
 
             // shader configuration
@@ -272,7 +272,7 @@ namespace this_file
                     mslo.add_variable_set( motor::shared( std::move( vars ) ) ) ;
                 }
 
-                msl_so_obj = std::move( mslo ) ;
+                msl_so_obj = motor::shared( std::move( mslo ) ) ;
             }
         }
 
@@ -295,18 +295,18 @@ namespace this_file
         {            
             if( rd.first_frame )
             {
-                fe->configure<motor::graphics::state_object_t>( &scene_so ) ;
+                //fe->configure<motor::graphics::state_object_t>( &scene_so ) ;
                 fe->configure<motor::graphics::geometry_object_t>( &quad_geo ) ;
                 fe->configure<motor::graphics::geometry_object_t>( &points_geo ) ;
                 fe->configure<motor::graphics::streamout_object_t>( &so_obj ) ;
-                fe->configure<motor::graphics::msl_object_t>( &msl_so_obj ) ;
-                fe->configure<motor::graphics::msl_object_t>( &msl_orig_obj ) ;
+                fe->configure<motor::graphics::msl_object_t>( msl_so_obj ) ;
+                fe->configure<motor::graphics::msl_object_t>( msl_orig_obj ) ;
 
                 // do initial streamout pass 
                 // in order to fill the buffer
                 {
                     fe->use( &so_obj ) ;
-                    fe->render( &msl_so_obj, motor::graphics::gen4::backend::render_detail_t() ) ;
+                    fe->render( msl_so_obj, motor::graphics::gen4::backend::render_detail_t() ) ;
                     fe->unuse( motor::graphics::gen4::backend::unuse_type::streamout ) ;
                 }
             }
@@ -317,12 +317,12 @@ namespace this_file
                 {
                     motor::graphics::gen4::backend_t::render_detail_t detail ;
                     detail.feed_from_streamout = true ;
-                    fe->render( &msl_so_obj, detail ) ;
+                    fe->render( msl_so_obj, detail ) ;
                 }
                 fe->unuse( motor::graphics::gen4::backend::unuse_type::streamout ) ;
             }
                         
-            msl_so_obj.for_each( [&] ( size_t const i, motor::graphics::variable_set_mtr_t vs )
+            msl_so_obj->for_each( [&] ( size_t const i, motor::graphics::variable_set_mtr_t vs )
             {
                 {
                     auto * var = vs->data_variable<motor::math::float_t>("u_dt") ;
@@ -338,11 +338,15 @@ namespace this_file
             {
                 motor::graphics::gen4::backend_t::render_detail_t detail ;
                 detail.feed_from_streamout = false ;
-                fe->render( &msl_orig_obj, detail ) ;
+                fe->render( msl_orig_obj, detail ) ;
             }
         }
 
-        virtual void_t on_shutdown( void_t ) noexcept {}
+        virtual void_t on_shutdown( void_t ) noexcept 
+        {
+            motor::release( motor::move( msl_orig_obj ) ) ;
+            motor::release( motor::move( msl_so_obj ) ) ;
+        }
     };
 }
 

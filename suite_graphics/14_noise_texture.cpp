@@ -27,7 +27,7 @@ namespace this_file
         motor::graphics::geometry_object_t geo_obj ;
         motor::graphics::image_object_t img_obj ;
 
-        motor::graphics::msl_object_t msl_obj ;
+        motor::graphics::msl_object_mtr_t msl_obj ;
 
         struct vertex { motor::math::vec3f_t pos ; motor::math::vec2f_t tx ; } ;
 
@@ -183,7 +183,7 @@ namespace this_file
 
                     mslo.link_geometry("quad") ;
 
-                    msl_obj = std::move( mslo ) ;
+                    msl_obj = motor::shared( std::move( mslo ) ) ;
                 }
 
                 // variable sets
@@ -205,7 +205,7 @@ namespace this_file
                         var->set( "noise_texture" ) ;
                     }
 
-                    msl_obj.add_variable_set( motor::memory::create_ptr( std::move( vars ), "a variable set" ) ) ;
+                    msl_obj->add_variable_set( motor::memory::create_ptr( std::move( vars ), "a variable set" ) ) ;
                 }
 
                 // variable sets
@@ -227,7 +227,7 @@ namespace this_file
                         var->set( "noise_texture" ) ;
                     }
 
-                    msl_obj.add_variable_set( motor::memory::create_ptr( std::move(vars), "a variable set" ) ) ;
+                    msl_obj->add_variable_set( motor::memory::create_ptr( std::move(vars), "a variable set" ) ) ;
                 }
             }
 
@@ -315,7 +315,7 @@ namespace this_file
                 fe->configure<motor::graphics::state_object_t>( &root_so ) ;
                 fe->configure<motor::graphics::geometry_object_t>( &geo_obj ) ;
                 fe->configure<motor::graphics::image_object_t>( &img_obj ) ;
-                fe->configure<motor::graphics::msl_object_t>( &msl_obj ) ;
+                fe->configure<motor::graphics::msl_object_t>( msl_obj ) ;
             }
 
             if( update_image )
@@ -331,7 +331,7 @@ namespace this_file
                     detail.start = 0 ;
                     //detail.num_elems = 3 ;
                     detail.varset = 0 ;
-                    fe->render( &msl_obj, detail ) ;
+                    fe->render( msl_obj, detail ) ;
                 }
                 fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ;
             }
@@ -363,6 +363,12 @@ namespace this_file
             }
 
             return true ; 
+        }
+
+        //******************************************************************************************************
+        virtual void_t on_shutdown( void_t ) noexcept
+        {
+            motor::release( motor::move( msl_obj) ) ;
         }
     };
 }
