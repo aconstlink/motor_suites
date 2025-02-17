@@ -52,7 +52,7 @@ namespace this_file
                 } ) ;
             }
 
-            #if 0
+            #if 1
             {
                 motor::application::window_info_t wi ;
                 wi.x = 400 ;
