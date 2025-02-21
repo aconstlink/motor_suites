@@ -184,7 +184,7 @@ namespace this_file
                     pos -= motor::math::vec2f_t( (1.0f/float_t(max_tris))*2.0f, 0.0f ) ;
                 }
                 #else
-                pr.draw_tris( 0, max_tris, [&] ( size_t const i ) 
+                pr.draw_tris( 1, max_tris, [&] ( size_t const i ) 
                 {
                     size_t const idx = max_tris - 1 - i ;
 
@@ -230,7 +230,7 @@ namespace this_file
                     pos += motor::math::vec2f_t( (1.0f/float_t(max_tris))*2.0f, 0.0f ) ;
                 }
                 #else
-                pr.draw_tris( 0, max_tris, [&] ( size_t const i )
+                pr.draw_tris( 1, max_tris, [&] ( size_t const i )
                 {
                     size_t const idx = max_tris - 1 - i ;
 

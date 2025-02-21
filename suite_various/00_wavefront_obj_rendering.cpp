@@ -129,8 +129,7 @@ namespace this_file
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
-            #endif
-            #if 0
+            #else
             {
                 motor::application::window_info_t wi ;
                 wi.x = 400 ;
@@ -276,7 +275,7 @@ namespace this_file
             {
                 auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 1.0f, 10000.0f ) ;
                 cam.perspective_fov( motor::math::angle<float_t>::degree_to_radian( 45.0f ) ) ;
-                cam.look_at( motor::math::vec3f_t( 0.0f, 20.0f, -100.0f ),
+                cam.look_at( motor::math::vec3f_t( -100.0f, 200.0f, 1000.0f ),
                     motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ;
 
                 _camera = std::move( cam ) ;
@@ -293,7 +292,7 @@ namespace this_file
 
                     {
                         auto * mat = vs.data_variable<motor::math::mat4f_t>( "world" ) ;
-                        mat->set( motor::math::mat4f_t::make_scaling( motor::math::vec3f_t( 100.0f ) ) ) ;
+                        mat->set( motor::math::mat4f_t::make_scaling( motor::math::vec3f_t( 300.0f ) ) ) ;
                     }
 
                     {
@@ -470,11 +469,11 @@ namespace this_file
                     {
                         if ( _cc.move_left )
                         {
-                            translate.x( -100.0f * gd.sec_dt ) ;
+                            translate.x( -200.0f * gd.sec_dt ) ;
                         }
                         else if ( _cc.move_right )
                         {
-                            translate.x( +100.0f * gd.sec_dt ) ;
+                            translate.x( +200.0f * gd.sec_dt ) ;
                         }
                     }
 
@@ -482,11 +481,11 @@ namespace this_file
                     {
                         if ( _cc.move_backwards )
                         {
-                            translate.z( -100.0f * gd.sec_dt ) ;
+                            translate.z( -200.0f * gd.sec_dt ) ;
                         }
                         else if ( _cc.move_forwards )
                         {
-                            translate.z( +100.0f * gd.sec_dt ) ;
+                            translate.z( +200.0f * gd.sec_dt ) ;
                         }
                     }
 
@@ -494,11 +493,11 @@ namespace this_file
                     {
                         if ( _cc.move_upwards )
                         {
-                            translate.y( -100.0f * gd.sec_dt ) ;
+                            translate.y( -200.0f * gd.sec_dt ) ;
                         }
                         else if ( _cc.move_downwards )
                         {
-                            translate.y( +100.0f * gd.sec_dt ) ;
+                            translate.y( +200.0f * gd.sec_dt ) ;
                         }
                     }
 

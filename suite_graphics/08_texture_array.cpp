@@ -29,7 +29,6 @@ namespace this_file
         motor::graphics::state_object_t scene_so ;
         motor::graphics::geometry_object_t geo_obj ;
         motor::graphics::image_object_t img_obj ;
-        motor::graphics::shader_object_t sh_obj ;
         motor::graphics::msl_object_mtr_t msl_obj ;
 
         int_t max_textures = 3 ;
@@ -294,7 +293,6 @@ namespace this_file
                 fe->configure<motor::graphics::state_object_t>( &scene_so ) ;
                 fe->configure<motor::graphics::geometry_object_t>( &geo_obj ) ;
                 fe->configure<motor::graphics::image_object_t>( &img_obj ) ;
-                fe->configure<motor::graphics::shader_object_t>( &sh_obj ) ;
                 fe->configure<motor::graphics::msl_object_t>( msl_obj ) ;
             }
 
