@@ -70,7 +70,8 @@ int main( int argc, char ** argv )
         {
             mon->for_each_and_swap( [&]( motor::io::location_cref_t loc, motor::io::monitor_t::notify const n )
             {
-                motor::log::global_t::status( "[monitor] : Got " + motor::io::monitor_t::to_string(n) + " for " + loc.as_string() ) ;
+                motor::log::global::status<2048>("[monitor] : Got %s for %s", 
+                    motor::io::monitor_t::to_string(n), loc.as_string().c_str() ) ;
             }) ;
 
             std::this_thread::sleep_for( std::chrono::milliseconds(1000) ) ;

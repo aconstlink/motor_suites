@@ -63,7 +63,7 @@ namespace this_file
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
-
+            
             {
                 motor::application::window_info_t wi ;
                 wi.x = 400 ;

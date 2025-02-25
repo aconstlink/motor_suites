@@ -71,7 +71,7 @@ namespace this_file
                 } ) ;
             }
 
-            db.attach( mon ) ;
+            db.attach( motor::share( mon ) ) ;
 
             {
                 struct vertex { motor::math::vec3f_t pos ; motor::math::vec2f_t tx ; } ;
@@ -230,7 +230,8 @@ namespace this_file
         {
             mon->for_each_and_swap( [&]( motor::io::location_cref_t loc, motor::io::monitor_t::notify const n )
             {
-                motor::log::global_t::status( "[monitor] : Got " + motor::io::monitor_t::to_string(n) + " for " + loc.as_string() ) ;
+                motor::log::global::status<2048>( "[monitor] : Got %s for %s", 
+                    motor::io::monitor_t::to_string(n), loc.as_string().c_str() ) ;
 
                 motor::string_t shd ;
                 db.load( loc ).wait_for_operation( [&] ( char_cptr_t data, size_t const sib, motor::io::result const ) 

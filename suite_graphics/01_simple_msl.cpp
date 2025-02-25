@@ -173,7 +173,7 @@ namespace this_file
 
                     mslo.link_geometry("quad") ;
 
-                    msl_obj = motor::shared( std::move( mslo ) ) ;
+                    msl_obj = motor::shared( std::move( mslo ), "msl object" ) ;
                 }
 
                 // variable sets
