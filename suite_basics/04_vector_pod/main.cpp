@@ -6,6 +6,7 @@
 
 #include <motor/std/string>
 #include <motor/std/vector_pod>
+#include <motor/std/vector>
 
 #include <motor/memory/global.h>
 
@@ -46,6 +47,16 @@ int main( int argc, char ** argv )
         some_value.erase( 5 ) ;
         for( size_t i=0; i<some_value.size(); ++i ) std::printf( "%zx,", some_value[i] ) ;
         std::printf( "\n" ) ;
+    }
+
+    {
+        motor::vector_pod< size_t > some_value { 1, 2, 3, 4, 5, 6, 7, 8 } ;
+        motor::vector_pod< size_t > other = std::move( some_value ) ;
+    }
+
+    {
+        motor::vector< motor::vector_pod< size_t > > some_values(8) ;
+        some_values[0].reserve( 10 ) ;
     }
 
     motor::memory::global::dump_to_std() ;

@@ -289,7 +289,7 @@ namespace this_file
                     // based on the swap of insertion_sort, 
                     // the neighbors need to be swapped too.
                     {
-                        motor::mstd::insertion_sort<angles_t::value_type>::in_range(
+                        motor::mstd::insertion_sort<angles_t>::in_range_with_swap(
                             fao, fao+na, fas, [&]( size_t const a, size_t const b )
                         {
                             size_t const idx0 = o + a + 1 ;

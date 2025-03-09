@@ -1,6 +1,7 @@
 
 #include <motor/math/spline/linear_bezier_spline.hpp>
 #include <motor/math/spline/cubic_hermit_spline.hpp>
+#include <motor/math/spline/cubic_bezier_spline.hpp>
 
 #include <motor/math/animation/keyframe_sequence.hpp>
 

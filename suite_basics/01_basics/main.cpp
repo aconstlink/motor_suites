@@ -63,6 +63,10 @@ int main( int argc, char ** argv )
         motor::memory::global_t::release( some_data ) ;
     }
 
+    motor::log::global::warning("a warning") ;
+    motor::log::global::error("an error") ;
+    motor::log::global::critical("critical error") ;
+
     motor::log::global_t::deinit() ;
     motor::memory::global_t::dump_to_std() ;
 
