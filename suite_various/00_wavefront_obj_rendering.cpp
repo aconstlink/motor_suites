@@ -77,6 +77,8 @@ namespace this_file
         //******************************************************************************************************
         virtual void_t on_init( void_t ) noexcept
         {
+            motor::application::carrier::set_cpu_sleep( std::chrono::microseconds(50) ) ;
+
             mod_reg = motor::format::global::register_default_modules(
                 motor::shared( motor::format::module_registry_t(), "mod registry" ) ) ;
 

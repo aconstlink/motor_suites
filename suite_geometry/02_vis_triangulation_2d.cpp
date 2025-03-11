@@ -23,93 +23,24 @@ namespace algorithm
 {
     using namespace motor::core::types ;
 
-    template< typename CONT_T >
-    class convex_hull
+    class mesh
     {
-        using container_t = CONT_T ;
+        motor_this_typedefs( mesh ) ;
+
+    private:
+
+        using edge_t = std::pair< size_t, size_t > ;
+
+        motor::vector< motor::math::vec2f_t > _points ;
+        motor::vector< edge_t > _edges ;
+
 
     public:
 
-        // inplace convex hull algorithm
-        // returns the number of hull edges stored at the beginning of
-        // the points container. So the algo swaps the hull points to 
-        // the beginning of the point container. 
-        // e0 => [p0,p1], e1 =>[p1,p2], e2 => [p2,p3], ...
-        // @note The algo fails if two points lay too close together. 
-        // Just think about those points. Do you really need such points?
-        // So a solution to that is simply merge points which are nearly 
-        // lay on the same spot!
-        static size_t perform( container_t & points ) noexcept
+
+        void_t add_point( motor::math::vec2f_cref_t p ) noexcept
         {
-            size_t idx = 0 ;
-            
-            // starting with a point on the hull makes it 
-            // much simpler, so find the most left point.
-            {
-                for( size_t i=1; i<points.size(); ++i )
-                {
-                    if( points[i].x() < points[idx].x() ) idx = i ;
-                }
-                std::swap( points[0], points[idx] ) ; idx = 0 ;
-            }
 
-            size_t num_restarts = 0 ;
-            size_t num_segs = 0 ;
-            for( size_t i = idx + 1; i< points.size(); ++i )
-            {
-                auto const dir = (points[i] - points[idx]).normalize() ;
-                auto const ortho = dir.ortho() ;
-                
-                bool_t is_restart = false ;
-                for( size_t j = i + 1; j<points.size(); ++j )
-                {
-                    auto const dist = ortho.dot( points[j] - points[idx] ) ;
-
-                    // point is on the line. Dont take it. It causes 
-                    // trouble.
-                    if( motor::math::fn<float_t>::abs(dist) < 0.001f ) continue ;
-                    
-                    // if we find a point that is more to the side 
-                    // we test, we just change to that point and restart
-                    // the hull finding. I think this is much like 
-                    // the gift wrap convex hull algo.
-                    if( dist < 0.0f )
-                    {
-                        std::swap( points[i], points[j] ) ;
-                        --i ;
-                        ++num_restarts ;
-                        is_restart = true ;
-                        break ;
-                    }
-                }
-
-                // using num_restars to track infinite loop
-                // because --i.
-                if( num_restarts > points.size() ) break ; 
-
-                if( is_restart ) continue ;
-                num_restarts = 0 ;
-
-                { 
-                    // if the distance with the first convex hull point at idx==0
-                    // now is > 0.0f, we just
-                    // made the circle complete has we have
-                    // to quit the iteration. Comment out 
-                    // the "else if" and see what happens.
-                    auto const dist = ortho.dot( points[i] - points[0] ) ;
-
-                    if( motor::math::fn<float_t>::abs(dist) < 0.001f)
-                    {
-                        // point is on the line
-                    }
-                    else if( dist > 0.0f ) break ;
-
-                    ++num_segs ;
-                    ++idx ;
-                    
-                }
-            }
-            return num_segs + 1;
         }
     };
 }
@@ -139,20 +70,7 @@ namespace this_file
 
     private:
 
-        enum class distribution
-        {
-            random, 
-            triangle
-        };
-        distribution _distri ;
-
         float_t _point_radius = 1.0f ;
-
-        // draw the indices as the main color
-        bool_t _draw_index_color = false ;
-
-        uint_t _num_points = 170 ;
-        size_t _num_segments = 0 ;
 
         // internal for completely recomputing the points
         bool_t _recompute_points = true ;
@@ -163,13 +81,22 @@ namespace this_file
         // do initial sort by x component
         bool_t _do_sort = true ;
 
+        // tmp point list for triangulation construction
         motor::vector< motor::math::vec2f_t > _points ;
-                
+        
+        bool_t _left_is_released = false ;
+        bool_t _right_is_released = false ;
+
+        bool_t _polygon_is_complete = false ;
+        bool_t _mouse_is_near_start = false ;
+
     private:
 
         //****************************************************************************************
         virtual void_t on_init( void_t ) noexcept
         {
+            motor::application::carrier::set_cpu_sleep( std::chrono::microseconds(50) ) ;
+
             {
                 _wid_tool = this_t::create_window( motor::application::window_info_t::create( 100, 100, 400, 400, 
                     motor::application::graphics_generation::gen4_auto ) ) ;
@@ -202,6 +129,11 @@ namespace this_file
             }
             else if( released )
                 _lock_point_mouse = false ;
+
+            _left_is_released = released ;
+
+
+            _right_is_released = mouse.is_released( motor::controls::types::three_mouse::button::right ) ;
         }
 
         //****************************************************************************************
@@ -223,87 +155,28 @@ namespace this_file
         //****************************************************************************************
         virtual void_t on_update( motor::application::app::update_data_in_t ud ) noexcept 
         {
-            if( _recompute_points )
+            if( _points.size() > 0 )
             {
-                if( _distri == distribution::random )
-                {
-                    _points.resize( _num_points ) ;
-                    for( uint_t i=0; i<_num_points; ++i )
-                    {
-                        _points[i] = this_t::rand_point( i ) * _dims * motor::math::vec2f_t(_spread_points) ;
-                    }
-
-                    // inplace dublicate point merge
-                    {
-                        size_t size = _points.size() ;
-                        for( uint_t i=0; i<size; ++i )
-                        {
-                            for( uint_t j=i+1; j<size; ++j )
-                            {
-                                if( (_points[i] - _points[j]).length2() < 0.0001f )
-                                {
-                                    std::swap( _points[j--], _points[--size] ) ;
-                                }
-                            }
-                        }
-                        _points.resize( size ) ;
-                        _num_points = uint_t( size ) ;
-                    }
-
-                }
-                else if( _distri == distribution::triangle )
-                {
-                    _num_points = 4 ;
-                    motor::math::vec2f_t const points[3] = 
-                    {
-                        -_dims* _spread_points,
-                        +_dims* _spread_points*motor::math::vec2f_t(1.0f, -1.0f),
-                        motor::math::vec2f_t(0.0, _dims.y()* _spread_points)
-                    } ;
-                    _points.resize( _num_points ) ;
-                    for( size_t i=0; i<3; ++i )
-                    {
-                        _points[i] = points[i] ;
-                    }
-                    _points[3] = (_points[0] + _points[1])*0.5f ;
-                }
-                
-                #if 0
-                if( _do_sort )
-                {
-                    motor::mstd::insertion_sort< decltype(_points) >::for_all( _points, [&]( motor::math::vec2f_cref_t a, motor::math::vec2f_cref_t b )
-                    {
-                        return a.x() < b.x() ;
-                    } ) ;
-                }
-                #endif
-
-                _recompute_points = false ;
+                auto const rad = (_point_radius * 5.0f) ;
+                _mouse_is_near_start = (_points[0] - _cur_mouse).length2() < rad*rad ;
             }
 
-            _num_segments = algorithm::convex_hull< decltype(_points) >::perform( _points ) ;
-
+            if( _left_is_released && !_polygon_is_complete )
             {
-                size_t hit = size_t(-1) ;
-                float_t min_d = !_lock_point_mouse ? _point_radius*_point_radius*80.0f : _dims.length2() * 2.0f ;
-                for( size_t i=0; i<_points.size(); ++i )
+                _polygon_is_complete = _mouse_is_near_start ;
+
+                if( !_polygon_is_complete )
                 {
-                    float_t const d = (_points[i] - _cur_mouse).length2() ;
-                    if( d <= min_d )
-                    {
-                        //std::printf("%zu\n", i) ;
-                        hit = i ;
-                        min_d = d ;
-                    }
+                    _points.emplace_back( motor::math::vec2f_t( _cur_mouse ) ) ;
+                    _left_is_released = false ;
                 }
-                
-                if( hit == size_t(-1) ) _lock_point_mouse = false ;
-                if( _lock_point_mouse )
-                {
-                    _points[hit] = _cur_mouse ;
-                }
-                
-                _cur_sel_point = hit ;
+            }
+
+            if( _right_is_released && _points.size() > 0 )
+            {
+                _points.resize( _points.size() - 1 ) ;
+                _right_is_released = false ;
+                _polygon_is_complete = false ;
             }
         }
 
@@ -313,6 +186,7 @@ namespace this_file
             static float_t inc = 0.0f ;
 
             // draw points
+            if( _points.size() > 1 )
             {
                 motor::math::vec4f_t const col_a(1.0f, 1.0f, 1.0f, 1.0f ) ;
                 motor::math::vec4f_t const col_b(1.0f, 0.0f, 1.0f, 1.0f ) ;
@@ -320,27 +194,42 @@ namespace this_file
                 {
                     float_t radius = _point_radius ;
                     motor::math::vec4f_t color( 0.0f, 0.0f, 0.0f, 1.0f ) ;
-                    if( _draw_index_color )
-                        color = motor::math::vec4f_t( motor::math::vec3f_t (float_t(i)/float_t(_points.size())), 1.0f ) ;
-                    else if( (i / _num_segments) < 1 )
-                    {
-                        color = motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) ;
-                        radius = radius * 3.0f ;
-                    }
                     return motor::gfx::primitive_render_2d::circle_t { _points[i], radius, color, col_b } ;
                 } ) ;
-
-                pr.draw_circle( 0, 10, _points[0], _point_radius * 5.0f, motor::math::vec4f_t(0.0f), motor::math::vec4f_t(0.0f, 1.0f, 0.0f, 1.0f) );
             }
 
-            // draw convex hull
+            if( _points.size() > 0 && !_polygon_is_complete )
             {
+                auto circ_col = motor::math::vec4f_t(1.0f, 0.0f, 0.0f, 1.0f) ;
+                if( _mouse_is_near_start ) circ_col = motor::math::vec4f_t(0.0f, 1.0f, 0.0f, 1.0f) ;
+                pr.draw_circle( 0, 10, _points[0], _point_radius * 5.0f, motor::math::vec4f_t(0.0f), circ_col );
+            }
+
+            // draw cur mouse as point
+            if( !_polygon_is_complete )
+            {
+                motor::math::vec4f_t const col_a(1.0f, 1.0f, 1.0f, 1.0f ) ;
+                motor::math::vec4f_t const col_b(1.0f, 0.0f, 1.0f, 1.0f ) ;
+                pr.draw_circle( 1, 10, _cur_mouse, _point_radius*2.0f, col_a, col_b ) ;
+            }
+
+            // draw mouse segment
+            if( _points.size() > 0 && !_polygon_is_complete )
+            {
+                motor::math::vec4f_t const col_a(1.0f, 0.0f, 0.0f, 1.0f ) ;
+                pr.draw_line( 0, _points.back(), _cur_mouse, col_a ) ;
+            }
+            
+            // draw hull
+            if( _points.size() >= 2 )
+            {
+                size_t const num_segments = _points.size() ;
                 motor::math::vec4f_t const col(1.0f, 1.0f, 0.0f, 1.0f ) ;
-                pr.draw_lines( 2, _num_segments, [&]( size_t const i )
+                pr.draw_lines( 2, num_segments, [&]( size_t const i )
                 {
                     size_t const cur = i ;
-                    size_t const nxt = (i + 1) % _num_segments ;
-                    return motor::gfx::line_render_2d::line_t{ {_points[cur], _points[nxt]}, col } ;
+                    size_t const nxt = (i + 1) % num_segments ;
+                    return motor::gfx::line_render_2d::line_t{ { _points[cur], _points[nxt] }, col } ;
                 } ) ;
             }
 
@@ -392,36 +281,19 @@ namespace this_file
 
             bool_t recomp = false ;
 
-            if( ImGui::Begin("Convex Hull") )
+            if( ImGui::Begin("Delaunay") )
             {
                 ImGui::Separator() ; ImGui::SameLine() ;
                 ImGui::Text("General Properties") ;
-                if( _distri == distribution::random )
-                {
-                    recomp |= uint_slider( "Number of Points", _num_points, 10, 1000 ) ;
-                    recomp |= ImGui::Checkbox( "Do sort", &_do_sort ) ;
-                }
-                else if( _distri == distribution::triangle )
-                {
-                }
+                
                 
 
                 ImGui::Separator() ; ImGui::SameLine() ;
                 ImGui::Text("Drawing Properties") ;
                 ImGui::SliderFloat( "Point Radius", &_point_radius, 1.0f, 5.0f ) ;
                 recomp |= ImGui::SliderFloat( "Spread Points", &_spread_points, 0.1f, 0.5f ) ;
-                ImGui::Checkbox( "Use point index as color", &_draw_index_color ) ;
 
                 
-                {
-                    static int_t cur_item = 0 ;
-                    static char const * names[] = { "random", "triangle" } ;
-                    if( ImGui::ListBox( "Point Distribution", &cur_item, names, IM_ARRAYSIZE(names) ) )
-                    {
-                        _distri = distribution( cur_item ) ;
-                        recomp = true ;
-                    }
-                }
             }
 
             _recompute_points = recomp ;
