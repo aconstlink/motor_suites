@@ -30,17 +30,311 @@ namespace algorithm
     private:
 
         using edge_t = std::pair< size_t, size_t > ;
+        using edges_t = motor::vector< edge_t > ;
 
-        motor::vector< motor::math::vec2f_t > _points ;
-        motor::vector< edge_t > _edges ;
-
+        using points_t = motor::vector< motor::math::vec2f_t > ;
+        points_t _points ;
+        edges_t _edges ;
+        edges_t _tri ;
 
     public:
 
 
         void_t add_point( motor::math::vec2f_cref_t p ) noexcept
         {
+            _points.emplace_back( p ) ;
 
+            if( _points.size() > 1 )
+            {
+                _edges.resize( _points.size()  ) ;
+                _edges[_edges.size()-2] = ( std::make_pair( _points.size()-2, _points.size()-1 ) ) ;
+                _edges[_edges.size()-1] = ( std::make_pair( _points.size()-1, 0 ) ) ;
+            }
+            
+        }
+
+        void_t remove_last_point_from_polygon( void_t ) noexcept
+        {
+            if( _edges.size() <= 1  )
+            {
+                _edges.clear() ;
+                _points.clear() ;
+                return ;
+            }
+
+            _edges[_edges.size()-2] = std::make_pair( _points.size()-2, 0 ) ;
+            _edges.resize( _edges.size() - 1 ) ;
+            _points.resize( _points.size() - 1 ) ;
+        }
+
+        edges_t const & get_polygon_edges( void_t ) const noexcept
+        {
+            return _edges ;
+        }
+
+        bool_t has_polygon_edges( void_t ) const noexcept
+        {
+            return _edges.size() > 0 ;
+        }
+
+        points_t const & get_points( void_t ) noexcept
+        {
+            return _points ;
+        }
+
+        void_t triangulate( void_t ) noexcept
+        {
+            if( _edges.size() <= 2 ) return ;
+
+            for( size_t i=0; i<_edges.size()-1; ++i )
+            {
+                auto const [a,b] = _edges[i+0] ;
+                auto const [c,d] = _edges[i+1] ;
+                
+                auto const cur_dir = (_points[b] -_points[a]).normalize() ;
+                auto const cur_ortho = cur_dir.ortho_left() ;
+
+                auto const nxt_dir = (_points[d] -_points[c]).normalize() ;
+                auto const nxt_ortho = nxt_dir.ortho_left() ;
+
+                auto const diag_dir = (_points[d] -_points[a]).normalize() ;
+                auto const diag_ortho = diag_dir.ortho_left() ;
+
+                // find if point is inside cur triangle
+                for( size_t j=d+1; j<_points.size(); ++j )
+                {
+                    auto const & p = _points[j] ;
+                    if( diag_ortho.dot( p ) < 0.0f )
+                    {
+                        int bp = 0 ;
+                    }
+                }
+            }
+        }
+
+        struct polygon_info
+        {
+            size_t start ;
+            size_t num_edges ;
+        };
+
+        struct storage
+        {
+            motor::vector< polygon_info > poly_infos ;
+            edges_t edges ;
+        };
+        motor_typedef( storage ) ;
+
+        struct ping_pong
+        {
+            motor_this_typedefs( ping_pong ) ;
+
+        private:
+
+            size_t idx = 0 ;
+            storage ping_pong[2] ;
+
+            size_t read_idx( void_t ) const noexcept
+            {
+                return idx % 2 ;
+            }
+
+            size_t write_idx( void_t ) const noexcept
+            {
+                return (idx+1) % 2 ;
+            }
+
+        public:
+
+            storage_cref_t read( void_t ) const noexcept
+            {
+                return ping_pong[ this_t::read_idx() ] ;
+            }
+
+            storage_ref_t write( void_t ) noexcept
+            {
+                return ping_pong[ this_t::write_idx() ] ;
+            }
+
+            void_t swap( void_t ) noexcept
+            {
+                idx = write_idx() ;
+            }
+        };
+       
+    private:
+
+        void_t draw_normal( motor::math::vec2f_cref_t a, motor::math::vec2f_cref_t b, motor::math::vec2f_cref_t nrm, 
+                motor::math::vec4f_cref_t color, motor::gfx::primitive_render_2d_ref_t pr ) const noexcept
+        {
+            auto const mid = a+(b-a)*0.5f ;
+            pr.draw_line( 2, mid, mid+nrm*10.0f, color ) ;
+        }
+
+        motor::math::vec2f_t ortho_from_edge_left( size_t const e, this_t::edges_t const & edges ) const noexcept
+        {
+            auto const [a, b] = edges[ e ] ;
+            auto const cur_dir = ( _points[ b ] - _points[ a ] ).normalize() ;
+            return cur_dir.ortho_left() ;
+        }
+
+        void_t draw_normal_at( size_t const e, this_t::edges_t const & edges, motor::gfx::primitive_render_2d_ref_t pr ) const noexcept
+        {
+            auto const [a, b] = edges[ e ] ;
+            auto const ortho = this_t::ortho_from_edge_left( e, edges ) ;
+            this_t::draw_normal( _points[ a ], _points[ b ], ortho,
+                motor::math::vec4f_t( 0.0f, 1.0f, 0.0f, 1.0f ), pr ) ;
+        }
+
+
+    public:
+
+        // visualize
+        void_t triangulate( motor::gfx::primitive_render_2d_ref_t pr )
+        {
+            // render outline
+            if( this_t::has_polygon_edges() )
+            {
+                auto const & polygon = _edges ;
+                auto const & points = _points ; 
+
+                motor::math::vec4f_t const col(1.0f, 1.0f, 0.0f, 1.0f ) ;
+                pr.draw_lines( 2, polygon.size(), [&]( size_t const i )
+                {
+                    auto const [a,b] = polygon[i] ;
+                    return motor::gfx::line_render_2d::line_t{ { points[a], points[b] }, col } ;
+                } ) ;
+            }
+
+            // algo starts here
+            if( _edges.size() <= 3 ) return ;
+
+            ping_pong pp ;
+
+            // init ping pong with all edges
+            {
+                pp.write().poly_infos.resize( 1 ) ;
+                pp.write().poly_infos[ 0 ] = { 0, _edges.size() } ;
+                pp.write().edges.resize( _edges.size() ) ;
+                for ( size_t i = 0; i < _edges.size(); ++i ) pp.write().edges[ i ] = _edges[ i ] ;
+                pp.swap() ;
+
+                // clear the original. Every triangle we find
+                // will be written in here so that container goes from
+                // 1 single polygon to many triangle polys.
+                _edges.clear() ;
+            }
+
+            // for each polygon in the read buffer do...
+            for( auto const & pi_ : pp.read().poly_infos )
+            {
+                auto const & edges = pp.read().edges ;
+
+                for ( size_t i = pi_.start; i < pi_.num_edges - 2; i += 1 )
+                {
+                    #if 1
+                    size_t const edge_0 = i ;
+                    auto const cur_ortho = this_t::ortho_from_edge_left( edge_0, edges ) ;
+                    this_t::draw_normal_at( i, edges, pr ) ;
+                    #else
+                    auto const [a, b] = edges[ i + 0 ] ;
+                    auto const [c, d] = edges[ i + 1 ] ;
+                    
+                    auto const cur_dir = ( _points[ b ] - _points[ a ] ).normalize() ;
+                    auto const cur_ortho = this_t::ortho_from_edge_left( i, edges ) ;
+                    
+                    auto const nxt_dir = ( _points[ d ] - _points[ c ] ).normalize() ;
+                    auto const nxt_ortho = nxt_dir.ortho_left() ;
+
+                    this_t::draw_normal( _points[ a ], _points[ b ], cur_ortho,
+                        motor::math::vec4f_t( 0.0f, 1.0f, 0.0f, 1.0f ), pr ) ;
+                    #endif
+
+                    // find first point in positive half space
+                    {
+                        auto const [a,b] = edges[edge_0] ;
+
+                        size_t j = i + 1 ;
+                        for ( j; j < edges.size(); ++j )
+                        {
+                            auto const [x, y] = edges[ j ] ;
+                            if ( cur_ortho.dot( _points[ y ] - _points[ a ] ) > 0.0f )
+                            {
+                                i = j ;
+                                break ;
+                            }
+                        }
+
+                        // no edge in the positive half space found.
+                        if( j == edges.size() ) 
+                        {
+                            ++i ; continue ;
+                        }
+                    }
+
+                    size_t a = edges[edge_0].first ;
+
+                    auto [c,e] = edges[i] ;
+                    //size_t e = edges[i].second ;
+                    
+                    
+                    size_t const edge_1 = edge_0 + 1  ;
+                    auto const nxt_ortho = this_t::ortho_from_edge_left( edge_1, edges ) ;
+
+                    //draw_nrm( _points[c], _points[d], nxt_ortho, motor::math::vec4f_t(0.0f, 1.0f, 0.0f, 1.0f), pr ) ;
+
+                    auto diag_dir = ( _points[ e ] - _points[ a ] ).normalize() ;
+                    auto diag_ortho = diag_dir.ortho_left() ;
+
+                    // DRAW: triangle we would like to have. But this tri is not
+                    // the final one. It could be intersected by a point later
+                    // in the point list.
+                    pr.draw_line( 2, _points[ e ], _points[ a ],
+                        motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) ) ;
+
+                    // find if other point is inside cur triangle
+                    {
+                        size_t const start = e + 1;
+
+                        for ( size_t j = start; j <= _points.size(); ++j )
+                        {
+                            size_t const idx = j % _points.size() ;
+
+                            auto const & p = _points[ idx ] ; // point to be tested
+                            if ( diag_ortho.dot( p - _points[ e ] ) < 0.0f )
+                            {
+                                float_t const dp0 = cur_ortho.dot( p - _points[ a ] ) ;
+                                float_t const dp1 = nxt_ortho.dot( p - _points[ c ] ) ;
+
+                                if ( dp0 > 0.0f && dp1 > 0.0f )
+                                {
+                                    diag_dir = ( _points[ idx ] - _points[ a ] ).normalize() ;
+                                    diag_ortho = diag_dir.ortho_left() ;
+                                    e = idx ;
+                                }
+                            }
+                        }
+                    }
+
+                    this_t::draw_normal( _points[ a ], _points[ e ], diag_ortho, motor::math::vec4f_t( 0.0f, 1.0f, 0.0f, 1.0f ), pr ) ;
+                    pr.draw_line( 2, _points[ e ], _points[ a ],
+                        motor::math::vec4f_t( 1.0f, 0.0f, 1.0f, 1.0f ) ) ;
+                }
+            }
+
+            _edges = std::move( pp.read().edges ) ;
+        }
+
+    private:
+
+        size_t triangulate( motor::vector< motor::math::vec2f_t > const & points, this_t::edges_t & edges ) noexcept
+        {
+            for( size_t i=0; i<_edges.size(); ++i )
+            {
+                
+            }
+
+            return edges.size() ;
         }
     };
 }
@@ -67,6 +361,10 @@ namespace this_file
         bool_t _lock_point_mouse = false ;
         motor::math::vec2f_t _cur_mouse ;
         size_t _cur_sel_point = size_t(-1) ;
+
+    private: // mesh
+
+        algorithm::mesh _mesh ;
 
     private:
 
@@ -167,6 +465,7 @@ namespace this_file
 
                 if( !_polygon_is_complete )
                 {
+                    _mesh.add_point( motor::math::vec2f_t( _cur_mouse ) ) ;
                     _points.emplace_back( motor::math::vec2f_t( _cur_mouse ) ) ;
                     _left_is_released = false ;
                 }
@@ -174,10 +473,13 @@ namespace this_file
 
             if( _right_is_released && _points.size() > 0 )
             {
+                _mesh.remove_last_point_from_polygon() ;
                 _points.resize( _points.size() - 1 ) ;
                 _right_is_released = false ;
                 _polygon_is_complete = false ;
             }
+
+            //_mesh.triangulate() ;
         }
 
         //****************************************************************************************
@@ -220,7 +522,22 @@ namespace this_file
                 pr.draw_line( 0, _points.back(), _cur_mouse, col_a ) ;
             }
             
+            #if 0
             // draw hull
+            #if 1
+            if( _mesh.has_polygon_edges() )
+            {
+                auto const & polygon = _mesh.get_polygon_edges() ;
+                auto const & points = _mesh.get_points() ;
+
+                motor::math::vec4f_t const col(1.0f, 1.0f, 0.0f, 1.0f ) ;
+                pr.draw_lines( 2, polygon.size(), [&]( size_t const i )
+                {
+                    auto const [a,b] = polygon[i] ;
+                    return motor::gfx::line_render_2d::line_t{ { points[a], points[b] }, col } ;
+                } ) ;
+            }
+            #else
             if( _points.size() >= 2 )
             {
                 size_t const num_segments = _points.size() ;
@@ -232,6 +549,9 @@ namespace this_file
                     return motor::gfx::line_render_2d::line_t{ { _points[cur], _points[nxt] }, col } ;
                 } ) ;
             }
+            #endif
+            #endif
+            _mesh.triangulate( pr ) ;
 
             inc += 0.01f  ;
             inc = motor::math::fn<float_t>::mod( inc, 1.0f ) ;
