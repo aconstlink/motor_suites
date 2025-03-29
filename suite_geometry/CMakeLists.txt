@@ -2,7 +2,8 @@
 set( tests
     "00_geometry.cpp"
     "01_vis_convex_hull_2d.cpp"
-    "02_vis_ear_triangulation_2d.cpp"
+    "02_00_vis_ear_triangulation_2d.cpp"
+    "02_01_vis_ear_triangulation_2d.cpp"
     )
 
 foreach( _test ${tests} )

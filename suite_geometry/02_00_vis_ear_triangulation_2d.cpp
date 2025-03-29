@@ -120,74 +120,6 @@ namespace algorithm
                 return (_start + num_edges) ;
             }
         };
-
-        struct storage
-        {
-            motor::vector< polygon_info > poly_infos ;
-            edges_t edges ;
-        };
-        motor_typedef( storage ) ;
-
-        struct ping_pong
-        {
-            motor_this_typedefs( ping_pong ) ;
-
-        private:
-
-            size_t idx = 0 ;
-            storage ping_pong[2] ;
-
-            size_t read_idx( void_t ) const noexcept
-            {
-                return idx % 2 ;
-            }
-
-            size_t write_idx( void_t ) const noexcept
-            {
-                return (idx+1) % 2 ;
-            }
-
-        public:
-
-            bool_t swap_last_poly_info_in_buffer_to( size_t const i, motor::vector< polygon_info > & polys ) noexcept
-            {
-                if( polys.size() == 0 || i > polys.size() - 1 ) return false ;
-                
-                polys[i] = polys.back() ;
-                polys.resize( polys.size()-1 ) ;
-
-                return true ;
-            }
-
-            bool_t swap_last_poly_info_in_read_to( size_t const i ) noexcept
-            {
-                return this_t::swap_last_poly_info_in_buffer_to( i, 
-                    ping_pong[ this_t::read_idx() ].poly_infos ) ;
-            }
-
-            bool_t swap_last_poly_info_in_write_to( size_t const i ) noexcept
-            {
-                return this_t::swap_last_poly_info_in_buffer_to( i, 
-                    ping_pong[ this_t::write_idx() ].poly_infos ) ;
-            }
-
-            storage_cref_t read( void_t ) const noexcept
-            {
-                return ping_pong[ this_t::read_idx() ] ;
-            }
-
-            storage_ref_t write( void_t ) noexcept
-            {
-                return ping_pong[ this_t::write_idx() ] ;
-            }
-
-            void_t swap_and_clear( void_t ) noexcept
-            {
-                idx = write_idx() ;
-                this_t::write().poly_infos.clear() ;
-                this_t::write().edges.clear() ;
-            }
-        };
        
     private:
 
@@ -307,6 +239,17 @@ namespace algorithm
             return id ;
         }
 
+
+    private:
+
+        void_t add_triangle( this_t::edge_t const & e0, this_t::edge_t const & e1, 
+            this_t::edge_t const & e2, this_t::edges_t & tris ) const noexcept
+        {
+            tris.emplace_back( e0 ) ;
+            tris.emplace_back( e1 ) ;
+            tris.emplace_back( e2 ) ;
+        }
+
     public:
 
         struct trig_props
@@ -315,6 +258,12 @@ namespace algorithm
             // index by one additionally.
             bool_t advance = false ;
         };
+
+        this_t::edges_t triangluate( void_t ) noexcept
+        {
+            this_t::trig_props props ;
+            return this_t::triangulate( props ) ;
+        }
 
         // ear-clippling triangulation
         this_t::edges_t triangulate( trig_props const & props ) noexcept
@@ -332,7 +281,7 @@ namespace algorithm
             size_t ei = size_t(-1) ;
             while( tris != tris_need )
             {
-                if( ++ei > tris_need*4 ) break ;
+                if( ++ei > (tris_need << 2) ) break ;
 
                 size_t const e0i = this_t::cur_edge( ei, edges ) ;
                 size_t const e1i = this_t::next_edge( e0i, edges ) ;
@@ -348,10 +297,7 @@ namespace algorithm
                     auto const e2 = edges[ this_t::next_edge( e1i, edges ) ] ;
                     if( a == e2.second && d == e2.first ) 
                     {
-                        ret.emplace_back( edges[e0i] ) ;
-                        ret.emplace_back( edges[e1i] ) ;
-                        ret.emplace_back( e2 ) ;
-
+                        this_t::add_triangle( edges[e0i], edges[e1i], e2, ret ) ;
                         this_t::replace_edges( e0i, e1i, {size_t(-1), size_t(-1)}, edges ) ;
 
                         ++tris ;
@@ -364,41 +310,37 @@ namespace algorithm
 
                 this_t::edge_t diag = { d, a } ;
 
+                // only convex edges can be clipped
                 {
-                    bool_t const is_conv = this_t::is_convex( this_t::dir_from_edge( e0 ), 
-                        this_t::dir_from_edge( e1 ) ) ;
-
-                    if( !is_conv ) continue ;
+                    if( !this_t::is_convex( this_t::dir_from_edge( e0 ), 
+                        this_t::dir_from_edge( e1 ) ) ) continue ;
                 }
 
-                // test if point inside triangle
+                // this makes this algo O(n^2)
+                // test if another point is inside triangle
                 {
+                    auto const p0 = this_t::ortho_from_edge_left( e0 ) ;
+                    auto const p1 = this_t::ortho_from_edge_left( e1 ) ;
+                    auto const p2 = this_t::ortho_from_edge_left( diag ) ;
+
                     size_t i = size_t(-1) ;
                     while( ++i < _points.size() )
                     {
                         if ( i == a || i == b || i == d ) continue ;
 
-                        auto const p0 = this_t::ortho_from_edge_left( e0 ) ;
-                        auto const p1 = this_t::ortho_from_edge_left( e1 ) ;
-                        auto const p2 = this_t::ortho_from_edge_left( diag ) ;
-
-                        motor::math::vec3f_t ndot(
+                        motor::math::vec3f_t const ndot(
                             p0.dot( _points[ i ] - _points[ c ] ),
                             p1.dot( _points[ i ] - _points[ c ] ),
                             p2.dot( _points[ i ] - _points[ d ] ) ) ;
 
-                        if ( ( motor::math::vec3f_t( 0.0f ).less_than( ndot ) ).all() )
-                            break ;
+                        if ( ( motor::math::vec3f_t( 0.0f ).less_than( ndot ) ).all() ) break ;
                     }
 
                     if( i != _points.size() ) continue ;
                 }
                 
                 {
-                    ret.emplace_back( edges[ e0i ] ) ;
-                    ret.emplace_back( edges[ e1i ] ) ;
-                    ret.emplace_back( diag ) ;
-
+                    this_t::add_triangle( edges[e0i], edges[e1i], diag, ret ) ;
                     this_t::replace_edges( e0i, e1i, {diag.second, diag.first}, edges ) ;
                     
                     if( props.advance ) ++ei ;
