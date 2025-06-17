@@ -5,6 +5,7 @@ set( tests
     "01_sprite_sheet.cpp"
     "02_aseprite_json_import.cpp"
     "03_wavefront_obj.cpp"
+    "04_gltf.cpp"
     )
 
 foreach( _test ${tests} )

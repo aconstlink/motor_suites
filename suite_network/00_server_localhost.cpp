@@ -3,6 +3,7 @@
 #include <motor/platform/network/network_module_creator.hpp>
 
 #include <thread>
+#include <chrono>
 
 using namespace motor::core::types ;
 
