@@ -31,7 +31,9 @@ foreach( _test ${tests} )
 
     set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_concurrent" )
 
-    install( TARGETS ${app_name} EXPORT suites-targets 
+    install( TARGETS ${app_name} EXPORT test-targets 
       RUNTIME DESTINATION bin )
-      
+
+    add_test( NAME ${app_name} COMMAND ${app_name} )
+
 endforeach()

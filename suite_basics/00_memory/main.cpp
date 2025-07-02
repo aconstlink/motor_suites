@@ -100,7 +100,9 @@ int main( int argc, char ** argv )
         v.resize( 2 ) ;
     }
     #if motor_used
-    motor::memory::global_t::dump_to_std() ;
+    return motor::memory::global_t::dump_to_std() > 0 ? 1 : 0 ;
+    #else
+    return 0;
     #endif
-    return 0 ;
+    
 }

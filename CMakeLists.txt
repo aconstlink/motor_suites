@@ -11,6 +11,7 @@ add_subdirectory( motor )
 list( APPEND CMAKE_MODULE_PATH 
   "${CMAKE_CURRENT_LIST_DIR}/motor/cmake/macros" )
 
+include( CTest )
 include( visual_studio_generate_bat_dll )
 include( emacs_default_directory )
 

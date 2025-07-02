@@ -59,6 +59,5 @@ int main( int argc, char ** argv )
         some_values[0].reserve( 10 ) ;
     }
 
-    motor::memory::global::dump_to_std() ;
-    return 0 ;
+    return motor::memory::global::dump_to_std() > 0 ? 1 : 0 ;    
 }

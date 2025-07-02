@@ -25,4 +25,7 @@ foreach( _subdir ${subdirs} )
 
   install( TARGETS ${app_name} EXPORT suites-targets 
     RUNTIME DESTINATION bin )
+
+  
+
 endforeach()

@@ -54,8 +54,11 @@ int main( int argc, char ** argv )
         {
             std::cout << token << " " ;
         } ) ;
+
+        motor::log::global::status( rd.to_string() );
     }
 
-    motor::memory::global::dump_to_std() ;
-    return 0 ;
+    motor::log::global::deinit();
+
+    return motor::memory::global::dump_to_std() != 0 ? 1 : 0 ;    
 }

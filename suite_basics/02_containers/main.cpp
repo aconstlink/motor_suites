@@ -77,7 +77,5 @@ int main( int argc, char ** argv )
     motor::log::global_t::deinit() ;
 
     // ... memory dump should show 0 sib allocated!
-    motor::memory::global_t::dump_to_std() ;
-
-    return 0 ;
+    return motor::memory::global_t::dump_to_std() > 0 ? 1 : 0 ;
 }

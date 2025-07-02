@@ -35,5 +35,8 @@ int main( int argc, char ** argv )
     f0.wait() ;
     f1.wait() ;
 
-    return 0 ;
+
+    
+    motor::log::global_t::deinit();
+    return motor::memory::global_t::dump_to_std() != 0 ? 1 : 0;
 }
