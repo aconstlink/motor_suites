@@ -33,8 +33,6 @@ namespace this_file
         //******************************************************************************************************
         virtual void_t on_init( void_t ) noexcept
         {
-            motor::tool::imgui_node_visitor_t::init_function_callbacks() ;
-
             MOTOR_PROBE( "application", "on_init" ) ;
 
             // #1 : init window

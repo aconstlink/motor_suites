@@ -9,7 +9,11 @@
 
 #include <motor/math/vector/vector4.hpp>
 
-//
+// this test only tests formal correctness. It allows the programmer
+// to step through the import process and observe the values and 
+// structures created. 
+// @todo in the future, here we could place some real tests for testing
+// the correct importing proces.
 int main( int argc, char ** argv )
 {
     motor::format::module_registry_mtr_t mod_reg = motor::format::global::register_default_modules( 
@@ -18,9 +22,13 @@ int main( int argc, char ** argv )
     {
         motor::io::database_t db = motor::io::database_t( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
 
-        // import
+        // import obj asset. 
         {
             auto item = mod_reg->import_from( motor::io::location_t( "meshes.giraffe.obj" ), "wavefront", &db ) ;
+        }
+
+        // @todo make some real tests here.
+        {
         }
     }
 

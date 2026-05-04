@@ -69,8 +69,6 @@ namespace this_file
         {
             MOTOR_PROBE( "application", "on_init" ) ;
 
-            motor::tool::imgui_node_visitor_t::init_function_callbacks() ;
-
             // #1 : init window
             {
                 motor::application::window_info_t wi ;
