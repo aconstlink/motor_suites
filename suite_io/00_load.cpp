@@ -1,4 +1,5 @@
 
+#include <motor/io/location.hpp>
 #include <motor/io/global.h>
 #include <motor/log/global.h>
 
@@ -7,6 +8,22 @@ using namespace motor::core::types ;
 //
 int main( int argc, char ** argv )
 {
+
+    {
+        motor::io::location_t loc("loc1.loc2.loc3.loc4.loc5.loc6") ;
+
+        // test from beginning
+        {
+            auto sloc = loc.sub_location( 3 ) ;
+            int bp = 0;
+        }
+
+        // test from end
+        {
+            auto sloc = loc.sub_location( -2 ) ;
+            int bp = 0;
+        }
+    }
 
     // #1 load non-existing
     {

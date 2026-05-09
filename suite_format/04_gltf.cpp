@@ -27,7 +27,9 @@ int main( int argc, char ** argv )
 
         // import the gltf asset.
         {
-            auto item = mod_reg->import_from( motor::io::location_t( "gltf.2CylinderEngine.glTF.2CylinderEngine.gltf" ), &db ) ;
+            //auto item = mod_reg->import_from( motor::io::location_t( "gltf.2CylinderEngine.glTF.2CylinderEngine.gltf" ), &db ) ;
+            //auto item = mod_reg->import_from( motor::io::location_t( "gltf.box.glTF.Box.gltf" ), &db ) ;
+            auto item = mod_reg->import_from( motor::io::location_t( "gltf.simple_camera.simple_camera.gltf" ), &db ) ;
 
             auto * ret_item = item.get() ;
 
