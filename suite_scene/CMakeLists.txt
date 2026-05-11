@@ -5,6 +5,7 @@ set( tests
     "01_scene_render.cpp"
     "02_scene_variables.cpp"
     "03_scene_animation.cpp"
+    "04_scene_gltf.cpp"
     )
 
 foreach( _test ${tests} )
