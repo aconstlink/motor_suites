@@ -30,7 +30,9 @@
 
 #include <motor/scene/component/name_component.hpp>
 #include <motor/scene/component/msl_component.h>
-#include <motor/scene/component/render_state_component.h>
+#include <motor/scene/component/render_settings_component.h>
+#include <motor/scene/component/trafo3d_component.h>
+
 #include <motor/scene/visitor/trafo_visitor.h>
 #include <motor/scene/visitor/render_visitor.h>
 #include <motor/scene/visitor/variable_update_visitor.h>
@@ -47,8 +49,87 @@
 #include <future>
 
 namespace this_file
-{
+{    
     using namespace motor::core::types ;
+
+    class dummy_visitor : public motor::scene::render_visitor
+    {
+        motor_this_typedefs( dummy_visitor ) ;
+
+        motor::graphics::msl_object_ptr_t _msl_dummy ;
+
+        public:
+
+            dummy_visitor( motor::graphics::gen4::frontend_ptr_t fe, motor::graphics::msl_object_ptr_t dummy, motor::gfx::generic_camera_ptr_t cam ) noexcept : 
+                _msl_dummy(dummy), render_visitor( fe, cam )
+            {
+            }
+
+            dummy_visitor( this_rref_t rhv ) noexcept : _msl_dummy( rhv._msl_dummy ), render_visitor( std::move( rhv ) ) 
+            {}
+
+            dummy_visitor( this_cref_t ) = delete ;
+            virtual ~dummy_visitor( void_t ) noexcept {}
+
+        private:
+
+            virtual motor::scene::result visit( motor::scene::leaf_ptr_t nptr ) noexcept  
+            {
+                if( auto * rptr = dynamic_cast<motor::scene::render_node_ptr_t>(nptr); rptr != nullptr )
+                {
+                    auto msl = rptr->borrow_msl() ;
+
+                    if( msl != nullptr )
+                    {
+                        motor::scene::render_visitor_t::visit( nptr ) ;
+                    }
+                    else // use dummy msl
+                    {
+                        size_t const vs_idx = rptr->set_msl( motor::share( _msl_dummy ) ) ;
+
+                        // add shader variable slots
+                        {
+                            auto & inputs = *(rptr->borrow_shader_inputs()) ;
+                            {
+                                auto s = motor::wire::input_slot( motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) ) ;
+                                inputs.add( "color", motor::shared( std::move( s ) ) ) ;
+                            }
+                            {
+                                auto s = motor::wire::input_slot( motor::math::vec3f_t( 1.0f, 1.0f, -0.5f ) ) ;
+                                inputs.add( "light_dir", motor::shared( std::move( s ) ) ) ;
+                            }
+                            #if 0
+                            {
+                                auto s = motor::shared( motor::wire::input_slot( 0.0f ) ) ;
+                                s->connect( motor::share( _time ) ) ;
+                                inputs.add( "time", motor::move( s ) ) ;
+                            }
+                            #endif
+                            #if 0
+                            // @note will be set by transformation visitor
+                            {
+                                motor::math::m3d::trafof_t trafo ;
+                                trafo.set_translation( motor::math::vec3f_t( 50.0f, 0.0f, 0.0f ) ) ;
+
+                                auto s = motor::wire::input_slot( trafo.get_transformation() ) ;
+                                inputs.add( "world", motor::shared( std::move( s ) ) ) ;
+                            }
+                            #endif
+                        }
+
+                        #if 0
+                        motor::graphics::gen4::backend_t::render_detail_t detail ;
+                        detail.start = 0 ;
+                        //detail.num_elems = 3 ;
+                        detail.varset = nptr->get_variable_set_idx() ;
+                        this_t::borrow_frontend()->render( _msl_dummy, detail ) ;
+                        #endif 
+                    }
+                }
+                return motor::scene::result::ok ;
+            }
+    };
+    motor_typedef( dummy_visitor ) ;
 
     class my_app : public motor::application::app
     {
@@ -115,10 +196,15 @@ namespace this_file
             // camera
             {
                 auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 0.1f, 500.0f ) ;
+                #if 1
                 cam.perspective_fov( motor::math::angle<float_t>::degree_to_radian( 30.0f ) ) ;
-                cam.look_at( motor::math::vec3f_t( 0.0f, 0.0f, -400.0f ),
+                cam.look_at( motor::math::vec3f_t( 0.0f, 0.0f, -100.0f ),
                     motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ;
-
+                #else
+                cam.orthographic() ;
+                cam.look_at( motor::math::vec3f_t( 0.0f, 0.0f, -100.0f ),
+                    motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ;
+                #endif
                 _cameras[0] = motor::shared( std::move( cam ) ) ;
             }
 
@@ -139,7 +225,7 @@ namespace this_file
                 // cube
                 {
                     motor::geometry::cube_t::input_params ip ;
-                    ip.scale = motor::math::vec3f_t( 1.0f ) ;
+                    ip.scale = motor::math::vec3f_t( 2.0f ) ;
                     ip.tess = 100 ;
 
                     motor::geometry::tri_mesh_t tm ;
@@ -199,7 +285,7 @@ namespace this_file
                                 void main()
                                 {
                                     vec3_t pos = in.pos ;
-                                    pos.xyz = pos.xyz * 10.0;
+                                    pos.xyz = pos.xyz;
                                     out.tx = in.tx ;
                                     out.pos = proj * view * world * vec4_t( pos, 1.0 ) ;
                                     out.nrm = normalize( world * vec4_t( in.nrm, 0.0 ) ).xyz ;
@@ -245,7 +331,7 @@ namespace this_file
                 {
                     motor::graphics::render_state_sets_t rss ;
                     rss.depth_s.do_change = true ;
-                    rss.depth_s.ss.do_activate = false ;
+                    rss.depth_s.ss.do_activate = true ;
                     rss.depth_s.ss.do_depth_write = true ;
                     rss.polygon_s.do_change = true ;
                     rss.polygon_s.ss.do_activate = true ;
@@ -278,83 +364,20 @@ namespace this_file
                     cam->add_component( motor::shared( motor::scene::name_component_t( "Camera" ) ) ) ;
                     root.add_child( motor::move( cam ) ) ;
                 }
-
-                {
-                    // add transformation node g
-                    auto t = motor::shared( motor::scene::trafo3d_node_t( 
-                        motor::math::m3d::trafof_t(
-                            motor::math::vec3f_t( 1.0f ),
-                            motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ),
-                            motor::math::vec3f_t( 0.0f, -10.0f, 0.0f ) ) ) ) ;
-
-                    {
-                        t->add_component( motor::shared( motor::scene::name_component_t( "trafo node 1" ) ) ) ;
-                    }
-
-                    // add render settings
-                    {
-                        auto rs = motor::shared( motor::scene::render_settings_t( motor::share( root_so ) ) ) ;
-                        rs->add_component( motor::shared( motor::scene::name_component_t( "Render Settings" ) ) ) ;
-
-                        {
-                            motor::scene::logic_group_t g ;
-
-                            {
-                                // add transformation node g
-                                auto t2 = motor::shared( motor::scene::trafo3d_node_t() ) ;
-                                
-                                // name component
-                                {
-                                    t2->add_component( motor::shared( motor::scene::name_component_t( "trafo left" ) ) ) ;
-                                }
-                               
-                                auto rn = motor::scene::render_node_t( motor::share(msl_obj), 0 ) ;
-                                rn.add_component( motor::shared( motor::scene::name_component_t( "Render Object 0" ) ) ) ;
-
-                                // add shader variable slots
-                                {
-                                    auto & inputs = *rn.borrow_shader_inputs() ;
-                                    {
-                                        auto s = motor::wire::input_slot( motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) ) ;
-                                        inputs.add( "color", motor::shared( std::move( s ) ) ) ;
-                                    }
-                                    {
-                                        auto s = motor::wire::input_slot( motor::math::vec3f_t( 1.0f, 1.0f, -0.5f ) ) ;
-                                        inputs.add( "light_dir", motor::shared( std::move( s ) ) ) ;
-                                    }
-                                    {
-                                        auto s = motor::shared( motor::wire::input_slot( 0.0f ) ) ;
-                                        s->connect( motor::share( _time ) ) ;
-                                        inputs.add( "time", motor::move( s ) ) ;
-                                    }
-                                    #if 0
-                                    // @note will be set by transformation visitor
-                                    {
-                                        motor::math::m3d::trafof_t trafo ;
-                                        trafo.set_translation( motor::math::vec3f_t( 50.0f, 0.0f, 0.0f ) ) ;
-
-                                        auto s = motor::wire::input_slot( trafo.get_transformation() ) ;
-                                        inputs.add( "world", motor::shared( std::move( s ) ) ) ;
-                                    }
-                                    #endif
-                                }
-
-                                t2->set_decorated( motor::shared( std::move( rn ) ) ) ;
-                                g.add_child( motor::move( t2 ) ) ;
-                            }
-
-                            rs->set_decorated(  motor::shared( std::move( g ) ) ) ;
-                        }
-                        
-                        t->set_decorated( motor::move( rs ) ) ;
-                    }
-
-                    root.add_child( motor::move( t ) ) ;
-                }
-
+                
                 // add imported scene
                 {
                     motor::scene::node_mtr_t imported_node = nullptr ;
+
+                    auto rs = motor::shared( motor::scene::logic_group_t(  ) ) ;
+                    {
+                        auto rsc = motor::scene::render_settings_component_t( motor::share( root_so ) ) ;
+
+                        rs->add_component( motor::shared( std::move( rsc) ) ) ;
+
+                        rs->add_component(motor::shared(
+                          motor::scene::name_component_t("Render Settings")));
+                    }
 
                     // make importer ready
                     {
@@ -365,9 +388,10 @@ namespace this_file
 
                         // import the gltf asset.
                         {
-                            auto item = mod_reg->import_from( motor::io::location_t( "gltf.2CylinderEngine.glTF.2CylinderEngine.gltf" ), &db ) ;
+                            //auto item = mod_reg->import_from( motor::io::location_t( "gltf.2CylinderEngine.glTF.2CylinderEngine.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.box.glTF.Box.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.simple_camera.simple_camera.gltf" ), &db ) ;
+                            auto item = mod_reg->import_from( motor::io::location_t( "gltf.scaled_cube.scaled_cube.gltf" ), &db ) ;
 
                             auto * ret_item = item.get() ;
 
@@ -381,7 +405,8 @@ namespace this_file
                         }
                     }
 
-                    root.add_child( motor::move( imported_node ) ) ;
+                    rs->add_child( motor::move( imported_node ) ) ;
+                    root.add_child( motor::move( rs ) ) ;
                 }
 
                 _root = motor::shared( std::move( root ) ) ;
@@ -438,6 +463,11 @@ namespace this_file
             
             {
                 motor::scene::render_visitor_t vis( fe, _cameras[_cam_id] ) ;
+                motor::scene::node_t::traverser(_root).apply( &vis ) ;
+            }
+
+            {
+                this_file::dummy_visitor_t vis( fe, msl_obj, _cameras[_cam_id] ) ;
                 motor::scene::node_t::traverser(_root).apply( &vis ) ;
             }
         }

@@ -3,7 +3,6 @@
 #include <motor/scene/node/logic_group.h>
 #include <motor/scene/node/switch_group.h>
 #include <motor/scene/node/logic_leaf.h>
-#include <motor/scene/node/logic_decorator.h>
 
 #include <motor/scene/visitor/log_visitor.h>
 #include <motor/scene/visitor/code_exe_visitor.h>
@@ -45,8 +44,9 @@ int main( int argc, char ** argv )
             }
 
             {
-                g->add_child( motor::shared( motor::scene::logic_decorator( 
-                    motor::shared( motor::scene::logic_leaf_t() ) ) ) ) ;
+                auto lg = motor::scene::logic_group_t() ;
+                lg.add_child( motor::shared( motor::scene::logic_leaf_t() ) ) ;
+                g->add_child( motor::shared( std::move(lg) ) ) ;
             }
 
             root.add_child( motor::move( g ) ) ;

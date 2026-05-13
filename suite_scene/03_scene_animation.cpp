@@ -28,7 +28,9 @@
 
 #include <motor/scene/component/name_component.hpp>
 #include <motor/scene/component/msl_component.h>
-#include <motor/scene/component/render_state_component.h>
+#include <motor/scene/component/render_settings_component.h>
+#include <motor/scene/component/trafo3d_component.h>
+
 #include <motor/scene/visitor/trafo_visitor.h>
 #include <motor/scene/visitor/render_visitor.h>
 #include <motor/scene/visitor/variable_update_visitor.h>
@@ -66,6 +68,7 @@ namespace this_file
 
         motor::wire::output_slot< motor::math::m3d::trafof_t > * _out_0 = nullptr ;
         motor::wire::output_slot< motor::math::m3d::trafof_t > * _out_1 = nullptr ;
+        motor::wire::output_slot< motor::math::m3d::trafof_t > * _out_2 = nullptr ;
 
         motor::wire::trafo3fv_t _trafo = motor::wire::trafo3fv_t("trafo") ;
         motor::wire::vec3fv_t _pos = motor::wire::vec3fv_t("position") ;
@@ -249,7 +252,7 @@ namespace this_file
                 {
                     motor::graphics::render_state_sets_t rss ;
                     rss.depth_s.do_change = true ;
-                    rss.depth_s.ss.do_activate = false ;
+                    rss.depth_s.ss.do_activate = true ;
                     rss.depth_s.ss.do_depth_write = true ;
                     rss.polygon_s.do_change = true ;
                     rss.polygon_s.ss.do_activate = true ;
@@ -282,6 +285,11 @@ namespace this_file
                     motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ),
                     motor::math::vec3f_t( 50.0f, 0.0f, 0.0f ) ) ) ;
 
+                _out_2 = motor::shared( motor::wire::output_slot< motor::math::m3d::trafof_t >(), "output 2" ) ;
+                _out_2->set_value( motor::math::m3d::trafof_t(
+                    motor::math::vec3f_t( 1.0f ),
+                    motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ),
+                    motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ) ;
 
                 _pos = motor::wire::vec3fv_t( "position", _trafo.get_value().get_translation() ) ;
 
@@ -304,45 +312,51 @@ namespace this_file
                 }
 
                 {
-                    // add transformation node g
-                    auto t = motor::shared( motor::scene::trafo3d_node_t( 
-                        motor::math::m3d::trafof_t(
-                            motor::math::vec3f_t( 1.0f ),
-                            motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ),
-                            motor::math::vec3f_t( 0.0f, -10.0f, 0.0f ) ) ) ) ;
-
+                    // render_settings and transformation
                     {
-                        t->add_component( motor::shared( motor::scene::name_component_t( "trafo node 1" ) ) ) ;
-                    }
+                        auto rs = motor::shared( motor::scene::logic_group_t() ) ;
 
-                    // add render settings
-                    {
-                        auto rs = motor::shared( motor::scene::render_settings_t( motor::share( root_so ) ) ) ;
-                        rs->add_component( motor::shared( motor::scene::name_component_t( "Render Settings" ) ) ) ;
-
+                        // name component
                         {
-                            motor::scene::logic_group_t g ;
+                            rs->add_component( motor::shared( motor::scene::name_component_t( "empty group node [rs][t]" ) ) ) ;
+                        }
 
+                        // render settings component
+                        {
+                            motor::scene::render_settings_component_t rsc ( motor::share( root_so ) ) ;
+                            rs->add_component( motor::shared( std::move( rsc ) ) ) ;
+                        }
+
+                        // transformation component and 
+                        // animation connect
+                        {
+                            auto tc = motor::scene::trafo3d_component_t() ;
+                            
+                            motor::wire::inputs_t inputs ;
+                            if( tc.inputs( inputs ) ) 
                             {
-                                // add transformation node g
-                                auto t2 = motor::shared( motor::scene::trafo3d_node_t() ) ;
-                                
-                                // name component
-                                {
-                                    t2->add_component( motor::shared( motor::scene::name_component_t( "trafo left" ) ) ) ;
-                                }
+                                inputs.connect( "trafo", motor::share( _out_2 ) ) ;
+                            }
+                            rs->add_component( motor::shared( std::move(tc) ) ) ;
+                        }
+
+                        // add renderable nodes
+                        {
+                            // render object 1 
+                            {
+                                auto rn = motor::scene::render_node_t( motor::share(msl_obj), 0 ) ;
+                                rn.add_component( motor::shared( motor::scene::name_component_t( "Render Object 0" ) ) ) ;
 
                                 // animation connect
                                 {
+                                    motor::scene::trafo3d_component_t tc ;
                                     motor::wire::inputs_t inputs ;
-                                    if( t2->inputs( inputs ) ) 
+                                    if( tc.inputs( inputs ) ) 
                                     {
                                         inputs.connect( "trafo", motor::share( _out_0 ) ) ;
                                     }
+                                    rn.add_component( motor::shared( std::move(tc) ) ) ;
                                 }
-
-                                auto rn = motor::scene::render_node_t( motor::share(msl_obj), 0 ) ;
-                                rn.add_component( motor::shared( motor::scene::name_component_t( "Render Object 0" ) ) ) ;
 
                                 // add shader variable slots
                                 {
@@ -372,30 +386,25 @@ namespace this_file
                                     #endif
                                 }
 
-                                t2->set_decorated( motor::shared( std::move( rn ) ) ) ;
-                                g.add_child( motor::move( t2 ) ) ;
+                                rs->add_child( motor::shared( std::move( rn ) ) ) ;
                             }
                             
+                            // render object 2
                             {
-                                // add transformation node g
-                                auto t2 = motor::shared( motor::scene::trafo3d_node_t() ) ;
-                                
-                                {
-                                    t2->add_component( motor::shared( motor::scene::name_component_t( "trafo right" ) ) ) ;
-                                }
+                                auto rn = motor::scene::render_node_t( motor::share( msl_obj ), 1 ) ;
+                                rn.add_component( motor::shared( motor::scene::name_component_t( "Render Object 1" ) ) ) ;
 
                                 // animation connect
                                 {
+                                    motor::scene::trafo3d_component_t tc ;
                                     motor::wire::inputs_t inputs ;
-                                    if ( t2->inputs( inputs ) )
+                                    if ( tc.inputs( inputs ) )
                                     {
                                         //inputs.connect( "trafo", motor::share( _out_1 ) ) ;
                                         inputs.connect("trafo", _trafo.get_value_os() ) ;
                                     }
+                                    rn.add_component( motor::shared( std::move(tc) ) ) ;
                                 }
-
-                                auto rn = motor::scene::render_node_t( motor::share( msl_obj ), 1 ) ;
-                                rn.add_component( motor::shared( motor::scene::name_component_t( "Render Object 1" ) ) ) ;
 
                                 // add shader variable slots
                                 {
@@ -424,18 +433,11 @@ namespace this_file
                                     }
                                     #endif
                                 }
-
-                                t2->set_decorated( motor::shared( std::move( rn ) ) ) ;
-                                g.add_child( motor::move( t2 ) ) ;
+                                rs->add_child( motor::shared( std::move( rn ) ) ) ;
                             }
-                            
-                            rs->set_decorated(  motor::shared( std::move( g ) ) ) ;
                         }
-                        
-                        t->set_decorated( motor::move( rs ) ) ;
+                        root.add_child( motor::move( rs ) ) ;
                     }
-
-                    root.add_child( motor::move( t ) ) ;
                 }
 
                 _root = motor::shared( std::move( root ) ) ;
@@ -481,22 +483,24 @@ namespace this_file
                 auto * os = _out_0;
 
                 static float_t angle = 0.0f ;
-                angle += d.sec_dt * motor::math::constants<float_t>::pix2() ;
+                angle += (d.sec_dt) * motor::math::constants<float_t>::pix2() ;
                 angle = angle > motor::math::constants<float_t>::pix2() ? 0.0f : angle ;
 
                 static float_t ts = 0.0f ;
-                ts += d.sec_dt * 0.5f ;
+                ts += d.sec_dt * 0.05f ;
                 ts = ts > 1.0f ? 0.0f : ts ;
 
                 float_t const ani_t = 1.0f - motor::math::fn<float_t>::abs( ts * 2.0f - 1.0f ) ;
 
-                float_t const s = motor::math::interpolation<float_t>::linear( 1.0f, 5.0f, ani_t ) ;
+                float_t const s = motor::math::interpolation<float_t>::linear( 1.0f, 2.0f, ani_t ) ;
 
                 motor::math::vec3f_t pos = os->get_value().get_translation() ;
+                pos.y() = pos.y() + std::sin( angle ) ;
 
                 motor::math::m3d::trafof_t const t( 
                     motor::math::vec3f_t(s), 
-                    motor::math::vec3f_t(angle, 0.0f, angle),
+                    //motor::math::vec3f_t(angle, 0.0f, angle),
+                    motor::math::vec3f_t( 0.0f,1.0f, 0.0f ),
                     pos ) ;
 
                 os->set_and_exchange( t ) ;
@@ -513,12 +517,31 @@ namespace this_file
 
                 motor::math::m3d::trafof_t const t(
                     motor::math::vec3f_t( 1.0f ),
-                    motor::math::vec3f_t( angle*0.347f, angle, 0.0f ),
+                    //motor::math::vec3f_t( angle*0.347f, angle, 0.0f ),
+                    motor::math::vec3f_t( 0.0f,0.0f, 0.0f ),
                     pos ) ;
 
                 // disabled because this slot is connected to the 
                 // trafo variable which is tested below.
                 //os->set_and_exchange( t ) ;
+            }
+
+            {
+                auto * os = _out_2;
+
+                static float_t angle = 0.0f ;
+                angle += (d.sec_dt*0.25f) * motor::math::constants<float_t>::pix2();
+                angle = (angle > motor::math::constants<float_t>::pix2()) ? 0.0f : angle ;
+
+                //motor::math::vec3f_t pos = os->get_value().get_translation() ;
+
+                motor::math::m3d::trafof_t const t( 
+                    motor::math::vec3f_t(1.0f, 1.0f, 1.0f), 
+                    motor::math::vec3f_t( 1.0f, angle, 0.0f ),
+                    motor::math::vec3f_t(0.0f, 0.0f,0.0f)  ) ;
+
+                //t.rotation_by_axis(motor::math::vec3f_t(0.0f, 1.0f, 0.0f), angle ) ;
+                os->set_and_exchange( t ) ;
             }
 
             {
@@ -655,6 +678,7 @@ namespace this_file
 
             motor::release( motor::move( _out_0 ) ) ;
             motor::release( motor::move( _out_1 ) ) ;
+            motor::release( motor::move( _out_2 ) ) ;
         }
     };
 }

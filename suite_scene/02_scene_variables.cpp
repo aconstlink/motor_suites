@@ -25,7 +25,8 @@
 
 #include <motor/scene/component/name_component.hpp>
 #include <motor/scene/component/msl_component.h>
-#include <motor/scene/component/render_state_component.h>
+#include <motor/scene/component/render_settings_component.h>
+#include <motor/scene/component/trafo3d_component.h>
 #include <motor/scene/visitor/trafo_visitor.h>
 #include <motor/scene/visitor/render_visitor.h>
 
@@ -37,11 +38,10 @@
 
 #include <future>
 
-namespace this_file
-{
-
-}
-
+// 
+// This test checks the variable connection into the scene 
+// graph.
+//
 namespace this_file
 {
     using namespace motor::core::types ;
@@ -239,6 +239,14 @@ namespace this_file
                     }
 
                     {
+                        auto * var = vars.data_variable< motor::math::vec3f_t >( "light_dir" ) ;
+                        var->set( motor::math::vec3f_t(1.0f,1.0f,0.5f) ) ;
+                    }
+
+                    // these variables will be set by the runtime.
+                    // those will be recognized by the shader bindings.
+                    #if 0
+                    {
                         auto * var = vars.data_variable< motor::math::mat4f_t >( "world" ) ;
 
                         motor::math::m3d::trafof_t t ;
@@ -246,7 +254,7 @@ namespace this_file
                         var->set( t.get_transformation() ) ;
                     }
 
-                    #if 0
+                    
                     {
                         auto * var = vars.data_variable< motor::math::mat4f_t >( "view" ) ;
                         var->set( _camera->get_view_matrix() ) ;
@@ -257,10 +265,6 @@ namespace this_file
                         var->set( _camera->get_proj_matrix() ) ;
                     }
                     #endif
-                    {
-                        auto * var = vars.data_variable< motor::math::vec3f_t >( "light_dir" ) ;
-                        var->set( motor::math::vec3f_t(1.0f,1.0f,0.5f) ) ;
-                    }
 
                     msl_obj->add_variable_set( motor::memory::create_ptr( std::move( vars ), "a variable set" ) ) ;
                 }
@@ -279,6 +283,14 @@ namespace this_file
                     }
 
                     {
+                        auto * var = vars.data_variable< motor::math::vec3f_t >( "light_dir" ) ;
+                        var->set( motor::math::vec3f_t( 1.0f, 1.0f, 0.5f ) ) ;
+                    }
+
+                    // these variables will be set by the runtime.
+                    // those will be recognized by the shader bindings.
+                    #if 0
+                    {
                         auto * var = vars.data_variable< motor::math::mat4f_t >( "world" ) ;
 
                         motor::math::m3d::trafof_t t ;
@@ -286,7 +298,7 @@ namespace this_file
                         var->set( t.get_transformation() ) ;
                     }
 
-                    #if 0
+                    
                     {
                         auto * var = vars.data_variable< motor::math::mat4f_t >( "view" ) ;
                         var->set( _camera->get_view_matrix() ) ;
@@ -297,11 +309,6 @@ namespace this_file
                         var->set( _camera->get_proj_matrix() ) ;
                     }
                     #endif
-
-                    {
-                        auto * var = vars.data_variable< motor::math::vec3f_t >( "light_dir" ) ;
-                        var->set( motor::math::vec3f_t( 1.0f, 1.0f, 0.5f ) ) ;
-                    }
 
                     msl_obj->add_variable_set( motor::memory::create_ptr( std::move( vars ), "a variable set" ) ) ;
                 }
@@ -350,41 +357,66 @@ namespace this_file
                 }
 
                 {
+                    
                     // add transformation node g
-                    auto t = motor::shared( motor::scene::trafo3d_node_t( 
-                        motor::math::m3d::trafof_t(
-                            motor::math::vec3f_t( 1.0f, 1.0f, 1.0f),
-                            motor::math::vec3f_t( 1.0f, 0.0f, 0.0f ),
-                            motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ) ) ;
+                    auto t = motor::shared( motor::scene::logic_group_t() ) ;
 
                     {
+                        auto tc = motor::scene::trafo3d_component_t( motor::math::m3d::trafof_t(
+                            motor::math::vec3f_t( 1.0f, 1.0f, 1.0f),
+                            motor::math::vec3f_t( 1.0f, 0.0f, 0.0f ),
+                            motor::math::vec3f_t( 0.0f, 20.0f, 0.0f ) ) ) ;
+
+                        t->add_component( motor::shared( std::move( tc ) ) ) ;
                         t->add_component( motor::shared( motor::scene::name_component_t( "trafo node 1" ) ) ) ;
                     }
 
                     // add render settings
                     {
-                        auto rs = motor::shared( motor::scene::render_settings_t( motor::share( root_so ) ) ) ;
-                        rs->add_component( motor::shared( motor::scene::name_component_t( "Render Settings" ) ) ) ;
-
+                        auto rs = motor::shared( motor::scene::logic_group_t() ) ;
                         {
-                            motor::scene::logic_group_t g ;
-                            
-                            {
-                                auto rn = motor::scene::render_node_t( motor::share(msl_obj), 0 ) ;
-                                rn.add_component( motor::shared( motor::scene::name_component_t( "Render Object 0" ) ) ) ;
-                                g.add_child( motor::shared( std::move( rn ) ) ) ;
-                            }
+                            motor::scene::render_settings_component_t rsc ( motor::share( root_so ) ) ;
+                            rs->add_component( motor::shared( std::move( rsc ) ) ) ;
 
-                            {
-                                auto rn = motor::scene::render_node_t( motor::share( msl_obj ), 1 ) ;
-                                rn.add_component( motor::shared( motor::scene::name_component_t( "Render Object 1" ) ) ) ;
-                                g.add_child( motor::shared( std::move( rn ) ) ) ;
-                            }
-                            
-                            rs->set_decorated(  motor::shared( std::move( g ) ) ) ;
+                            rs->add_component(motor::shared(
+                                motor::scene::name_component_t("Render Settings")));
                         }
                         
-                        t->set_decorated( motor::move( rs ) ) ;
+                        {
+                            auto rn = motor::scene::render_node_t( motor::share(msl_obj), 0 ) ;
+                            {
+                                motor::scene::trafo3d_component_t tc( motor::math::m3d::trafof_t(
+                                    motor::math::vec3f_t( 1.0f, 1.0f, 1.0f ),
+                                    motor::math::vec3f_t( 1.0f, 0.0f, 0.0f ),
+                                    motor::math::vec3f_t( -50.0f, -20.0f, 0.0f ) ) ) ;
+
+                                rn.add_component( motor::shared( std::move(tc) ) ) ;
+
+                                rn.add_component(motor::shared(
+                                    motor::scene::name_component_t(
+                                        "Render Object 0")));
+                            }
+                            rs->add_child( motor::shared( std::move( rn ) ) ) ;
+                        }
+
+                        {
+                            auto rn = motor::scene::render_node_t( motor::share( msl_obj ), 1 ) ;
+                            {
+                                motor::scene::trafo3d_component_t tc( motor::math::m3d::trafof_t(
+                                    motor::math::vec3f_t( 1.0f, 1.0f, 1.0f ),
+                                    motor::math::vec3f_t( 1.0f, 0.0f, 0.0f ),
+                                    motor::math::vec3f_t( 50.0f, 0.0f, 0.0f ) ) ) ;
+
+                                rn.add_component( motor::shared( std::move(tc) ) ) ;
+
+                                rn.add_component(motor::shared(
+                                    motor::scene::name_component_t(
+                                        "Render Object 1")));
+                            }
+                            rs->add_child( motor::shared( std::move( rn ) ) ) ;
+                        }
+                        
+                        t->add_child( motor::move( rs ) ) ;
                     }
 
                     root.add_child( motor::move( t ) ) ;
