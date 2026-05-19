@@ -23,15 +23,12 @@
 
 #include <motor/scene/node/logic_group.h>
 #include <motor/scene/node/logic_leaf.h>
-#include <motor/scene/node/camera_node.h>
-#include <motor/scene/node/trafo3d_node.h>
-#include <motor/scene/node/render_node.h>
-#include <motor/scene/node/render_settings.h>
 
 #include <motor/scene/component/name_component.hpp>
 #include <motor/scene/component/msl_component.h>
 #include <motor/scene/component/render_settings_component.h>
 #include <motor/scene/component/trafo3d_component.h>
+#include <motor/scene/component/camera_component.h>
 
 #include <motor/scene/visitor/trafo_visitor.h>
 #include <motor/scene/visitor/render_visitor.h>
@@ -50,86 +47,7 @@
 
 namespace this_file
 {    
-    using namespace motor::core::types ;
-
-    class dummy_visitor : public motor::scene::render_visitor
-    {
-        motor_this_typedefs( dummy_visitor ) ;
-
-        motor::graphics::msl_object_ptr_t _msl_dummy ;
-
-        public:
-
-            dummy_visitor( motor::graphics::gen4::frontend_ptr_t fe, motor::graphics::msl_object_ptr_t dummy, motor::gfx::generic_camera_ptr_t cam ) noexcept : 
-                _msl_dummy(dummy), render_visitor( fe, cam )
-            {
-            }
-
-            dummy_visitor( this_rref_t rhv ) noexcept : _msl_dummy( rhv._msl_dummy ), render_visitor( std::move( rhv ) ) 
-            {}
-
-            dummy_visitor( this_cref_t ) = delete ;
-            virtual ~dummy_visitor( void_t ) noexcept {}
-
-        private:
-
-            virtual motor::scene::result visit( motor::scene::leaf_ptr_t nptr ) noexcept  
-            {
-                if( auto * rptr = dynamic_cast<motor::scene::render_node_ptr_t>(nptr); rptr != nullptr )
-                {
-                    auto msl = rptr->borrow_msl() ;
-
-                    if( msl != nullptr )
-                    {
-                        motor::scene::render_visitor_t::visit( nptr ) ;
-                    }
-                    else // use dummy msl
-                    {
-                        size_t const vs_idx = rptr->set_msl( motor::share( _msl_dummy ) ) ;
-
-                        // add shader variable slots
-                        {
-                            auto & inputs = *(rptr->borrow_shader_inputs()) ;
-                            {
-                                auto s = motor::wire::input_slot( motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) ) ;
-                                inputs.add( "color", motor::shared( std::move( s ) ) ) ;
-                            }
-                            {
-                                auto s = motor::wire::input_slot( motor::math::vec3f_t( 1.0f, 1.0f, -0.5f ) ) ;
-                                inputs.add( "light_dir", motor::shared( std::move( s ) ) ) ;
-                            }
-                            #if 0
-                            {
-                                auto s = motor::shared( motor::wire::input_slot( 0.0f ) ) ;
-                                s->connect( motor::share( _time ) ) ;
-                                inputs.add( "time", motor::move( s ) ) ;
-                            }
-                            #endif
-                            #if 0
-                            // @note will be set by transformation visitor
-                            {
-                                motor::math::m3d::trafof_t trafo ;
-                                trafo.set_translation( motor::math::vec3f_t( 50.0f, 0.0f, 0.0f ) ) ;
-
-                                auto s = motor::wire::input_slot( trafo.get_transformation() ) ;
-                                inputs.add( "world", motor::shared( std::move( s ) ) ) ;
-                            }
-                            #endif
-                        }
-
-                        #if 0
-                        motor::graphics::gen4::backend_t::render_detail_t detail ;
-                        detail.start = 0 ;
-                        //detail.num_elems = 3 ;
-                        detail.varset = nptr->get_variable_set_idx() ;
-                        this_t::borrow_frontend()->render( _msl_dummy, detail ) ;
-                        #endif 
-                    }
-                }
-                return motor::scene::result::ok ;
-            }
-    };
-    motor_typedef( dummy_visitor ) ;
+    using namespace motor::core::types ;    
 
     class my_app : public motor::application::app
     {
@@ -142,8 +60,6 @@ namespace this_file
         motor::property::property_sheet_t _props ;
 
         motor::graphics::state_object_mtr_t root_so ;
-        motor::graphics::msl_object_mtr_t msl_obj ;
-        motor::graphics::geometry_object_t geo_obj ;
 
         motor::wire::output_slot< float_t > * _time = motor::shared( motor::wire::output_slot< float_t >( 0.0f ) ) ;
 
@@ -160,6 +76,7 @@ namespace this_file
             MOTOR_PROBE( "application", "on_init" ) ;
 
             // #1 : init window
+            #if 1
             {
                 motor::application::window_info_t wi ;
                 wi.x = 100 ;
@@ -175,8 +92,9 @@ namespace this_file
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
-
+            #endif
             // #2 : init window
+            #if 1
             {
                 motor::application::window_info_t wi ;
                 wi.x = 500 ;
@@ -192,13 +110,13 @@ namespace this_file
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }            
-
+            #endif
             // camera
             {
-                auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 0.1f, 500.0f ) ;
+                auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 0.1f, 1000.0f ) ;
                 #if 1
                 cam.perspective_fov( motor::math::angle<float_t>::degree_to_radian( 30.0f ) ) ;
-                cam.look_at( motor::math::vec3f_t( 0.0f, 0.0f, -100.0f ),
+                cam.look_at( motor::math::vec3f_t( 0.0f, 0.0f, -20.0f ),
                     motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ;
                 #else
                 cam.orthographic() ;
@@ -216,114 +134,8 @@ namespace this_file
                     motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ;
 
                 _cameras[1] = motor::shared( std::move( cam ) ) ;
-            }
-
-            // # : make geometry
-            {
-                struct vertex { motor::math::vec3f_t pos ; motor::math::vec3f_t nrm ; motor::math::vec2f_t tx ; } ;
-
-                // cube
-                {
-                    motor::geometry::cube_t::input_params ip ;
-                    ip.scale = motor::math::vec3f_t( 2.0f ) ;
-                    ip.tess = 100 ;
-
-                    motor::geometry::tri_mesh_t tm ;
-                    motor::geometry::cube_t::make( &tm, ip ) ;
-
-                    motor::geometry::flat_tri_mesh_t ftm ;
-                    tm.flatten( ftm ) ;
-
-                    auto vb = motor::graphics::vertex_buffer_t()
-                        .add_layout_element( motor::graphics::vertex_attribute::position, motor::graphics::type::tfloat, motor::graphics::type_struct::vec3 )
-                        .add_layout_element( motor::graphics::vertex_attribute::normal, motor::graphics::type::tfloat, motor::graphics::type_struct::vec3 )
-                        .add_layout_element( motor::graphics::vertex_attribute::texcoord0, motor::graphics::type::tfloat, motor::graphics::type_struct::vec2 )
-                        .resize( ftm.get_num_vertices() ).update<vertex>( [&] ( vertex * array, size_t const ne )
-                    {
-                        for ( size_t i = 0; i < ne; ++i )
-                        {
-                            array[ i ].pos = ftm.get_vertex_position_3d( i ) ;
-                            array[ i ].nrm = ftm.get_vertex_normal_3d( i ) ;
-                            array[ i ].tx = ftm.get_vertex_texcoord( 0, i ) ;
-                        }
-                    } );
-
-                    auto ib = motor::graphics::index_buffer_t().
-                        set_layout_element( motor::graphics::type::tuint ).resize( ftm.indices.size() ).
-                        update<uint_t>( [&] ( uint_t * array, size_t const ne )
-                    {
-                        for ( size_t i = 0; i < ne; ++i ) array[ i ] = ftm.indices[ i ] ;
-                    } ) ;
-
-                    geo_obj = motor::graphics::geometry_object_t( "cube",
-                        motor::graphics::primitive_type::triangles, std::move( vb ), std::move( ib ) ) ;
-                }
-            }
+            }            
             
-            // msl object for scene
-            {
-                {
-                    motor::graphics::msl_object_t mslo( "scene_obj" ) ;
-
-                    mslo.add( motor::graphics::msl_api_type::msl_4_0, R"(
-                        config just_render
-                        {
-                            vertex_shader
-                            {
-                                mat4_t proj : projection ;
-                                mat4_t view : view ;
-                                mat4_t world : world ;
-
-                                in vec3_t pos : position ;
-                                in vec3_t nrm : normal ;
-                                in vec2_t tx : texcoord ;
-
-                                out vec4_t pos : position ;
-                                out vec2_t tx : texcoord ;
-                                out vec3_t nrm : normal ;
-
-                                void main()
-                                {
-                                    vec3_t pos = in.pos ;
-                                    pos.xyz = pos.xyz;
-                                    out.tx = in.tx ;
-                                    out.pos = proj * view * world * vec4_t( pos, 1.0 ) ;
-                                    out.nrm = normalize( world * vec4_t( in.nrm, 0.0 ) ).xyz ;
-                                }
-                            }
-
-                            pixel_shader
-                            {
-                                tex2d_t tex ;
-                                vec3_t light_dir ;
-                                vec4_t color ;
-                                float_t time ;
-
-                                in vec2_t tx : texcoord ;
-                                in vec3_t nrm : normal ;
-                                out vec4_t color : color0 ;
-                                //out vec4_t color1 : color1 ;
-                                //out vec4_t color2 : color2 ;
-
-                                void main()
-                                {
-                                    float_t light = dot( normalize( in.nrm ), normalize( light_dir ) ) ;
-                                    out.color = vec4_t( light*time, light, light, 1.0 ) ;
-
-                                    //out.color = color ' texture( tex, in.tx ) ;
-                                    //out.color1 = vec4_t( in.nrm, 1.0 ) ;
-                                    //out.color2 = vec4_t( light, light, light , 1.0 ) ;
-                                }
-                            }
-                        })" ) ;
-
-                    mslo.link_geometry( { "cube" } ) ;
-
-                    msl_obj = motor::shared( motor::graphics::msl_object_t( std::move( mslo ) ) ) ;
-                }
-            }
-            
-
             {
                 motor::graphics::state_object_t so = motor::graphics::state_object_t(
                     "root_render_states" ) ;
@@ -335,6 +147,7 @@ namespace this_file
                     rss.depth_s.ss.do_depth_write = true ;
                     rss.polygon_s.do_change = true ;
                     rss.polygon_s.ss.do_activate = true ;
+                    rss.polygon_s.ss.fm = motor::graphics::fill_mode::line ;
                     rss.polygon_s.ss.ff = motor::graphics::front_face::counter_clock_wise ;
                     rss.polygon_s.ss.cm = motor::graphics::cull_mode::back ;
                     rss.clear_s.do_change = true ;
@@ -355,15 +168,6 @@ namespace this_file
             {
                 motor::scene::logic_group_t root ;
                 root.add_component( motor::shared( motor::scene::name_component_t( "my root name" ) ) ) ;
-
-                // add camera
-                { 
-                    auto cam = motor::shared( motor::scene::camera_node_t( 
-                        motor::shared( motor::gfx::generic_camera_t( 800.0f, 600.0f, 1.0f, 100.0f ) ) ) ) ;
-
-                    cam->add_component( motor::shared( motor::scene::name_component_t( "Camera" ) ) ) ;
-                    root.add_child( motor::move( cam ) ) ;
-                }
                 
                 // add imported scene
                 {
@@ -389,6 +193,7 @@ namespace this_file
                         // import the gltf asset.
                         {
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.2CylinderEngine.glTF.2CylinderEngine.gltf" ), &db ) ;
+                            //auto item = mod_reg->import_from( motor::io::location_t( "gltf.AntiqueCamera.glTF.AntiqueCamera.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.box.glTF.Box.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.simple_camera.simple_camera.gltf" ), &db ) ;
                             auto item = mod_reg->import_from( motor::io::location_t( "gltf.scaled_cube.scaled_cube.gltf" ), &db ) ;
@@ -457,19 +262,13 @@ namespace this_file
             if ( rd.first_frame )
             {
                 fe->configure<motor::graphics::state_object_t>( root_so ) ;
-                fe->configure<motor::graphics::geometry_object_t>( &geo_obj ) ;
-                fe->configure<motor::graphics::msl_object_t>( msl_obj ) ;
             }
             
             {
-                motor::scene::render_visitor_t vis( fe, _cameras[_cam_id] ) ;
+                motor::scene::render_visitor_t vis( wid, fe, _cameras[_cam_id] ) ;
                 motor::scene::node_t::traverser(_root).apply( &vis ) ;
             }
 
-            {
-                this_file::dummy_visitor_t vis( fe, msl_obj, _cameras[_cam_id] ) ;
-                motor::scene::node_t::traverser(_root).apply( &vis ) ;
-            }
         }
 
         //******************************************************************************************************
@@ -563,7 +362,6 @@ namespace this_file
             motor::release( motor::move( _time ) ) ;
             motor::release( motor::move( _root ) ) ;
             motor::release( motor::move( root_so ) ) ;
-            motor::release( motor::move( msl_obj ) ) ;
 
             motor::release( motor::move( _selected ) ) ;
             motor::release( motor::move( _cameras[0] ) ) ;

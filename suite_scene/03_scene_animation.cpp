@@ -21,15 +21,12 @@
 
 #include <motor/scene/node/logic_group.h>
 #include <motor/scene/node/logic_leaf.h>
-#include <motor/scene/node/camera_node.h>
-#include <motor/scene/node/trafo3d_node.h>
-#include <motor/scene/node/render_node.h>
-#include <motor/scene/node/render_settings.h>
 
 #include <motor/scene/component/name_component.hpp>
 #include <motor/scene/component/msl_component.h>
 #include <motor/scene/component/render_settings_component.h>
 #include <motor/scene/component/trafo3d_component.h>
+#include <motor/scene/component/camera_component.h>
 
 #include <motor/scene/visitor/trafo_visitor.h>
 #include <motor/scene/visitor/render_visitor.h>
@@ -304,11 +301,9 @@ namespace this_file
 
                 // add camera
                 { 
-                    auto cam = motor::shared( motor::scene::camera_node_t( 
-                        motor::shared( motor::gfx::generic_camera_t( 800.0f, 600.0f, 1.0f, 100.0f ) ) ) ) ;
-
-                    cam->add_component( motor::shared( motor::scene::name_component_t( "Camera" ) ) ) ;
-                    root.add_child( motor::move( cam ) ) ;
+                    auto cam_comp = motor::scene::camera_component_t( 
+                        motor::shared( motor::gfx::generic_camera_t( 800.0f, 600.0f, 1.0f, 100.0f ) ) ) ;
+                    root.add_component( motor::shared( std::move( cam_comp ) ) ) ;
                 }
 
                 {
@@ -344,8 +339,12 @@ namespace this_file
                         {
                             // render object 1 
                             {
-                                auto rn = motor::scene::render_node_t( motor::share(msl_obj), 0 ) ;
-                                rn.add_component( motor::shared( motor::scene::name_component_t( "Render Object 0" ) ) ) ;
+                                auto rn = motor::scene::logic_group_t() ;
+
+                                {
+                                    rn.add_component(motor::shared(
+                                        motor::scene::name_component_t( "Render Object 0")));
+                                }
 
                                 // animation connect
                                 {
@@ -360,7 +359,9 @@ namespace this_file
 
                                 // add shader variable slots
                                 {
-                                    auto & inputs = *rn.borrow_shader_inputs() ;
+                                    auto mslcomp = motor::scene::msl_component_t( motor::share(msl_obj), 0) ;
+
+                                    auto & inputs = *mslcomp.borrow_shader_inputs() ;
                                     {
                                         auto s = motor::wire::input_slot( motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) ) ;
                                         inputs.add( "color", motor::shared( std::move( s ) ) ) ;
@@ -384,6 +385,8 @@ namespace this_file
                                         inputs.add( "world", motor::shared( std::move( s ) ) ) ;
                                     }
                                     #endif
+
+                                    rn.add_component( motor::shared( std::move(mslcomp) ) ) ;
                                 }
 
                                 rs->add_child( motor::shared( std::move( rn ) ) ) ;
@@ -391,7 +394,7 @@ namespace this_file
                             
                             // render object 2
                             {
-                                auto rn = motor::scene::render_node_t( motor::share( msl_obj ), 1 ) ;
+                                auto rn = motor::scene::logic_group_t() ;
                                 rn.add_component( motor::shared( motor::scene::name_component_t( "Render Object 1" ) ) ) ;
 
                                 // animation connect
@@ -408,7 +411,8 @@ namespace this_file
 
                                 // add shader variable slots
                                 {
-                                    auto & inputs = *rn.borrow_shader_inputs() ;
+                                    auto mslcomp = motor::scene::msl_component_t( motor::share(msl_obj), 1) ;
+                                    auto & inputs = *mslcomp.borrow_shader_inputs() ;
                                     {
                                         auto s = motor::wire::input_slot( motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) ) ;
                                         inputs.add( "color", motor::shared( std::move( s ) ) ) ;
@@ -432,6 +436,7 @@ namespace this_file
                                         inputs.add( "world", motor::shared( std::move( s ) ) ) ;
                                     }
                                     #endif
+                                    rn.add_component( motor::shared( std::move(mslcomp) ) ) ;
                                 }
                                 rs->add_child( motor::shared( std::move( rn ) ) ) ;
                             }
@@ -574,7 +579,7 @@ namespace this_file
             }
             
             {
-                motor::scene::render_visitor_t vis( fe, _cameras[_cam_id] ) ;
+                motor::scene::render_visitor_t vis( wid, fe, _cameras[_cam_id] ) ;
                 motor::scene::node_t::traverser(_root).apply( &vis ) ;
             }
         }

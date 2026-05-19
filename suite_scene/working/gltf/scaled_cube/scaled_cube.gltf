@@ -3,137 +3,51 @@
 		"generator":"Khronos glTF Blender I/O v5.1.19",
 		"version":"2.0"
 	},
-	"extensionsUsed":[
-		"KHR_lights_punctual"
-	],
-	"extensionsRequired":[
-		"KHR_lights_punctual"
-	],
-	"extensions":{
-		"KHR_lights_punctual":{
-			"lights":[
-				{
-					"color":[
-						1,
-						1,
-						1
-					],
-					"intensity":54351.41306588226,
-					"type":"point",
-					"name":"Light"
-				}
-			]
-		}
-	},
 	"scene":0,
 	"scenes":[
 		{
 			"name":"Scene",
 			"nodes":[
-				0,
-				1,
-				4,
-				5
+				2
 			]
 		}
 	],
 	"nodes":[
 		{
-			"extensions":{
-				"KHR_lights_punctual":{
-					"light":0
-				}
-			},
-			"name":"Light",
-			"rotation":[
-				0.16907574236392975,
-				0.27217137813568115,
-				0.7558803558349609,
-				0.570947527885437
-			],
-			"translation":[
-				4.076245307922363,
-				17.020662307739258,
-				39.04191970825195
-			]
-		},
-		{
-			"camera":0,
-			"name":"Camera",
-			"rotation":[
-				0.483536034822464,
-				0.20870360732078552,
-				0.33687159419059753,
-				0.7804827094078064
-			],
-			"translation":[
-				7.358891487121582,
-				10.10922622680664,
-				4.958309173583984
-			]
-		},
-		{
 			"mesh":0,
 			"name":"Cube",
 			"rotation":[
-				0.3225947618484497,
-				0.5390344858169556,
-				-0.23437881469726562,
-				0.7419171333312988
-			],
-			"scale":[
-				3.8212363719940186,
-				3.8212361335754395,
-				3.8212361335754395
+				-0.5099232792854309,
+				0.3191143274307251,
+				0.21121713519096375,
+				0.7704100608825684
 			],
 			"translation":[
-				12.12586498260498,
-				11.171131134033203,
-				0
+				0,
+				-14.077165603637695,
+				4.299368858337402
 			]
 		},
 		{
 			"mesh":1,
-			"name":"Cube.001",
+			"name":"Sphere",
 			"translation":[
-				0,
-				9.209097862243652,
+				-4.685349941253662,
+				-4.007828712463379,
 				0
 			]
 		},
 		{
 			"children":[
-				2,
-				3
+				0,
+				1
 			],
 			"name":"Empty",
-			"rotation":[
-				0.5581455230712891,
-				0.6139601469039917,
-				0,
-				0.5581455826759338
-			],
 			"translation":[
-				9.268457412719727,
-				4.62938117980957,
+				0,
+				7.856509685516357,
 				0
 			]
-		},
-		{
-			"mesh":2,
-			"name":"Cube.002"
-		}
-	],
-	"cameras":[
-		{
-			"name":"Camera",
-			"perspective":{
-				"aspectRatio":1.7777777777777777,
-				"yfov":0.39959652046304894,
-				"zfar":100,
-				"znear":0.10000000149011612
-			},
-			"type":"perspective"
 		}
 	],
 	"materials":[
@@ -168,26 +82,13 @@
 			]
 		},
 		{
-			"name":"Cube.001",
+			"name":"Sphere",
 			"primitives":[
 				{
 					"attributes":{
 						"POSITION":4,
 						"NORMAL":5,
 						"TEXCOORD_0":6
-					},
-					"indices":7
-				}
-			]
-		},
-		{
-			"name":"Cube.002",
-			"primitives":[
-				{
-					"attributes":{
-						"POSITION":8,
-						"NORMAL":9,
-						"TEXCOORD_0":10
 					},
 					"indices":7
 				}
@@ -232,15 +133,15 @@
 		{
 			"bufferView":4,
 			"componentType":5126,
-			"count":24,
+			"count":1984,
 			"max":[
-				1,
+				0.9999997019767761,
 				1,
 				1
 			],
 			"min":[
-				-1,
-				-1,
+				-0.9999990463256836,
+				-0.9999993443489075,
 				-1
 			],
 			"type":"VEC3"
@@ -248,48 +149,20 @@
 		{
 			"bufferView":5,
 			"componentType":5126,
-			"count":24,
+			"count":1984,
 			"type":"VEC3"
 		},
 		{
 			"bufferView":6,
 			"componentType":5126,
-			"count":24,
+			"count":1984,
 			"type":"VEC2"
 		},
 		{
 			"bufferView":7,
 			"componentType":5123,
-			"count":36,
+			"count":2880,
 			"type":"SCALAR"
-		},
-		{
-			"bufferView":8,
-			"componentType":5126,
-			"count":24,
-			"max":[
-				1,
-				1,
-				1
-			],
-			"min":[
-				-1,
-				-1,
-				-1
-			],
-			"type":"VEC3"
-		},
-		{
-			"bufferView":9,
-			"componentType":5126,
-			"count":24,
-			"type":"VEC3"
-		},
-		{
-			"bufferView":10,
-			"componentType":5126,
-			"count":24,
-			"type":"VEC2"
 		}
 	],
 	"bufferViews":[
@@ -319,50 +192,32 @@
 		},
 		{
 			"buffer":0,
-			"byteLength":288,
+			"byteLength":23808,
 			"byteOffset":840,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":288,
-			"byteOffset":1128,
+			"byteLength":23808,
+			"byteOffset":24648,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":192,
-			"byteOffset":1416,
+			"byteLength":15872,
+			"byteOffset":48456,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":72,
-			"byteOffset":1608,
+			"byteLength":5760,
+			"byteOffset":64328,
 			"target":34963
-		},
-		{
-			"buffer":0,
-			"byteLength":288,
-			"byteOffset":1680,
-			"target":34962
-		},
-		{
-			"buffer":0,
-			"byteLength":288,
-			"byteOffset":1968,
-			"target":34962
-		},
-		{
-			"buffer":0,
-			"byteLength":192,
-			"byteOffset":2256,
-			"target":34962
 		}
 	],
 	"buffers":[
 		{
-			"byteLength":2448,
+			"byteLength":70088,
 			"uri":"scaled_cube.bin"
 		}
 	]

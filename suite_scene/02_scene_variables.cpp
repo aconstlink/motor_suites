@@ -18,15 +18,13 @@
 
 #include <motor/scene/node/logic_group.h>
 #include <motor/scene/node/logic_leaf.h>
-#include <motor/scene/node/camera_node.h>
-#include <motor/scene/node/trafo3d_node.h>
-#include <motor/scene/node/render_node.h>
-#include <motor/scene/node/render_settings.h>
 
 #include <motor/scene/component/name_component.hpp>
 #include <motor/scene/component/msl_component.h>
 #include <motor/scene/component/render_settings_component.h>
 #include <motor/scene/component/trafo3d_component.h>
+#include <motor/scene/component/camera_component.h>
+
 #include <motor/scene/visitor/trafo_visitor.h>
 #include <motor/scene/visitor/render_visitor.h>
 
@@ -349,11 +347,9 @@ namespace this_file
 
                 // add camera
                 { 
-                    auto cam = motor::shared( motor::scene::camera_node_t( 
-                        motor::shared( motor::gfx::generic_camera_t( 800.0f, 600.0f, 1.0f, 100.0f ) ) ) ) ;
-
-                    cam->add_component( motor::shared( motor::scene::name_component_t( "Camera" ) ) ) ;
-                    root.add_child( motor::move( cam ) ) ;
+                    auto cam_comp = motor::scene::camera_component_t( 
+                        motor::shared( motor::gfx::generic_camera_t( 800.0f, 600.0f, 1.0f, 100.0f ) ) ) ;
+                    root.add_component( motor::shared( std::move( cam_comp ) ) ) ;
                 }
 
                 {
@@ -383,7 +379,7 @@ namespace this_file
                         }
                         
                         {
-                            auto rn = motor::scene::render_node_t( motor::share(msl_obj), 0 ) ;
+                            auto rn = motor::scene::logic_leaf_t() ;
                             {
                                 motor::scene::trafo3d_component_t tc( motor::math::m3d::trafof_t(
                                     motor::math::vec3f_t( 1.0f, 1.0f, 1.0f ),
@@ -396,11 +392,15 @@ namespace this_file
                                     motor::scene::name_component_t(
                                         "Render Object 0")));
                             }
+                            {
+                                auto mslcomp = motor::scene::msl_component_t( motor::share(msl_obj), 0 ) ;
+                                rn.add_component( motor::shared( std::move(mslcomp) ) ) ;
+                            }
                             rs->add_child( motor::shared( std::move( rn ) ) ) ;
                         }
 
                         {
-                            auto rn = motor::scene::render_node_t( motor::share( msl_obj ), 1 ) ;
+                            auto rn = motor::scene::logic_leaf_t() ;
                             {
                                 motor::scene::trafo3d_component_t tc( motor::math::m3d::trafof_t(
                                     motor::math::vec3f_t( 1.0f, 1.0f, 1.0f ),
@@ -412,6 +412,10 @@ namespace this_file
                                 rn.add_component(motor::shared(
                                     motor::scene::name_component_t(
                                         "Render Object 1")));
+                            }
+                            {
+                                auto mslcomp = motor::scene::msl_component_t( motor::share(msl_obj), 1 ) ;
+                                rn.add_component( motor::shared( std::move(mslcomp) ) ) ;
                             }
                             rs->add_child( motor::shared( std::move( rn ) ) ) ;
                         }
@@ -467,7 +471,7 @@ namespace this_file
             }
 
             {
-                motor::scene::render_visitor_t vis( fe, _cameras[_cam_id] ) ;
+                motor::scene::render_visitor_t vis( wid, fe, _cameras[_cam_id] ) ;
                 motor::scene::node_t::traverser(_root).apply( &vis ) ;
             }
         }
