@@ -43,6 +43,8 @@
 
 #include <future>
 
+// this test checks if slots can connect to 
+// components and allows to animate.
 namespace this_file
 {
     using namespace motor::core::types ;
@@ -590,14 +592,14 @@ namespace this_file
             MOTOR_PROBE( "application", "on_update" ) ;
 
             {
-                motor::scene::trafo_visitor_t v ;
+                motor::scene::variable_update_visitor_t v ;
                 motor::scene::node_t::traverser( _root ).apply( &v ) ;
             }
 
             {
-                motor::scene::variable_update_visitor_t v ;
+                motor::scene::trafo_visitor_t v ;
                 motor::scene::node_t::traverser( _root ).apply( &v ) ;
-            }
+            }            
         } 
 
         //******************************************************************************************************
