@@ -48,33 +48,33 @@ namespace this_file
 
             // init node graph
             {
-                auto start = motor::shared( motor::wire::node( "start", [=] ( motor::wire::node_ptr_t )
+                auto start = motor::shared( motor::wire::funk_node_t( "start", [=] ( motor::wire::funk_node_ptr_t )
                 {
                 } ), "start node" ) ;
 
-                auto a = motor::shared( motor::wire::node( "a", [=] ( motor::wire::node_ptr_t )
+                auto a = motor::shared( motor::wire::funk_node_t( "a", [=] ( motor::wire::funk_node_ptr_t )
                 {
                 } ), "node" ) ;
 
-                auto b = motor::shared( motor::wire::node( "b",  [=] ( motor::wire::node_ptr_t )
+                auto b = motor::shared( motor::wire::funk_node_t( "b",  [=] ( motor::wire::funk_node_ptr_t )
                 {
                     //std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) ) ;
                     
                 } ), "node" ) ;
 
-                auto c = motor::shared( motor::wire::node( "c", [=] ( motor::wire::node_ptr_t )
+                auto c = motor::shared( motor::wire::funk_node_t( "c", [=] ( motor::wire::funk_node_ptr_t )
                 {
                 } ), "node" ) ;
 
-                auto d = motor::shared( motor::wire::node( "d", [=] ( motor::wire::node_ptr_t )
+                auto d = motor::shared( motor::wire::funk_node_t( "d", [=] ( motor::wire::funk_node_ptr_t )
                 {
                 } ), "node" ) ;
 
-                auto e = motor::shared( motor::wire::node( "e", [=] ( motor::wire::node_ptr_t )
+                auto e = motor::shared( motor::wire::funk_node_t( "e", [=] ( motor::wire::funk_node_ptr_t )
                 {
                 } ), "node" ) ;
 
-                auto f = motor::shared( motor::wire::node( "f", [&] ( motor::wire::node_ptr_t )
+                auto f = motor::shared( motor::wire::funk_node_t( "f", [&] ( motor::wire::funk_node_ptr_t )
                 {
                 } ), "node" ) ;
 

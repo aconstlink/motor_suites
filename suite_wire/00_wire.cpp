@@ -38,8 +38,8 @@ int main( int argc, char ** argv )
 
     // test sheets #1
     {
-        motor::wire::sheet< motor::wire::ioutput_slot > outputs ;
-        motor::wire::sheet< motor::wire::iinput_slot > inputs ;
+        motor::wire::sheet< motor::wire::ioutput_slot, true > outputs ;
+        motor::wire::sheet< motor::wire::iinput_slot, true > inputs ;
 
         {
             outputs.add( "a signal", motor::shared( motor::wire::output_slot<float_t>( 1.0f ), "signal" ) ) ;

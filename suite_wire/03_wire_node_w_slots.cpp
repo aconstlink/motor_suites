@@ -15,9 +15,9 @@ namespace this_file
     // one option would be to derive from inode
     // and implement all the logic of the node 
     // directly in the execute() function.
-    class my_node : public motor::wire::inode
+    class my_node : public motor::wire::named_slots_node_t
     {
-        using base_t = motor::wire::inode ;
+        using base_t = motor::wire::named_slots_node_t ;
         motor_this_typedefs( my_node ) ;
 
     private:
@@ -105,23 +105,24 @@ int main( int argc, char ** argv )
 
         bool_t run_loop = true ;
 
-        motor::wire::inode_mtr_t start = nullptr ;
-        motor::wire::inode_mtr_t a = nullptr ;
-        motor::wire::inode_mtr_t b = nullptr ;
-        motor::wire::inode_mtr_t c = nullptr ;
-        motor::wire::inode_mtr_t d = nullptr ;
+        motor::wire::funk_node_named_mtr_t start = nullptr ;
+        motor::wire::funk_node_named_mtr_t a = nullptr ;
+        this_file::my_node_mtr_t b = nullptr ;
+        motor::wire::funk_node_named_mtr_t c = nullptr ;
+        motor::wire::funk_node_named_mtr_t d = nullptr ;
         
         // option #1: Search for slots 
         // Search for the slots by name within the lambda function.
         {
-            start = motor::shared( motor::wire::node( [=] ( motor::wire::node_ptr_t n )
+            auto task = motor::shared( motor::wire::funk_node_named_t( [=] ( motor::wire::funk_node_named_t * n )
             {
                 if( auto output_slot = dynamic_cast<motor::wire::output_slot<float_t>*>( n->outputs().borrow("out") ); output_slot != nullptr ) 
                 {
                     output_slot->set_value( 10.0f ) ;
                 }
             } ) ) ;
-            start->outputs().add( "out", motor::shared( motor::wire::output_slot<float_t>( 0.0f ) ) ) ;
+            task->outputs().add( "out", motor::shared( motor::wire::output_slot<float_t>( 0.0f ) ) ) ;
+            start = motor::move( task ) ;
         }
         
         // option #2 : Capture slots
@@ -136,15 +137,17 @@ int main( int argc, char ** argv )
             auto input_slot = motor::shared( motor::wire::input_slot<float_t>( 0.0f ) ) ;
 
             // capture slots
-            a = motor::shared( motor::wire::node( [=] ( motor::wire::node_ptr_t n )
+            auto task = motor::shared( motor::wire::funk_node_named_t( [=] ( motor::wire::funk_node_named_ptr_t n )
             {
                 float_t const value = input_slot->get_value() * 2.0f ;
                 output_slot->set_value( value ) ;
             } ) ) ;
 
             // safe slot for ref counting
-            a->outputs().add( "out", motor::move( output_slot ) ) ;
-            a->inputs().add( "in", motor::move( input_slot ) ) ;
+            task->outputs().add( "out", motor::move( output_slot ) ) ;
+            task->inputs().add( "in", motor::move( input_slot ) ) ;
+
+            a = motor::move( task ) ;
         }
 
         // option #3 : Use Custom Node
@@ -157,7 +160,7 @@ int main( int argc, char ** argv )
             auto input_slot1 = motor::shared( motor::wire::input_slot<float_t>( 0.0f ) ) ;
             auto input_slot2 = motor::shared( motor::wire::input_slot<float_t>( 0.0f ) ) ;
 
-            c = motor::shared( motor::wire::node( [=] ( motor::wire::node_ptr_t )
+            auto task = motor::shared( motor::wire::funk_node_named_t( [=] ( motor::wire::funk_node_named_ptr_t )
             {
                 auto const v1 = input_slot1->get_value() ;
                 auto const v2 = input_slot2->get_value() ;
@@ -166,13 +169,15 @@ int main( int argc, char ** argv )
                 motor::log::global_t::status( "slot 1: " + motor::to_string( v1 ) ) ;
                 motor::log::global_t::status( "slot 2: " + motor::to_string( v2 ) ) ;
             } ) ) ;
-            c->inputs().add( "in1", motor::move( input_slot1 ) ) ;
-            c->inputs().add( "in2", motor::move( input_slot2 ) ) ;
+            task->inputs().add( "in1", motor::move( input_slot1 ) ) ;
+            task->inputs().add( "in2", motor::move( input_slot2 ) ) ;
+
+            c = motor::move( task ) ;
         }
 
         // using a lambda node to shutdown the program
         {
-            d = motor::shared( motor::wire::node( [&] ( motor::wire::node_ptr_t )
+            d = motor::shared( motor::wire::funk_node_named_t( [&] ( motor::wire::funk_node_named_ptr_t )
             {
                 run_loop = false ;
                 motor::log::global::status( "update ending" ) ;

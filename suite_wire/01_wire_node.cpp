@@ -12,34 +12,34 @@ int main( int argc, char ** argv )
 {
     bool_t run_loop = true ;
 
-    auto start = motor::shared( motor::wire::node( [=] ( motor::wire::node_ptr_t ) 
+    auto start = motor::shared( motor::wire::funk_node_t( [=] ( motor::wire::funk_node_ptr_t ) 
     {
         motor::log::global::status( "start node" ) ;
     } ), "start node" ) ;
 
-    auto a = motor::shared( motor::wire::node( [=] ( motor::wire::node_ptr_t )
+    auto a = motor::shared( motor::wire::funk_node_t( [=] ( motor::wire::funk_node_ptr_t )
     {
         std::this_thread::sleep_for( std::chrono::milliseconds( 19 ) ) ;
         motor::log::global::status( "node a" ) ;
     } ), "node" ) ;
 
-    auto b = motor::shared( motor::wire::node( [=] ( motor::wire::node_ptr_t )
+    auto b = motor::shared( motor::wire::funk_node_t( [=] ( motor::wire::funk_node_ptr_t )
     {
         std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) ) ;
         motor::log::global::status( "node b" ) ;
     } ), "node" ) ;
 
-    auto c = motor::shared( motor::wire::node( [=] ( motor::wire::node_ptr_t )
+    auto c = motor::shared( motor::wire::funk_node_t( [=] ( motor::wire::funk_node_ptr_t )
     {
         motor::log::global::status( "node c" ) ;
     } ), "node" ) ;
 
-    auto d = motor::shared( motor::wire::node( [=] ( motor::wire::node_ptr_t )
+    auto d = motor::shared( motor::wire::funk_node_t( [=] ( motor::wire::funk_node_ptr_t )
     {
         motor::log::global::status( "node d" ) ;
     } ), "node" ) ;
 
-    auto e = motor::shared( motor::wire::node( [&] ( motor::wire::node_ptr_t )
+    auto e = motor::shared( motor::wire::funk_node_t( [&] ( motor::wire::funk_node_ptr_t )
     {
         run_loop = false ;
         motor::log::global::status( "node e" ) ;
@@ -86,7 +86,7 @@ int main( int argc, char ** argv )
         for( auto t : br.tiers )
         {
             motor::log::global_t::status(
-                "Tier #" + motor::to_string(idx) + " has " + motor::to_string( t.tasks.size() ) + " tasks" ) ;
+                "Tier #" + motor::to_string(idx++) + " has " + motor::to_string( t.tasks.size() ) + " tasks" ) ;
         }
 
         if( br.has_cylce ) motor::log::global_t::status("graph has a cycle.") ;

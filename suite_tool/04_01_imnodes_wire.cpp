@@ -21,7 +21,7 @@ namespace this_file
         motor_this_typedefs( my_app ) ;
 
         motor::concurrent::task::tier_builder_t::build_result_t _tier_builder_result ;
-        motor::wire::node::tier_builder_t::build_result_t _tier_builder_result_nodes ;
+        motor::wire::funk_node_t::tier_builder_t::build_result_t _tier_builder_result_nodes ;
 
         virtual void_t on_init( void_t ) noexcept
         {
@@ -45,33 +45,33 @@ namespace this_file
 
             // init node graph
             {
-                auto start = motor::shared( motor::wire::node( "start", [=] ( motor::wire::node_ptr_t )
+                auto start = motor::shared( motor::wire::funk_node_t( "start", [=] ( motor::wire::funk_node_ptr_t )
                 {
                 } ), "start node" ) ;
 
-                auto a = motor::shared( motor::wire::node( "a", [=] ( motor::wire::node_ptr_t )
+                auto a = motor::shared( motor::wire::funk_node_t( "a", [=] ( motor::wire::funk_node_ptr_t )
                 {
                 } ), "node" ) ;
 
-                auto b = motor::shared( motor::wire::node( "b",  [=] ( motor::wire::node_ptr_t )
+                auto b = motor::shared( motor::wire::funk_node_t( "b",  [=] ( motor::wire::funk_node_ptr_t )
                 {
                     //std::this_thread::sleep_for( std::chrono::milliseconds( 20 ) ) ;
                     
                 } ), "node" ) ;
 
-                auto c = motor::shared( motor::wire::node( "c", [=] ( motor::wire::node_ptr_t )
+                auto c = motor::shared( motor::wire::funk_node_t( "c", [=] ( motor::wire::funk_node_ptr_t )
                 {
                 } ), "node" ) ;
 
-                auto d = motor::shared( motor::wire::node( "d", [=] ( motor::wire::node_ptr_t )
+                auto d = motor::shared( motor::wire::funk_node_t( "d", [=] ( motor::wire::funk_node_ptr_t )
                 {
                 } ), "node" ) ;
 
-                auto e = motor::shared( motor::wire::node( "e", [=] ( motor::wire::node_ptr_t )
+                auto e = motor::shared( motor::wire::funk_node_t( "e", [=] ( motor::wire::funk_node_ptr_t )
                 {
                 } ), "node" ) ;
 
-                auto f = motor::shared( motor::wire::node( "f", [&] ( motor::wire::node_ptr_t )
+                auto f = motor::shared( motor::wire::funk_node_t( "f", [&] ( motor::wire::funk_node_ptr_t )
                 {
                 } ), "node" ) ;
 
@@ -101,7 +101,7 @@ namespace this_file
                 }
 
                 {
-                    motor::wire::node::tier_builder_t tb ;
+                    motor::wire::funk_node_t::tier_builder_t tb ;
 
                     tb.build( start, _tier_builder_result_nodes ) ;
 
@@ -292,7 +292,7 @@ namespace this_file
                     // link all tasks
                     {
                         int_t link_id = 0 ;
-                        motor::wire::node::tier_builder_t::output_slot_walk( _tier_builder_result_nodes,
+                        motor::wire::funk_node_t::tier_builder_t::output_slot_walk( _tier_builder_result_nodes,
                             [&] ( motor::wire::inode_mtr_t n_in, motor::wire::inode::nodes_in_t outputs )
                         {
                             int_t const tid = nodes_to_ids[ n_in ] ;

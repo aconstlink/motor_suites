@@ -1,10 +1,12 @@
 
 
 set( tests
-    "00_vector.cpp"
-    "01_matrix.cpp"
-    "02_angle.cpp"
-    "03_spline_keyframe.cpp"
+    "00_coord_system.cpp"
+    "01_vector.cpp"
+    "02_matrix.cpp"
+    "03_angle.cpp"
+    "04_spline_keyframe.cpp"
+    "05_quaternion.cpp"
     )
 
 if( MSVC )

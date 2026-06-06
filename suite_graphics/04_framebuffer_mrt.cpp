@@ -87,7 +87,7 @@ namespace this_file
                 // why setting camera position two times?
                 //
                 {
-                    camera.look_at( motor::math::vec3f_t( 0.0f, 60.0f, -50.0f ),
+                    camera.look_at( motor::math::vec3f_t( 0.0f, 60.0f, 50.0f ),
                             motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 0.0f, 0.0f )) ;
                 }
                     
@@ -101,7 +101,7 @@ namespace this_file
 
                 rss.polygon_s.do_change = true ;
                 rss.polygon_s.ss.do_activate = true ;
-                rss.polygon_s.ss.ff = motor::graphics::front_face::counter_clock_wise ;
+                rss.polygon_s.ss.ff = motor::graphics::front_face::clock_wise ;
                 rss.polygon_s.ss.cm = motor::graphics::cull_mode::back ;
                 rss.polygon_s.ss.fm = motor::graphics::fill_mode::fill ;
                    
@@ -531,7 +531,7 @@ namespace this_file
                             motor::math::m3d::trafof_t trans( var->get() ) ;
 
                             motor::math::m3d::trafof_t rotation ;
-                            rotation.rotate_by_axis_fr( motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), angle ) ;
+                            rotation.rotate_by_axis_fl( motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), angle ) ;
                         
                             trans.transform_fl( rotation ) ;
 

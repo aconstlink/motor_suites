@@ -27,6 +27,8 @@
 #include <motor/scene/component/render_settings_component.h>
 #include <motor/scene/component/trafo3d_component.h>
 #include <motor/scene/component/camera_component.h>
+#include <motor/scene/component/animation/animation_component.h>
+#include <motor/scene/component/animation/animation_track.hpp>
 
 #include <motor/scene/visitor/trafo_visitor.h>
 #include <motor/scene/visitor/render_visitor.h>
@@ -34,6 +36,7 @@
 
 #include <motor/wire/variables/trafo_variables.hpp>
 #include <motor/wire/variables/vector_variables.hpp>
+#include <motor/wire/adapter/trafo3_composer.hpp>
 
 #include <motor/math/interpolation/interpolate.hpp>
 
@@ -69,6 +72,9 @@ namespace this_file
 
         motor::wire::trafo3fv_t _trafo = motor::wire::trafo3fv_t("trafo") ;
         motor::wire::vec3fv_t _pos = motor::wire::vec3fv_t("position") ;
+
+        motor::wire::input_slot< float_t > * _dt = nullptr ;
+        motor::wire::funk_node_unnamed_mtr_t _time_node = nullptr ;
 
         size_t _cam_id = 0 ;
 
@@ -269,6 +275,7 @@ namespace this_file
                 root_so = motor::shared( motor::graphics::state_object_t( std::move( so ) ) ) ;
             }
 
+            
             {
                 _out_0 = motor::shared( motor::wire::output_slot< motor::math::m3d::trafof_t >(), "output 0" ) ;
                 _out_0->set_value( motor::math::m3d::trafof_t(
@@ -290,8 +297,30 @@ namespace this_file
 
                 _pos = motor::wire::vec3fv_t( "position", _trafo.get_value().get_translation() ) ;
 
+                #if 0
                 _trafo.connect( motor::share( _out_1 ) ) ;
                 _trafo.inputs().connect( "trafo.position", _pos.get_os() ) ;
+                #endif
+            }
+
+            // time node
+            {
+                motor::wire::input_slot< float_t > * dt = motor::shared( motor::wire::input_slot<float_t>(0.0f) ) ;
+                motor::wire::output_slot< float_t > * time = motor::shared( motor::wire::output_slot< float_t >( 0.0f ) ) ;
+                motor::wire::output_slot< motor::math::time_ms_t > * time_ms = motor::shared( motor::wire::output_slot< motor::math::time_ms_t >( 0 ) ) ;
+
+                _time_node = motor::shared( motor::wire::funk_node_unnamed_t([=]( motor::wire::funk_node_unnamed_ptr_t )
+                {
+                    float_t t = time->get_value() + dt->get_value() * 0.5f ;
+                    t = t > 3.0f ? 0.0f : t ;
+                    time->set_and_exchange( t ) ;
+                    time_ms->set_and_exchange( motor::math::time_ms_t(t * 1000.0f) ) ;
+                }) ) ;
+
+                _dt = motor::share( dt ) ;
+                _time_node->inputs().add( motor::move( dt ) ) ;
+                _time_node->outputs().add( motor::move( time ) ) ;
+                _time_node->outputs().add( motor::move( time_ms ) ) ;
             }
 
             // #3 : init scene tree
@@ -322,6 +351,57 @@ namespace this_file
                             rs->add_component( motor::shared( std::move( rsc ) ) ) ;
                         }
 
+                        #if 1
+                        {
+                            // add trafo component which is animated through the 
+                            // animation component
+                            
+                            // connect trafo composer with trafo component of scene node
+                            // ani_comp | ani_ctrl -> trafo_composer -> trafo_component | scene node
+
+                            auto trafo_composer = motor::shared( motor::wire::trafo3_composer<float_t>() ) ;
+
+                            {
+                                auto tc = motor::scene::trafo3d_component_t();
+
+                                motor::wire::inputs_t inputs ;
+                                if( tc.inputs( inputs ) )
+                                {
+                                    inputs.connect( "trafo", trafo_composer->ensure_and_get_os() ) ;
+                                }
+
+                                rs->add_component(motor::shared(std::move(tc)));
+                            }
+
+                            // add and connect the animation component
+                            {
+                                using spline_t = motor::math::linear_bezier_spline< motor::math::vec3f_t>;
+                                using kfs_t = motor::math::keyframe_sequence<spline_t>;
+
+                                kfs_t kfs;
+                                kfs.insert( {motor::math::time_ms_t(1000), motor::math::vec3f_t(-100.0f, 0.0f, 0.0f)});
+                                kfs.insert( {motor::math::time_ms_t(1500), motor::math::vec3f_t(0.0f, 0.0f, 0.0f)});
+                                kfs.insert( {motor::math::time_ms_t(2500), motor::math::vec3f_t(0.0f, 100.0f, 0.0f)});
+
+                                auto ani_track = motor::shared( motor::scene::animation_track<spline_t>( std::move(kfs) ) );
+
+                                // connect data slots
+                                
+                                auto const b = ani_track->borrow_is()->connect( _time_node->outputs().get(1) ) ; // connect to time
+                                ani_track->borrow_os()->connect( trafo_composer->ensure_and_get_position_is() ) ; // somehow connect to position of trafo component
+                                
+                                // connect execution slots
+                                ani_track->borrow_node()->then( motor::move( trafo_composer) ) ;
+                                _time_node->then( ani_track->get_node() ) ;
+
+
+                                motor::scene::animation_component_t ani_comp;
+                                ani_comp.attach_controller( motor::share( ani_track ) ) ;
+                                
+                                rs->add_component( motor::shared(std::move(ani_comp)));
+                            }
+                        }
+                        #else
                         // transformation component and 
                         // animation connect
                         {
@@ -334,6 +414,7 @@ namespace this_file
                             }
                             rs->add_component( motor::shared( std::move(tc) ) ) ;
                         }
+                        #endif
 
                         // add renderable nodes
                         {
@@ -480,11 +561,6 @@ namespace this_file
         virtual void_t on_graphics( motor::application::app::graphics_data_in_t d ) noexcept 
         {
             {
-                float_t const t = _time->get_value() + d.sec_dt * 0.5f ;
-                _time->set_and_exchange( t > 1.0f ? 0.0f : t ) ;
-            }
-
-            {
                 auto * os = _out_0;
 
                 static float_t angle = 0.0f ;
@@ -585,9 +661,18 @@ namespace this_file
         }
 
         //******************************************************************************************************
-        virtual void_t on_update( motor::application::app::update_data_in_t ) noexcept 
+        virtual void_t on_update( motor::application::app::update_data_in_t d ) noexcept 
         {
             MOTOR_PROBE( "application", "on_update" ) ;
+
+            {
+                float_t const t = _time->get_value() + d.sec_dt * 0.5f ;
+                _time->set_and_exchange( t > 1.0f ? 0.0f : t ) ;
+
+                _dt->set_value( d.sec_dt ) ;
+
+                motor::concurrent::global_t::schedule( _time_node->get_task(), motor::concurrent::schedule_type::pool ) ;
+            }
 
             {
                 motor::scene::variable_update_visitor_t v ;
@@ -598,6 +683,7 @@ namespace this_file
                 motor::scene::trafo_visitor_t v ;
                 motor::scene::node_t::traverser( _root ).apply( &v ) ;
             }
+            
         } 
 
         //******************************************************************************************************

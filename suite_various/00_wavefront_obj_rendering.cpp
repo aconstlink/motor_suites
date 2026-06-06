@@ -162,7 +162,7 @@ namespace this_file
                     rss.depth_s.ss.do_depth_write = true ;
                     rss.polygon_s.do_change = true ;
                     rss.polygon_s.ss.do_activate = true ;
-                    rss.polygon_s.ss.ff = motor::graphics::front_face::clock_wise ;
+                    rss.polygon_s.ss.ff = motor::graphics::front_face::counter_clock_wise ;
                     rss.polygon_s.ss.cm = motor::graphics::cull_mode::back ;
                     rss.polygon_s.ss.fm = motor::graphics::fill_mode::fill;
                     rss.clear_s.do_change = true ;
@@ -192,7 +192,7 @@ namespace this_file
                     rss.depth_s.ss.do_depth_write = false ;
                     rss.polygon_s.do_change = true ;
                     rss.polygon_s.ss.do_activate = true ;
-                    rss.polygon_s.ss.ff = motor::graphics::front_face::clock_wise ;
+                    rss.polygon_s.ss.ff = motor::graphics::front_face::counter_clock_wise ;
                     rss.polygon_s.ss.cm = motor::graphics::cull_mode::back ;
                     rss.polygon_s.ss.fm = motor::graphics::fill_mode::fill;
                     rss.clear_s.do_change = false ;

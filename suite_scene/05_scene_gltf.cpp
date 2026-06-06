@@ -117,8 +117,8 @@ namespace this_file
             {
                 auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 0.1f, 1000.0f ) ;
                 #if 1
-                cam.perspective_fov( motor::math::angle<float_t>::degree_to_radian( 30.0f ) ) ;
-                cam.look_at( motor::math::vec3f_t( 0.0f, 0.0f, -20.0f ),
+                cam.perspective_fov( motor::math::angle<float_t>::degree_to_radian( 45.0f ) ) ;
+                cam.look_at( motor::math::vec3f_t( 0.0f, 0.0f, 50.0f ),
                     motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ;
                 #else
                 cam.orthographic() ;
@@ -131,8 +131,8 @@ namespace this_file
             // camera
             {
                 auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 1.0f, 100.0f ) ;
-                cam.perspective_fov( motor::math::angle<float_t>::degree_to_radian( 90.0f ) ) ;
-                cam.look_at( motor::math::vec3f_t( -50.0f, 20.0f, -100.0f ),
+                cam.perspective_fov( motor::math::angle<float_t>::degree_to_radian( 45.0f ) ) ;
+                cam.look_at( motor::math::vec3f_t( -50.0f, 00.0f, 0.0f ),
                     motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ;
 
                 _cameras[1] = motor::shared( std::move( cam ) ) ;
@@ -149,7 +149,7 @@ namespace this_file
                     rss.depth_s.ss.do_depth_write = true ;
                     rss.polygon_s.do_change = true ;
                     rss.polygon_s.ss.do_activate = true ;
-                    rss.polygon_s.ss.fm = motor::graphics::fill_mode::line ;
+                    rss.polygon_s.ss.fm = motor::graphics::fill_mode::fill ;
                     rss.polygon_s.ss.ff = motor::graphics::front_face::counter_clock_wise ;
                     rss.polygon_s.ss.cm = motor::graphics::cull_mode::back ;
                     rss.clear_s.do_change = true ;
@@ -198,8 +198,12 @@ namespace this_file
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.AntiqueCamera.glTF.AntiqueCamera.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.box.glTF.Box.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.simple_camera.simple_camera.gltf" ), &db ) ;
-                            auto item = mod_reg->import_from( motor::io::location_t( "gltf.scaled_cube.scaled_cube.gltf" ), &db ) ;
+                            //auto item = mod_reg->import_from( motor::io::location_t( "gltf.scaled_cube.scaled_cube.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.BoomBox.BoomBox.gltf" ), &db ) ;
+                            //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.gears_corrected.gltf" ), &db ) ;
+                            //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.test.gltf" ), &db ) ;
+                            //auto item = mod_reg->import_from( motor::io::location_t( "gltf.ABeautifulGame.ABeautifulGame.gltf" ), &db ) ;
+                            auto item = mod_reg->import_from( motor::io::location_t( "gltf.AnimatedTriangle.AnimatedTriangle.gltf" ), &db ) ;
 
                             auto * ret_item = item.get() ;
 
@@ -207,6 +211,11 @@ namespace this_file
                             if( auto * scene_item = dynamic_cast<motor::format::scene_item_ptr_t>( ret_item ); scene_item!= nullptr )
                             {
                                 imported_node = motor::move( scene_item->root ) ;
+                            }
+                            else
+                            {
+                                motor::log::global_t::critical("Failed to load gltf file.") ;
+                                std::exit(1) ;
                             }
 
                             motor::release( motor::move( ret_item ) ) ;
@@ -217,7 +226,7 @@ namespace this_file
 
                     {
                         motor::math::m3d::trafof_t t ;
-                        t.set_scale( motor::math::vec3f_t( 100.0f ) ) ;
+                        t.set_scale( motor::math::vec3f_t( 1.0f ) ) ;
 
                         motor::scene::trafo3d_component_t comp ;
                         comp.set_trafo( t ) ;
@@ -297,12 +306,12 @@ namespace this_file
             MOTOR_PROBE( "application", "on_update" ) ;
 
             {
-                motor::scene::trafo_visitor_t v ;
+                motor::scene::variable_update_visitor_t v ;
                 motor::scene::node_t::traverser( _root ).apply( &v ) ;
             }
 
             {
-                motor::scene::variable_update_visitor_t v ;
+                motor::scene::trafo_visitor_t v ;
                 motor::scene::node_t::traverser( _root ).apply( &v ) ;
             }
         } 
@@ -317,7 +326,12 @@ namespace this_file
                 {
                     auto t = _scale_os->get_value() ;
                     float_t f = t.get_scale().x() ;
-                    if( ImGui::SliderFloat( "Scene Scale", &f, 1.0f, 3000.0f )  )
+                    if( ImGui::SliderFloat( "Scene Scale small", &f, 0.1f, 30.0f )  )
+                    {
+                        _scale_os->set_and_exchange( t.set_scale( f ) ) ;
+                    }
+
+                    if( ImGui::SliderFloat( "Scene Scale large", &f, 30.0f, 300.0f )  )
                     {
                         _scale_os->set_and_exchange( t.set_scale( f ) ) ;
                     }
