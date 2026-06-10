@@ -20,7 +20,7 @@ namespace this_file
 
 int main( int argc, char ** argv )
 {
-    motor::log::global_t::status( "Testing linear bezier" ) ;
+    motor::log::global_t::status( "Testing linear bezier" ) ;    
 
     {
         typedef motor::math::linear_bezier_spline< motor::math::vec3f_t > spline_t ;
@@ -36,7 +36,7 @@ int main( int argc, char ** argv )
         {
             this_file::print( "at "+motor::to_string(f), sp(f) );
         }
-    }
+    }    
 
     motor::log::global_t::status( "Testing cubic hermit keyframe sequence" ) ;
 
@@ -57,6 +57,17 @@ int main( int argc, char ** argv )
         {
             this_file::print( "at "+motor::to_string(f), kf(f) );
         }
+    }
+
+    motor::log::global_t::status( "adding  100 keyframes" ) ;
+    {
+        typedef motor::math::linear_bezier_spline< motor::math::vec3f_t > spline_t ;
+        typedef motor::math::keyframe_sequence< spline_t > keyframe_sequence_t ;
+
+        keyframe_sequence_t kf ;
+
+        for( size_t i=0; i<100; ++i )
+            kf.insert( {motor::math::time_ms_t(i), motor::math::vec3f_t() } ) ;
     }
 
     return 0 ;

@@ -1,6 +1,7 @@
 
 #include <motor/math/quaternion/quaternion4.hpp>
 #include <motor/math/vector/vector3.hpp>
+#include <motor/math/interpolation/slerp.hpp>
 
 #include <motor/math/utility/angle.hpp>
 
@@ -108,6 +109,14 @@ int main( int argc, char ** argv )
             auto const res = quat * v ;
             int bp = 0 ;
         }
+    }
+
+    // slerp
+    {
+        motor::math::quat4f_t q1(0.0f,1.0f,1.0f,0.0f) ;
+        motor::math::quat4f_t q2(1.0f,1.0f,1.0f,0.0f) ;
+
+        auto q3 = motor::math::interpolation< motor::math::quat4f_t >::linear( q1, q2, 0.5f ) ;
     }
 
     return 0 ;

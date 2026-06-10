@@ -65,6 +65,9 @@ namespace this_file
         motor::wire::output_slot< motor::math::m3d::trafof_t > * _scale_os = 
             motor::shared( motor::wire::output_slot< motor::math::m3d::trafof_t >() ) ;
 
+        motor::wire::time_node_mtr_t _time_node ; // from the importer
+        motor::wire::inode_mtr_t _merger ; // from the importer
+
         size_t _cam_id = 0 ;
 
         // 0 : this is the free moving camera
@@ -166,6 +169,14 @@ namespace this_file
                 root_so = motor::shared( motor::graphics::state_object_t( std::move( so ) ) ) ;
             }            
 
+            // time noe
+            #if 0
+            {
+                _time_node = motor::shared( motor::wire::time_node_t() ) ;
+                _time_node->borrow_time_is()->set_value( 0.0f ) ;
+            }
+            #endif
+
             // #3 : init scene tree
             {
                 motor::scene::logic_group_t root ;
@@ -202,8 +213,11 @@ namespace this_file
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.BoomBox.BoomBox.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.gears_corrected.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.test.gltf" ), &db ) ;
+                            //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.animated_cube.gltf" ), &db ) ;
+                            auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.BoxAnimated.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.ABeautifulGame.ABeautifulGame.gltf" ), &db ) ;
-                            auto item = mod_reg->import_from( motor::io::location_t( "gltf.AnimatedTriangle.AnimatedTriangle.gltf" ), &db ) ;
+                            //auto item = mod_reg->import_from( motor::io::location_t( "gltf.AnimatedTriangle.AnimatedTriangle.gltf" ), &db ) ;
+                            
 
                             auto * ret_item = item.get() ;
 
@@ -211,6 +225,10 @@ namespace this_file
                             if( auto * scene_item = dynamic_cast<motor::format::scene_item_ptr_t>( ret_item ); scene_item!= nullptr )
                             {
                                 imported_node = motor::move( scene_item->root ) ;
+                                _time_node = motor::move( scene_item->start_node ) ;
+                                _merger = motor::move( scene_item->merger_node ) ;
+
+                                _time_node->borrow_time_is()->connect( motor::share(_time) ) ;
                             }
                             else
                             {
@@ -224,6 +242,8 @@ namespace this_file
                         motor::release( motor::move( mod_reg ) ) ;
                     }
 
+                    // test and scale whole imported tree with
+                    // only one trafo component.
                     {
                         motor::math::m3d::trafof_t t ;
                         t.set_scale( motor::math::vec3f_t( 1.0f ) ) ;
@@ -278,9 +298,13 @@ namespace this_file
         virtual void_t on_graphics( motor::application::app::graphics_data_in_t d ) noexcept 
         {
             {
-                float_t const t = _time->get_value() + d.sec_dt * 0.5f ;
-                _time->set_and_exchange( t > 1.0f ? 0.0f : t ) ;
-            }            
+                float_t const t = _time->get_value() + d.sec_dt ;
+                _time->set_and_exchange( t > 4.0f ? 0.0f : t ) ;
+            }
+
+            {
+                motor::concurrent::global_t::schedule( _time_node->get_task(), motor::concurrent::schedule_type::pool ) ;
+            }
         } 
 
         //******************************************************************************************************

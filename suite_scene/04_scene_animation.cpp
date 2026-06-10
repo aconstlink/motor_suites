@@ -36,7 +36,7 @@
 
 #include <motor/wire/variables/trafo_variables.hpp>
 #include <motor/wire/variables/vector_variables.hpp>
-#include <motor/wire/adapter/trafo3_composer.hpp>
+#include <motor/wire/kit/trafo3_composer.hpp>
 
 #include <motor/math/interpolation/interpolate.hpp>
 #include <motor/math/spline/cubic_hermit_spline.hpp>
