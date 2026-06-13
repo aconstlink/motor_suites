@@ -79,8 +79,8 @@ namespace this_file
             // camera
             {
                 auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 1.0f, 100.0f ) ;
-                cam.perspective_fov( motor::math::angle<float_t>::degree_to_radian( 90.0f ) ) ;
-                cam.look_at( motor::math::vec3f_t( 0.0f, 60.0f, -50.0f ),
+                cam.perspective_fov( motor::math::angle<float_t>::degree_to_radian( 45.0f ) ) ;
+                cam.look_at( motor::math::vec3f_t( 0.0f, 50.0f, 80.0f ),
                     motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ;
 
                 _camera = motor::shared( std::move( cam ) ) ;
@@ -173,6 +173,7 @@ namespace this_file
                                 {
                                     float_t light = dot( normalize( in.nrm ), normalize( vec3_t( 1.0, 1.0, 0.5) ) ) ;
                                     out.color0 = vec4_t( light, light, light, 1.0 ) ;
+                                    out.color0 = out.color0 ' vec4_t( color.xyz, 1.0 ) ;
                                     
                                 }
                             }
@@ -188,31 +189,13 @@ namespace this_file
 
                     {
                         auto * var = vars.data_variable< motor::math::vec4f_t >( "color" ) ;
-                        var->set( motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) ) ;
+                        var->set( motor::math::vec4f_t( 0.0f, 0.0f, 1.0f, 1.0f ) ) ;
                     }
 
                     {
                         auto * var = vars.data_variable< float_t >( "u_time" ) ;
                         var->set( 0.0f ) ;
-                    }
-
-                    {
-                        auto * var = vars.data_variable< motor::math::mat4f_t >( "world" ) ;
-
-                        motor::math::m3d::trafof_t t ;
-                        t.set_translation( motor::math::vec3f_t( -50.0f, 0.0f, 0.0f ) ) ;
-                        var->set( t.get_transformation() ) ;
-                    }
-
-                    {
-                        auto * var = vars.data_variable< motor::math::mat4f_t >( "view" ) ;
-                        var->set( _camera->get_view_matrix() ) ;
-                    }
-
-                    {
-                        auto * var = vars.data_variable< motor::math::mat4f_t >( "proj" ) ;
-                        var->set( _camera->get_proj_matrix() ) ;
-                    }
+                    }                    
 
                     msl_obj->add_variable_set( motor::memory::create_ptr( std::move( vars ), "a variable set" ) ) ;
                 }
@@ -228,25 +211,7 @@ namespace this_file
                     {
                         auto * var = vars.data_variable< float_t >( "u_time" ) ;
                         var->set( 0.0f ) ;
-                    }
-
-                    {
-                        auto * var = vars.data_variable< motor::math::mat4f_t >( "world" ) ;
-
-                        motor::math::m3d::trafof_t t ;
-                        t.set_translation( motor::math::vec3f_t( 50.0f, 0.0f, 0.0f ) ) ;
-                        var->set( t.get_transformation() ) ;
-                    }
-
-                    {
-                        auto * var = vars.data_variable< motor::math::mat4f_t >( "view" ) ;
-                        var->set( _camera->get_view_matrix() ) ;
-                    }
-
-                    {
-                        auto * var = vars.data_variable< motor::math::mat4f_t >( "proj" ) ;
-                        var->set( _camera->get_proj_matrix() ) ;
-                    }
+                    }                    
 
                     msl_obj->add_variable_set( motor::memory::create_ptr( std::move( vars ), "a variable set" ) ) ;
                 }
@@ -297,8 +262,8 @@ namespace this_file
                     {
                         motor::scene::trafo3d_component_t tc( motor::math::m3d::trafof_t(
                             motor::math::vec3f_t( 1.0f, 1.0f, 1.0f ),
-                            motor::math::vec3f_t( 1.0f, 0.0f, 0.0f ),
-                            motor::math::vec3f_t( 0.0f, 20.0f, 0.0f ) ) ) ;
+                            motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ),
+                            motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ) ;
 
                         t->add_component( motor::shared( motor::scene::name_component_t( "trafo node 1" ) ) ) ;
                         t->add_component( motor::shared( std::move( tc ) ) ) ;
@@ -318,8 +283,8 @@ namespace this_file
                             {
                                 motor::scene::trafo3d_component_t tc( motor::math::m3d::trafof_t(
                                     motor::math::vec3f_t( 1.0f, 1.0f, 1.0f ),
-                                    motor::math::vec3f_t( 1.0f, 0.0f, 0.0f ),
-                                    motor::math::vec3f_t( -50.0f, 0.0f, 0.0f ) ) ) ;
+                                    motor::math::vec3f_t( .0f, 0.0f, 0.0f ),
+                                    motor::math::vec3f_t( -10.0f, 0.0f, 0.0f ) ) ) ;
 
                                 rn.add_component( motor::shared( std::move(tc) ) ) ;
 
@@ -343,8 +308,8 @@ namespace this_file
 
                                 motor::scene::trafo3d_component_t tc( motor::math::m3d::trafof_t(
                                     motor::math::vec3f_t( 1.0f, 1.0f, 1.0f ),
-                                    motor::math::vec3f_t( 1.0f, 0.0f, 0.0f ),
-                                    motor::math::vec3f_t( 50.0f, 0.0f, 0.0f ) ) ) ;
+                                    motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ),
+                                    motor::math::vec3f_t( 10.0f, 0.0f, 0.0f ) ) ) ;
 
                                 rn.add_component( motor::shared( std::move(tc) ) ) ;
                             }

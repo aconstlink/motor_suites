@@ -49,6 +49,53 @@ namespace this_file
 {    
     using namespace motor::core::types ;    
 
+    class collect_cameras : public motor::scene::default_visitor
+    {
+        motor_this_typedefs( collect_cameras ) ;
+
+    private:
+
+        using camera_entry_t = std::pair< motor::string_t, motor::gfx::generic_camera_mtr_t > ;
+        using cameras_t = motor::vector< camera_entry_t > ;
+
+        cameras_t _cameras ;
+
+        virtual motor::scene::result visit( motor::scene::node_ptr_t nptr ) noexcept 
+        {
+            motor::string_t name = "" ;
+            {
+                motor::scene::name_component_mtr_t comp ;
+                if( nptr->has_component_and_borrow( comp ) )
+                {
+                    name = comp->get_name() ;
+                }
+            }
+            {
+                motor::scene::camera_component_mtr_t comp;
+                if (nptr->has_component_and_borrow(comp)) 
+                {
+                    this_t::camera_entry_t e(name, comp->get_camera() );
+                    _cameras.emplace_back( std::move(e) ) ;
+                }
+            }
+
+            return motor::scene::result::ok ;
+        }
+
+        virtual motor::scene::result post_visit( motor::scene::node_ptr_t nptr, motor::scene::result const res ) noexcept 
+        {
+            return motor::scene::result::ok ;
+        }
+
+    public:
+
+        cameras_t get_cameras( void_t ) noexcept
+        {
+            return _cameras ;
+        }
+
+    };
+
     class my_app : public motor::application::app
     {
         motor_this_typedefs( my_app ) ;
@@ -73,6 +120,8 @@ namespace this_file
         // 0 : this is the free moving camera
         // 1 : second camera for testing shader variable bindings
         motor::gfx::generic_camera_mtr_t _cameras[2] ;
+
+        motor::gfx::generic_camera_mtr_t _selected_cam = nullptr ;
 
 
         //******************************************************************************************************
@@ -211,12 +260,16 @@ namespace this_file
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.simple_camera.simple_camera.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.scaled_cube.scaled_cube.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.BoomBox.BoomBox.gltf" ), &db ) ;
+                            
+                            //auto item = mod_reg->import_from( motor::io::location_t( "gltf.ABeautifulGame.ABeautifulGame.gltf" ), &db ) ;
+                            //auto item = mod_reg->import_from( motor::io::location_t( "gltf.AnimatedTriangle.AnimatedTriangle.gltf" ), &db ) ;
+                            //auto item = mod_reg->import_from( motor::io::location_t( "gltf.CesiumMilkTruck.CesiumMilkTruck.gltf" ), &db ) ;
+
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.gears_corrected.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.test.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.animated_cube.gltf" ), &db ) ;
-                            auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.BoxAnimated.gltf" ), &db ) ;
-                            //auto item = mod_reg->import_from( motor::io::location_t( "gltf.ABeautifulGame.ABeautifulGame.gltf" ), &db ) ;
-                            //auto item = mod_reg->import_from( motor::io::location_t( "gltf.AnimatedTriangle.AnimatedTriangle.gltf" ), &db ) ;
+                            //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.BoxAnimated.gltf" ), &db ) ;
+                            auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.camera_on_path_and_lookat.gltf" ), &db ) ;
                             
 
                             auto * ret_item = item.get() ;
@@ -298,8 +351,14 @@ namespace this_file
         virtual void_t on_graphics( motor::application::app::graphics_data_in_t d ) noexcept 
         {
             {
-                float_t const t = _time->get_value() + d.sec_dt ;
-                _time->set_and_exchange( t > 4.0f ? 0.0f : t ) ;
+                static float_t t_ = 0.0f ;
+                t_ += d.sec_dt ;
+
+                float_t t = t_ ;
+                t = (motor::math::fn<float_t>::mod( t, 4.0f ) / 2.0f)-1.0f ;
+                t = 1.0f - std::abs( t ) ;
+
+                _time->set_and_exchange( t*2.0f ) ;
             }
 
             {
@@ -315,10 +374,12 @@ namespace this_file
             if ( rd.first_frame )
             {
                 fe->configure<motor::graphics::state_object_t>( root_so ) ;
-            }
+            }            
             
             {
-                motor::scene::render_visitor_t vis( wid, fe, _cameras[_cam_id] ) ;
+                motor::gfx::generic_camera_mtr_t cam = _selected_cam == nullptr ? _cameras[_cam_id] : _selected_cam ;
+                cam->set_dims( 1000.0f, 1000.0f, 1.0f, 1000.0f) ;
+                motor::scene::render_visitor_t vis( wid, fe, cam ) ;
                 motor::scene::node_t::traverser(_root).apply( &vis ) ;
             }
 
@@ -359,14 +420,14 @@ namespace this_file
                     {
                         _scale_os->set_and_exchange( t.set_scale( f ) ) ;
                     }
-                }
-                {
-                    motor::tool::imgui_node_visitor_t v( motor::move( _selected ) ) ;
-                    motor::scene::node_t::traverser( _root ).apply( &v ) ;
-                    _selected = v.get_selected() ;
+
+                    {
+                        motor::tool::imgui_node_visitor_t v( motor::move( _selected ) ) ;
+                        motor::scene::node_t::traverser( _root ).apply( &v ) ;
+                        _selected = v.get_selected() ;
+                    }
                 }
                 ImGui::End() ;
-                
 
                 if ( ImGui::Begin( "Camera Window" ) )
                 {
@@ -384,6 +445,58 @@ namespace this_file
                         ImGui::SliderFloat( "Cur Cam Y", &y, -100.0f, 100.0f ) ;
                         _cameras[_cam_id]->translate_to( motor::math::vec3f_t( x, y, cam_pos.z() ) ) ;
                         
+                    }
+
+                    // choose camera from scene
+                    {
+                        this_file::collect_cameras cc ;
+                        motor::scene::node_t::traverser(_root).apply( &cc ) ;
+
+                        auto cams = cc.get_cameras() ;
+
+                        
+
+                        {
+                            size_t i=1; 
+                            static ImGuiComboFlags flags = 0;
+                            motor::vector< char const * > items( cams.size() + 1 ) ;
+                            for( auto const & e : cams )
+                            {
+                                items[i++] = e.first.c_str() ;
+                            }
+                            items[0] = "none" ;
+
+                            static int item_selected_idx = 0; 
+                            const char* combo_preview_value = items[item_selected_idx];
+                            if (ImGui::BeginCombo("CameraCombo", combo_preview_value, flags))
+                            {
+                                for (int n = 0; n < items.size(); n++)
+                                {
+                                    const bool is_selected = (item_selected_idx == n);
+                                    if (ImGui::Selectable(items[n], is_selected))
+                                        item_selected_idx = n;
+
+                                    // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+                                    if (is_selected)
+                                        ImGui::SetItemDefaultFocus();
+                                }
+                                ImGui::EndCombo();
+
+
+                                {
+                                    motor::release( motor::move( _selected_cam ) ) ;
+                                    if( item_selected_idx != 0 ) 
+                                        _selected_cam = motor::move( cams[item_selected_idx-1].second ) ;
+                                }
+                            }
+                        }
+
+                        
+                        
+                        for( auto e : cams )
+                        {
+                            motor::release( motor::move( e.second ) ) ;
+                        }
                     }
                 }
                 ImGui::End() ;

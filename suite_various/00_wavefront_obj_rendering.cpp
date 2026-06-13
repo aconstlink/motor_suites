@@ -402,8 +402,8 @@ namespace this_file
                 auto const r = button_funk( motor::controls::types::three_mouse_t::button::right ) ;
                 auto const m = button_funk( motor::controls::types::three_mouse_t::button::middle ) ;
 
-                _cc.rotate_x = r ? int_t( -motor::math::fn<float_t>::sign( dif.y() ) ) : 0 ;
-                _cc.rotate_y = r ? int_t( +motor::math::fn<float_t>::sign( dif.x() ) ) : 0 ;
+                _cc.rotate_x = r ? int_t( +motor::math::fn<float_t>::sign( dif.y() ) ) : 0 ;
+                _cc.rotate_y = r ? int_t( -motor::math::fn<float_t>::sign( dif.x() ) ) : 0 ;
                 _cc.rotate_z = ctrl ? int_t( +motor::math::fn<float_t>::sign( dif.x() ) ) : 0 ;
             }
 
@@ -483,11 +483,11 @@ namespace this_file
                     {
                         if ( _cc.move_backwards )
                         {
-                            translate.z( -200.0f * gd.sec_dt ) ;
+                            translate.z( +200.0f * gd.sec_dt ) ;
                         }
                         else if ( _cc.move_forwards )
                         {
-                            translate.z( +200.0f * gd.sec_dt ) ;
+                            translate.z( -200.0f * gd.sec_dt ) ;
                         }
                     }
 
