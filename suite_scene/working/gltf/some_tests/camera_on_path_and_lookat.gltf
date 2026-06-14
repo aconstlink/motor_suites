@@ -18,7 +18,9 @@
 				7,
 				8,
 				9,
-				10
+				10,
+				12,
+				15
 			]
 		}
 	],
@@ -95,14 +97,6 @@
 			]
 		},
 		{
-			"name":"camera_lookat",
-			"translation":[
-				-10.642215728759766,
-				1.4924888610839844,
-				-1.9790687561035156
-			]
-		},
-		{
 			"camera":2,
 			"name":"camera_on_path",
 			"rotation":[
@@ -119,11 +113,81 @@
 		},
 		{
 			"mesh":4,
+			"name":"Suzanne",
+			"rotation":[
+				-0.19370758533477783,
+				0.4512737989425659,
+				0.13706795871257782,
+				0.8602567911148071
+			],
+			"translation":[
+				3.7828328609466553,
+				5.527288436889648,
+				6.213360786437988
+			]
+		},
+		{
+			"camera":3,
+			"name":"suz_cam",
+			"rotation":[
+				-0.20902755856513977,
+				0.650530219078064,
+				0.19311025738716125,
+				0.7041494250297546
+			],
+			"translation":[
+				11.458905220031738,
+				10.297807693481445,
+				6.750087261199951
+			]
+		},
+		{
+			"mesh":5,
+			"name":"Icosphere",
+			"translation":[
+				0,
+				-4.234414100646973,
+				-7.688310623168945
+			]
+		},
+		{
+			"children":[
+				11
+			],
+			"name":"Empty",
+			"translation":[
+				0,
+				9.036831855773926,
+				10.484243392944336
+			]
+		},
+		{
+			"mesh":6,
 			"name":"camera_look_at_target",
 			"translation":[
 				-11.642215728759766,
-				-0.3194694519042969,
-				-1.9790687561035156
+				-7.387698173522949,
+				7.429666519165039
+			]
+		},
+		{
+			"name":"camera_lookat",
+			"translation":[
+				-10.642215728759766,
+				-5.575739860534668,
+				7.429666519165039
+			]
+		},
+		{
+			"children":[
+				13,
+				14
+			],
+			"name":"Empty.001",
+			"translation":[
+				0,
+				7.068228721618652,
+				-9.408735275268555
 			]
 		}
 	],
@@ -161,6 +225,16 @@
 				"znear":0.10000000149011612
 			},
 			"type":"perspective"
+		},
+		{
+			"name":"Camera.003",
+			"perspective":{
+				"aspectRatio":1.7777777777777777,
+				"yfov":0.39959652046304894,
+				"zfar":1000,
+				"znear":0.10000000149011612
+			},
+			"type":"perspective"
 		}
 	],
 	"animations":[
@@ -184,14 +258,14 @@
 			"name":"CameraAction",
 			"samplers":[
 				{
-					"input":17,
+					"input":25,
 					"interpolation":"LINEAR",
-					"output":18
+					"output":26
 				},
 				{
-					"input":17,
+					"input":25,
 					"interpolation":"LINEAR",
-					"output":19
+					"output":27
 				}
 			]
 		},
@@ -200,14 +274,14 @@
 				{
 					"sampler":0,
 					"target":{
-						"node":9,
+						"node":8,
 						"path":"translation"
 					}
 				},
 				{
 					"sampler":1,
 					"target":{
-						"node":9,
+						"node":8,
 						"path":"rotation"
 					}
 				}
@@ -215,14 +289,14 @@
 			"name":"camera_on_pathAction",
 			"samplers":[
 				{
-					"input":20,
+					"input":28,
 					"interpolation":"LINEAR",
-					"output":21
+					"output":29
 				},
 				{
-					"input":20,
+					"input":28,
 					"interpolation":"LINEAR",
-					"output":22
+					"output":30
 				}
 			]
 		},
@@ -231,7 +305,7 @@
 				{
 					"sampler":0,
 					"target":{
-						"node":10,
+						"node":13,
 						"path":"translation"
 					}
 				}
@@ -239,9 +313,9 @@
 			"name":"camera_look_at_targetAction",
 			"samplers":[
 				{
-					"input":23,
+					"input":31,
 					"interpolation":"LINEAR",
-					"output":24
+					"output":32
 				}
 			]
 		}
@@ -304,6 +378,9 @@
 			]
 		},
 		{
+			"extras":{
+				"test_string":"1.0"
+			},
 			"name":"Cube.003",
 			"primitives":[
 				{
@@ -317,13 +394,39 @@
 			]
 		},
 		{
-			"name":"Cube.004",
+			"name":"Suzanne",
 			"primitives":[
 				{
 					"attributes":{
 						"POSITION":14,
 						"NORMAL":15,
 						"TEXCOORD_0":16
+					},
+					"indices":17
+				}
+			]
+		},
+		{
+			"name":"Icosphere",
+			"primitives":[
+				{
+					"attributes":{
+						"POSITION":18,
+						"NORMAL":19,
+						"TEXCOORD_0":20
+					},
+					"indices":21
+				}
+			]
+		},
+		{
+			"name":"Cube.004",
+			"primitives":[
+				{
+					"attributes":{
+						"POSITION":22,
+						"NORMAL":23,
+						"TEXCOORD_0":24
 					},
 					"indices":7
 				}
@@ -458,6 +561,74 @@
 		{
 			"bufferView":14,
 			"componentType":5126,
+			"count":1966,
+			"max":[
+				1.3671875,
+				0.984375,
+				0.8515625
+			],
+			"min":[
+				-1.3671875,
+				-0.984375,
+				-0.8515625
+			],
+			"type":"VEC3"
+		},
+		{
+			"bufferView":15,
+			"componentType":5126,
+			"count":1966,
+			"type":"VEC3"
+		},
+		{
+			"bufferView":16,
+			"componentType":5126,
+			"count":1966,
+			"type":"VEC2"
+		},
+		{
+			"bufferView":17,
+			"componentType":5123,
+			"count":2904,
+			"type":"SCALAR"
+		},
+		{
+			"bufferView":18,
+			"componentType":5126,
+			"count":240,
+			"max":[
+				0.9510578513145447,
+				1,
+				0.9999999403953552
+			],
+			"min":[
+				-0.9510578513145447,
+				-1,
+				-0.9999999403953552
+			],
+			"type":"VEC3"
+		},
+		{
+			"bufferView":19,
+			"componentType":5126,
+			"count":240,
+			"type":"VEC3"
+		},
+		{
+			"bufferView":20,
+			"componentType":5126,
+			"count":240,
+			"type":"VEC2"
+		},
+		{
+			"bufferView":21,
+			"componentType":5123,
+			"count":240,
+			"type":"SCALAR"
+		},
+		{
+			"bufferView":22,
+			"componentType":5126,
 			"count":24,
 			"max":[
 				1,
@@ -472,19 +643,19 @@
 			"type":"VEC3"
 		},
 		{
-			"bufferView":15,
+			"bufferView":23,
 			"componentType":5126,
 			"count":24,
 			"type":"VEC3"
 		},
 		{
-			"bufferView":16,
+			"bufferView":24,
 			"componentType":5126,
 			"count":24,
 			"type":"VEC2"
 		},
 		{
-			"bufferView":17,
+			"bufferView":25,
 			"componentType":5126,
 			"count":72,
 			"max":[
@@ -496,19 +667,19 @@
 			"type":"SCALAR"
 		},
 		{
-			"bufferView":18,
+			"bufferView":26,
 			"componentType":5126,
 			"count":72,
 			"type":"VEC3"
 		},
 		{
-			"bufferView":19,
+			"bufferView":27,
 			"componentType":5126,
 			"count":72,
 			"type":"VEC4"
 		},
 		{
-			"bufferView":20,
+			"bufferView":28,
 			"componentType":5126,
 			"count":67,
 			"max":[
@@ -520,19 +691,19 @@
 			"type":"SCALAR"
 		},
 		{
-			"bufferView":21,
+			"bufferView":29,
 			"componentType":5126,
 			"count":67,
 			"type":"VEC3"
 		},
 		{
-			"bufferView":22,
+			"bufferView":30,
 			"componentType":5126,
 			"count":67,
 			"type":"VEC4"
 		},
 		{
-			"bufferView":23,
+			"bufferView":31,
 			"componentType":5126,
 			"count":59,
 			"max":[
@@ -544,7 +715,7 @@
 			"type":"SCALAR"
 		},
 		{
-			"bufferView":24,
+			"bufferView":32,
 			"componentType":5126,
 			"count":59,
 			"type":"VEC3"
@@ -637,66 +808,114 @@
 		},
 		{
 			"buffer":0,
-			"byteLength":288,
+			"byteLength":23592,
 			"byteOffset":3216,
 			"target":34962
 		},
 		{
 			"buffer":0,
+			"byteLength":23592,
+			"byteOffset":26808,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":15728,
+			"byteOffset":50400,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":5808,
+			"byteOffset":66128,
+			"target":34963
+		},
+		{
+			"buffer":0,
+			"byteLength":2880,
+			"byteOffset":71936,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":2880,
+			"byteOffset":74816,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":1920,
+			"byteOffset":77696,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":480,
+			"byteOffset":79616,
+			"target":34963
+		},
+		{
+			"buffer":0,
 			"byteLength":288,
-			"byteOffset":3504,
+			"byteOffset":80096,
+			"target":34962
+		},
+		{
+			"buffer":0,
+			"byteLength":288,
+			"byteOffset":80384,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":192,
-			"byteOffset":3792,
+			"byteOffset":80672,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":288,
-			"byteOffset":3984
+			"byteOffset":80864
 		},
 		{
 			"buffer":0,
 			"byteLength":864,
-			"byteOffset":4272
+			"byteOffset":81152
 		},
 		{
 			"buffer":0,
 			"byteLength":1152,
-			"byteOffset":5136
+			"byteOffset":82016
 		},
 		{
 			"buffer":0,
 			"byteLength":268,
-			"byteOffset":6288
+			"byteOffset":83168
 		},
 		{
 			"buffer":0,
 			"byteLength":804,
-			"byteOffset":6556
+			"byteOffset":83436
 		},
 		{
 			"buffer":0,
 			"byteLength":1072,
-			"byteOffset":7360
+			"byteOffset":84240
 		},
 		{
 			"buffer":0,
 			"byteLength":236,
-			"byteOffset":8432
+			"byteOffset":85312
 		},
 		{
 			"buffer":0,
 			"byteLength":708,
-			"byteOffset":8668
+			"byteOffset":85548
 		}
 	],
 	"buffers":[
 		{
-			"byteLength":9376,
+			"byteLength":86256,
 			"uri":"camera_on_path_and_lookat.bin"
 		}
 	]

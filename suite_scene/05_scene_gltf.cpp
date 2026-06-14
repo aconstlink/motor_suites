@@ -108,9 +108,11 @@ namespace this_file
 
         motor::graphics::state_object_mtr_t root_so ;
 
-        motor::wire::output_slot< float_t > * _time = motor::shared( motor::wire::output_slot< float_t >( 0.0f ) ) ;
-        motor::wire::output_slot< motor::math::m3d::trafof_t > * _scale_os = 
-            motor::shared( motor::wire::output_slot< motor::math::m3d::trafof_t >() ) ;
+        using os_float_t = motor::wire::output_slot< float_t > ;
+        using os_trafo_t = motor::wire::output_slot< motor::math::m3d::trafof_t > ;
+
+        os_float_t * _time = motor::shared( os_float_t( 0.0f ) ) ;
+        os_trafo_t * _scale_os = motor::shared( os_trafo_t() ) ;
 
         motor::wire::time_node_mtr_t _time_node ; // from the importer
         motor::wire::inode_mtr_t _merger ; // from the importer
@@ -378,7 +380,7 @@ namespace this_file
             
             {
                 motor::gfx::generic_camera_mtr_t cam = _selected_cam == nullptr ? _cameras[_cam_id] : _selected_cam ;
-                cam->set_dims( 1000.0f, 1000.0f, 1.0f, 1000.0f) ;
+                //cam->set_dims( 1000.0f, 1000.0f, 1.0f, 1000.0f) ;
                 motor::scene::render_visitor_t vis( wid, fe, cam ) ;
                 motor::scene::node_t::traverser(_root).apply( &vis ) ;
             }
@@ -464,11 +466,11 @@ namespace this_file
                             {
                                 items[i++] = e.first.c_str() ;
                             }
-                            items[0] = "none" ;
+                            items[0] = "free" ;
 
                             static int item_selected_idx = 0; 
                             const char* combo_preview_value = items[item_selected_idx];
-                            if (ImGui::BeginCombo("CameraCombo", combo_preview_value, flags))
+                            if (ImGui::BeginCombo("Scene Camera", combo_preview_value, flags))
                             {
                                 for (int n = 0; n < items.size(); n++)
                                 {
@@ -538,14 +540,23 @@ namespace this_file
 
         virtual void_t on_shutdown( void_t ) noexcept 
         {
-            motor::release( motor::move( _time ) ) ;
+            // release your own slots with wire::release!
+            // motor::release will not resolve x-connections.
+            motor::wire::release( motor::move( _time ) ) ;
+            motor::wire::release( motor::move( _scale_os ) ) ;
+
             motor::release( motor::move( _root ) ) ;
             motor::release( motor::move( root_so ) ) ;
-            motor::release( motor::move( _scale_os ) ) ;
+            
 
             motor::release( motor::move( _selected ) ) ;
             motor::release( motor::move( _cameras[0] ) ) ;
             motor::release( motor::move( _cameras[1] ) ) ;
+
+            motor::release( motor::move( _time_node  ) ) ;
+            motor::release( motor::move( _merger ) ) ;
+
+            motor::release( motor::move( _selected_cam ) ) ;
         }
     };
 }
