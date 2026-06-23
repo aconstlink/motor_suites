@@ -271,7 +271,8 @@ namespace this_file
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.test.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.animated_cube.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.BoxAnimated.gltf" ), &db ) ;
-                            auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.camera_on_path_and_lookat.gltf" ), &db ) ;
+                            //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.camera_on_path_and_lookat.gltf" ), &db ) ;
+                            auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.scene2.gltf" ), &db ) ;
                             
 
                             auto * ret_item = item.get() ;
@@ -304,7 +305,7 @@ namespace this_file
                         t.set_scale( motor::math::vec3f_t( 1.0f ) ) ;
 
                         motor::scene::trafo3d_component_t comp ;
-                        comp.set_trafo( t ) ;
+                        comp.set_trafo_local( t ) ;
 
                         {
                             motor::wire::inputs_t inputs ;
@@ -357,10 +358,11 @@ namespace this_file
                 t_ += d.sec_dt ;
 
                 float_t t = t_ ;
-                t = (motor::math::fn<float_t>::mod( t, 4.0f ) / 2.0f)-1.0f ;
-                t = 1.0f - std::abs( t ) ;
+                t = motor::math::fn<float_t>::mod( t, 8.0f ) ;
+                //t = (motor::math::fn<float_t>::mod( t, 8.0f ) / 4.0f)-1.0f ;
+                //t = 1.0f - std::abs( t ) ;
 
-                _time->set_and_exchange( t*2.0f ) ;
+                _time->set_and_exchange( t) ;
             }
 
             {
@@ -426,7 +428,7 @@ namespace this_file
                     {
                         motor::tool::imgui_node_visitor_t v( motor::move( _selected ) ) ;
                         motor::scene::node_t::traverser( _root ).apply( &v ) ;
-                        _selected = v.get_selected() ;
+                        _selected = v.move_selected() ;
                     }
                 }
                 ImGui::End() ;
