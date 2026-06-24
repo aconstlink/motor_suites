@@ -358,7 +358,7 @@ namespace this_file
                 t_ += d.sec_dt ;
 
                 float_t t = t_ ;
-                t = motor::math::fn<float_t>::mod( t, 8.0f ) ;
+                t = motor::math::fn<float_t>::mod( t, 12.0f ) ;
                 //t = (motor::math::fn<float_t>::mod( t, 8.0f ) / 4.0f)-1.0f ;
                 //t = 1.0f - std::abs( t ) ;
 
