@@ -268,11 +268,11 @@ namespace this_file
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.CesiumMilkTruck.CesiumMilkTruck.gltf" ), &db ) ;
 
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.gears_corrected.gltf" ), &db ) ;
-                            //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.test.gltf" ), &db ) ;
+                            auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.test.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.animated_cube.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.BoxAnimated.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.camera_on_path_and_lookat.gltf" ), &db ) ;
-                            auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.scene2.gltf" ), &db ) ;
+                            //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.scene2.gltf" ), &db ) ;
                             
 
                             auto * ret_item = item.get() ;

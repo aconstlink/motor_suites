@@ -106,7 +106,7 @@ namespace this_file
                 {
                     motor::tool::imgui_node_visitor_t v( motor::move( _selected ) ) ;
                     motor::scene::node_t::traverser( _root ).apply( &v ) ;
-                    _selected = v.get_selected() ;
+                    _selected = v.move_selected() ;
                 }
                 ImGui::End() ;
             }
