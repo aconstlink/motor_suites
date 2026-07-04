@@ -23,8 +23,8 @@
 #include <motor/scene/node/logic_leaf.h>
 
 #include <motor/scene/component/name_component.hpp>
-#include <motor/scene/component/msl_component.h>
-#include <motor/scene/component/render_settings_component.h>
+#include <motor/scene/component/graphics/msl_component.h>
+#include <motor/scene/component/graphics/render_settings_component.h>
 #include <motor/scene/component/trafo3d_component.h>
 #include <motor/scene/component/camera_component.h>
 #include <motor/scene/component/animation/animation_component.h>

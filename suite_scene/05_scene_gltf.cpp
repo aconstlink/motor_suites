@@ -25,11 +25,13 @@
 #include <motor/scene/node/logic_leaf.h>
 
 #include <motor/scene/component/name_component.hpp>
-#include <motor/scene/component/msl_component.h>
-#include <motor/scene/component/render_settings_component.h>
+#include <motor/scene/component/graphics/msl_component.h>
+#include <motor/scene/component/graphics/msl_set_component.hpp>
+#include <motor/scene/component/graphics/render_settings_component.h>
 #include <motor/scene/component/trafo3d_component.h>
 #include <motor/scene/component/camera_component.h>
 
+#include <motor/scene/visitor/search_by_name_visitor.hpp>
 #include <motor/scene/visitor/trafo_visitor.h>
 #include <motor/scene/visitor/render_visitor.h>
 #include <motor/scene/visitor/variable_update_visitor.h>
@@ -125,10 +127,11 @@ namespace this_file
 
         motor::gfx::generic_camera_mtr_t _selected_cam = nullptr ;
 
-
         //******************************************************************************************************
         virtual void_t on_init( void_t ) noexcept
         {
+            motor::io::database_t db = motor::io::database_t( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
+
             MOTOR_PROBE( "application", "on_init" ) ;
 
             // #1 : init window
@@ -209,7 +212,7 @@ namespace this_file
                     rss.clear_s.do_change = true ;
                     rss.clear_s.ss.clear_color = motor::math::vec4f_t( 0.5f, 0.9f, 0.5f, 1.0f ) ;
                     rss.clear_s.ss.do_activate = true ;
-                    rss.clear_s.ss.do_color_clear = true ;
+                    rss.clear_s.ss.do_color_clear = false ;
                     rss.clear_s.ss.do_depth_clear = true ;
                     rss.view_s.do_change = true ;
                     rss.view_s.ss.do_activate = false ;
@@ -250,9 +253,7 @@ namespace this_file
                     // make importer ready
                     {
                         motor::format::module_registry_mtr_t mod_reg = motor::format::global::register_default_modules( 
-                        motor::shared( motor::format::module_registry_t(), "mod registry"  ) ) ;
-
-                        motor::io::database_t db = motor::io::database_t( motor::io::path_t( DATAPATH ), "./working", "data" ) ;
+                        motor::shared( motor::format::module_registry_t(), "mod registry"  ) ) ;                        
 
                         // import the gltf asset.
                         {
@@ -268,11 +269,11 @@ namespace this_file
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.CesiumMilkTruck.CesiumMilkTruck.gltf" ), &db ) ;
 
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.gears_corrected.gltf" ), &db ) ;
-                            auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.test.gltf" ), &db ) ;
+                            //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.test.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.animated_cube.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.BoxAnimated.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.camera_on_path_and_lookat.gltf" ), &db ) ;
-                            //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.scene2.gltf" ), &db ) ;
+                            auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.scene2.gltf" ), &db ) ;
                             
 
                             auto * ret_item = item.get() ;
@@ -320,6 +321,57 @@ namespace this_file
                 }
 
                 _root = motor::shared( std::move( root ) ) ;
+            }
+
+            // load shader and add to msl_set_component
+            {
+                motor::scene::node_ptr_t found = nullptr ;
+
+                // search node to add new msl to 
+                {
+                    motor::scene::search_by_name_visitor sv("Sphere.001")  ;
+                    motor::scene::node_t::traverser( _root ).apply( &sv ) ;
+
+                    found = sv.move_found_node() ;
+                }
+
+                // load new msl shader
+                if( found != nullptr )
+                {
+                    motor::string_t shd ;
+                    db.load( motor::io::location_t( "shaders.just_red.msl" ) ).wait_for_operation( [&] ( char_cptr_t data, size_t const sib, motor::io::result const ) 
+                    { 
+
+                        motor::log::global_t::status( "********************************" ) ;
+                        motor::log::global_t::status( "loaded shader " + motor::from_std( std::to_string(sib) ) + " bytes" ) ;
+
+                        shd = motor::string_t( data, sib ) ;
+                    } ) ;
+
+                    {
+                        motor::scene::msl_set_component_mtr_t comp = found->borrow_component<motor::scene::msl_set_component_t>() ;
+                        if( comp != nullptr )
+                        {
+                            // clone and set new shader
+                            motor::scene::msl_component_mtr_t msl_comp ;
+                            if( comp->borrow_msl_component( 0, msl_comp ) )
+                            {
+                                auto clone = msl_comp->light_clone( "my_new_msl_clone") ;
+                                comp->add_component( 1, motor::shared( std::move( clone ) ) ) ;
+                            }
+                            
+                            if( comp->borrow_msl_component(1, msl_comp ) ) 
+                            {
+                                msl_comp->borrow_msl()->clear_shaders().add( motor::graphics::msl_api_type::msl_4_0, shd ) ;
+                            }
+                        }
+                    }
+                    motor::release( motor::move( found ) ) ;
+                }
+                else
+                {
+                    motor::log::global_t::status("You can search for a node and exchange the msl.") ;
+                }
             }
         }
 
@@ -386,6 +438,15 @@ namespace this_file
                 motor::scene::render_visitor_t vis( wid, fe, cam ) ;
                 motor::scene::node_t::traverser(_root).apply( &vis ) ;
             }
+
+            {
+                motor::gfx::generic_camera_mtr_t cam = _selected_cam == nullptr ? _cameras[_cam_id] : _selected_cam ;
+                //cam->set_dims( 1000.0f, 1000.0f, 1.0f, 1000.0f) ;
+                motor::scene::render_visitor_t vis( wid, 1, fe, cam ) ;
+                motor::scene::node_t::traverser(_root).apply( &vis ) ;
+            }
+
+            
 
         }
 
