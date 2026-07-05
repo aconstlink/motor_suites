@@ -26,7 +26,7 @@
 #include <motor/scene/component/camera_component.h>
 
 #include <motor/scene/visitor/trafo_visitor.h>
-#include <motor/scene/visitor/render_visitor.h>
+#include <motor/scene/visitor/graphics/render_visitor.h>
 
 #include <motor/tool/imgui/node_kit/imgui_node_visitor.h>
 

@@ -31,7 +31,7 @@
 #include <motor/scene/component/animation/animation_track.hpp>
 
 #include <motor/scene/visitor/trafo_visitor.h>
-#include <motor/scene/visitor/render_visitor.h>
+#include <motor/scene/visitor/graphics/render_visitor.h>
 #include <motor/scene/visitor/variable_update_visitor.h>
 
 #include <motor/wire/variables/trafo_variables.hpp>
