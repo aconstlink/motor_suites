@@ -24,7 +24,7 @@
 
 #include <motor/scene/component/name_component.hpp>
 #include <motor/scene/component/graphics/msl_component.h>
-#include <motor/scene/component/graphics/render_settings_component.h>
+#include <motor/scene/component/graphics/render_settings_component.hpp>
 #include <motor/scene/component/trafo3d_component.h>
 #include <motor/scene/component/camera_component.h>
 #include <motor/scene/component/animation/animation_component.h>
@@ -501,7 +501,7 @@ namespace this_file
                                 }                                
 
                                 // add shader variable slots
-                                {
+                                {                                    
                                     auto mslcomp = motor::scene::msl_component_t( motor::share(msl_obj), 0) ;
 
                                     auto & inputs = *mslcomp.borrow_shader_inputs() ;
@@ -529,7 +529,8 @@ namespace this_file
                                     }
                                     #endif
 
-                                    rn.add_component( motor::shared( std::move(mslcomp) ) ) ;
+                                    auto mslset_comp = motor::scene::msl_set_component_t( 0, motor::shared( std::move(mslcomp) ) ) ;
+                                    rn.add_component( motor::shared( std::move( mslset_comp ) ) ) ;
                                 }
 
                                 rs->add_child( motor::shared( std::move( rn ) ) ) ;
@@ -582,7 +583,9 @@ namespace this_file
                                         inputs.add( "world", motor::shared( std::move( s ) ) ) ;
                                     }
                                     #endif
-                                    rn.add_component( motor::shared( std::move(mslcomp) ) ) ;
+
+                                    auto mslset_comp = motor::scene::msl_set_component_t( 0, motor::shared( std::move(mslcomp) ) ) ;
+                                    rn.add_component( motor::shared( std::move(mslset_comp) ) ) ;
                                 }
                                 rs->add_child( motor::shared( std::move( rn ) ) ) ;
                             }
@@ -724,7 +727,7 @@ namespace this_file
             }
             
             {
-                motor::scene::render_visitor_t vis( wid, fe, _cameras[_cam_id] ) ;
+                motor::scene::render_visitor_t vis( fe, _cameras[_cam_id] ) ;
                 motor::scene::node_t::traverser(_root).apply( &vis ) ;
             }
         }

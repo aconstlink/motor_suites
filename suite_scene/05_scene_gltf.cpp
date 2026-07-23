@@ -27,7 +27,7 @@
 #include <motor/scene/component/name_component.hpp>
 #include <motor/scene/component/graphics/msl_component.h>
 #include <motor/scene/component/graphics/msl_set_component.hpp>
-#include <motor/scene/component/graphics/render_settings_component.h>
+#include <motor/scene/component/graphics/render_settings_component.hpp>
 #include <motor/scene/component/trafo3d_component.h>
 #include <motor/scene/component/camera_component.h>
 
@@ -273,7 +273,8 @@ namespace this_file
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.animated_cube.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.BoxAnimated.gltf" ), &db ) ;
                             //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.camera_on_path_and_lookat.gltf" ), &db ) ;
-                            auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.scene2.gltf" ), &db ) ;
+                            //auto item = mod_reg->import_from( motor::io::location_t( "gltf.some_tests.scene2.gltf" ), &db ) ;
+                            auto item = mod_reg->import_from( motor::io::location_t( "gltf.marker_export_test.gltf" ), &db ) ;
                             
 
                             auto * ret_item = item.get() ;
@@ -292,6 +293,8 @@ namespace this_file
                                 motor::log::global_t::critical("Failed to load gltf file.") ;
                                 std::exit(1) ;
                             }
+
+                            ret_item->release() ;
 
                             motor::release( motor::move( ret_item ) ) ;
                         }
@@ -329,7 +332,7 @@ namespace this_file
 
                 // search node to add new msl to 
                 {
-                    motor::scene::search_by_name_visitor sv("Sphere.001")  ;
+                    motor::scene::search_by_name_visitor sv("Cube")  ;
                     motor::scene::node_t::traverser( _root ).apply( &sv ) ;
 
                     found = sv.move_found_node() ;
@@ -435,14 +438,14 @@ namespace this_file
             {
                 motor::gfx::generic_camera_mtr_t cam = _selected_cam == nullptr ? _cameras[_cam_id] : _selected_cam ;
                 //cam->set_dims( 1000.0f, 1000.0f, 1.0f, 1000.0f) ;
-                motor::scene::render_visitor_t vis( wid, fe, cam ) ;
+                motor::scene::render_visitor_t vis( 0, fe, cam ) ;
                 motor::scene::node_t::traverser(_root).apply( &vis ) ;
             }
 
             {
                 motor::gfx::generic_camera_mtr_t cam = _selected_cam == nullptr ? _cameras[_cam_id] : _selected_cam ;
                 //cam->set_dims( 1000.0f, 1000.0f, 1.0f, 1000.0f) ;
-                motor::scene::render_visitor_t vis( wid, 1, fe, cam ) ;
+                motor::scene::render_visitor_t vis( 1, fe, cam ) ;
                 motor::scene::node_t::traverser(_root).apply( &vis ) ;
             }
 
