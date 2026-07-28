@@ -32,7 +32,8 @@ namespace this_file
                 wi.y = 100 ;
                 wi.w = 800 ;
                 wi.h = 600 ;
-                wi.gen = motor::application::graphics_generation::gen4_auto ;
+                wi.gen = motor::application::graphics_generation::gen4_gl4 ;
+                //wi.gen = motor::application::graphics_generation::gen4_auto ;
                 
                 this_t::send_window_message( this_t::create_window( wi ), [&]( motor::application::app::window_view & wnd )
                 {

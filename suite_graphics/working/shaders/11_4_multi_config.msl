@@ -1,0 +1,65 @@
+
+
+config render_b
+{
+    vertex_shader
+    {
+        in vec3_t pos : position ;
+        in vec2_t tx : texcoord0 ;
+
+        out vec2_t tx : texcoord0 ;
+        out vec4_t pos : position ;
+
+        void main()
+        {
+            vec3_t p = in.pos ;
+            out.tx = in.tx ;
+            out.pos = vec4_t( sign(p), 1.0 ) ;  
+        }
+    }
+
+    pixel_shader
+    {
+        out vec4_t color : color ;
+
+        vec4_t u_color ;
+
+        void main()
+        {
+            vec3_t color = u_color.xyz + vec3_t(0.0,1.0,0.0) ;
+            out.color = vec4_t(color, 1.0) ;
+        }
+    }
+}
+
+config render_c
+{
+    vertex_shader
+    {
+        in vec3_t pos : position ;
+        in vec2_t tx : texcoord0 ;
+
+        out vec2_t tx : texcoord0 ;
+        out vec4_t pos : position ;
+
+        void main()
+        {
+            vec3_t p = in.pos ;
+            out.tx = in.tx ;
+            out.pos = vec4_t( sign(p), 1.0 ) ;  
+        }
+    }
+
+    pixel_shader
+    {
+        out vec4_t color : color ;
+
+        vec4_t u_color ;
+
+        void main()
+        {
+            vec3_t color = u_color.xyz + vec3_t(0.0,0.0,1.0) ;
+            out.color = vec4_t(color, 1.0) ;
+        }
+    }
+}
