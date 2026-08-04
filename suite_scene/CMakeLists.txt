@@ -7,6 +7,7 @@ set( tests
     "03_scene_animation.cpp"
     "04_scene_animation.cpp"
     "05_scene_gltf.cpp"
+    "06_manager_render.cpp"
     )
 
 foreach( _test ${tests} )

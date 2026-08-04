@@ -23,6 +23,7 @@
 #include <motor/scene/component/trafo3d_component.h>
 #include <motor/scene/component/camera_component.h>
 
+#include <motor/scene/visitor/variable_update_visitor.h>
 #include <motor/scene/visitor/trafo_visitor.h>
 #include <motor/scene/visitor/graphics/render_visitor.h>
 
@@ -378,6 +379,11 @@ namespace this_file
         virtual void_t on_update( motor::application::app::update_data_in_t ) noexcept 
         {
             MOTOR_PROBE( "application", "on_update" ) ;
+
+            {
+                motor::scene::variable_update_visitor_t v;
+                motor::scene::node_t::traverser( _root ).apply( &v ) ;
+            }
 
             {
                 motor::scene::trafo_visitor_t v ;

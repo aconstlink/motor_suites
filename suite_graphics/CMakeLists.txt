@@ -22,7 +22,6 @@ set( tests
     "11_1_msl_libraries.cpp"
     "11_2_msl_buildins_1.cpp"
     "11_3_msl_buildins_2.cpp"
-    "11_4_msl_reference.cpp"
     "12_noise_texture.cpp"
     "15_wire_shader_slots.cpp"
     "16_ghosting.cpp"
