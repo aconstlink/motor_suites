@@ -36,6 +36,13 @@ namespace this_file
         motor::graphics::geometry_object_t geo_obj2 ;
         motor::graphics::msl_object_mtr_t msl_obj_scene ;
                 
+        bool_t _check_geo0 = false ;
+        bool_t _check_geo1 = false ;
+        bool_t _check_geo2 = false ;
+
+        size_t _geo0_idx = size_t(-1) ;
+        size_t _geo1_idx = size_t(-1) ;
+        size_t _geo2_idx = size_t(-1) ;
 
         motor::graphics::state_object_t fb_so ;
 
@@ -44,6 +51,7 @@ namespace this_file
 
         virtual void_t on_init( void_t ) noexcept
         {
+            #if 1
             {
                 motor::application::window_info_t wi ;
                 wi.x = 100 ;
@@ -59,7 +67,7 @@ namespace this_file
                     wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
                 } ) ;
             }
-
+            #endif
             {
                 motor::application::window_info_t wi ;
                 wi.x = 400 ;
@@ -334,8 +342,11 @@ namespace this_file
                         }
                     })" ) ;
 
-                        
+                    
+                    // we want to do this during run-time
+                    #if 0
                     mslo.link_geometry({"geo0","geo1", "cube"}) ;
+                    #endif
 
                     msl_obj_scene = motor::shared( std::move( mslo ) ) ;
                 }
@@ -437,25 +448,80 @@ namespace this_file
                     }
                 }
 
+                // we have the following geometies:
+                // "geo0", "geo1", "cube"
+                if( _check_geo0 && _geo0_idx == size_t(-1) )
+                {
+                    _geo0_idx = msl_obj_scene->link_geometry( "geo0" ) ;
+                    // optional. will be done in the render, lazy.
+                    //fe->update_geometry_link( msl_obj_scene, _geo0_idx ) ;
+                }
+                else if( !_check_geo0 && _geo0_idx != size_t(-1) )
+                {
+                    msl_obj_scene->unlink_geometry( _geo0_idx ) ;
+                    // must be communicated to the backends.
+                    // otherwise, the linke
+                    fe->update_geometry_link( msl_obj_scene, _geo0_idx ) ;
+
+                    _geo0_idx = size_t(-1) ;
+                }
+
+                if( _check_geo1 && _geo1_idx == size_t(-1) )
+                {
+                    _geo1_idx = msl_obj_scene->link_geometry( "geo1" ) ;
+                    // optional. will be done in the render, lazy.
+                    //fe->update_geometry_link( msl_obj_scene, _geo0_idx ) ;
+                }
+                else if( !_check_geo1 && _geo1_idx != size_t(-1) )
+                {
+                    msl_obj_scene->unlink_geometry( _geo1_idx ) ;
+                    // must be communicated to the backends.
+                    // otherwise, the linke
+                    fe->update_geometry_link( msl_obj_scene, _geo1_idx ) ;
+
+                    _geo1_idx = size_t(-1) ;
+                }
+
+                if( _check_geo2 && _geo2_idx == size_t(-1) )
+                {
+                    _geo2_idx = msl_obj_scene->link_geometry( "cube" ) ;
+                    // optional. will be done in the render, lazy.
+                    //fe->update_geometry_link( msl_obj_scene, _geo0_idx ) ;
+                }
+                else if( !_check_geo2 && _geo2_idx != size_t(-1) )
+                {
+                    msl_obj_scene->unlink_geometry( _geo2_idx ) ;
+                    // must be communicated to the backends.
+                    // otherwise, the linke
+                    fe->update_geometry_link( msl_obj_scene, _geo2_idx ) ;
+
+                    _geo2_idx = size_t(-1) ;
+                }
                 
                 
                 fe->push( &scene_so ) ;
+
+                if( _check_geo0 )
                 {
                     motor::graphics::gen4::backend_t::render_detail_t detail ;
                     detail.varset = 0 ;
-                    detail.geo = 0 ;
+                    detail.geo = _geo0_idx ;
                     fe->render(  msl_obj_scene, detail ) ;
                 }
+
+                if( _check_geo1 )
                 {
                     motor::graphics::gen4::backend_t::render_detail_t detail ;
                     detail.varset = 1 ;
-                    detail.geo = 1 ;
+                    detail.geo = _geo1_idx ;
                     fe->render(  msl_obj_scene, detail ) ;
                 }
+
+                if( _check_geo2 )
                 {
                     motor::graphics::gen4::backend_t::render_detail_t detail ;
                     detail.varset = 2 ;
-                    detail.geo = 2 ;
+                    detail.geo = _geo2_idx ;
                     fe->render(  msl_obj_scene, detail ) ;
                 }
                 fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ; 
@@ -489,6 +555,22 @@ namespace this_file
                     }
                 }
                 ImGui::End() ;
+
+                if ( ImGui::Begin( "Geometry Link Window" ) )
+                {
+                    if( ImGui::Checkbox( "Link Geo 0", &_check_geo0 ) )
+                    {
+                    }
+
+                    if( ImGui::Checkbox( "Link Geo 1", &_check_geo1 ) )
+                    {
+                    }
+
+                    if( ImGui::Checkbox( "Link Geo 2", &_check_geo2 ) )
+                    {
+                    }
+                }
+                ImGui::End() ;
             }
             
             return true ; 
@@ -497,6 +579,11 @@ namespace this_file
         virtual void_t on_shutdown( void_t ) noexcept 
         {
             motor::release( motor::move( msl_obj_scene ) ) ;
+
+            for( auto * mtr : _cameras )
+            {
+                motor::release( motor::move( mtr ) ) ;
+            }
         }
     };
 }

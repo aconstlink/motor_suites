@@ -5,6 +5,7 @@ set( tests
     "02_framebuffer.cpp"
     "03_01_multi_geometry.cpp"
     "03_02_multi_geometry.cpp"
+    "03_03_dyn_multi_geometry.cpp"
     "04_framebuffer_mrt.cpp"
     "05_array_object_raw.cpp"
     "06_array_object.cpp"
