@@ -7,6 +7,7 @@
 #include <motor/geometry/mesh/tri_mesh.h>
 #include <motor/geometry/mesh/flat_tri_mesh.h>
 #include <motor/geometry/3d/cube.h>
+#include <motor/geometry/3d/tetra.h>
 
 #include <motor/controls/types/ascii_keyboard.hpp>
 #include <motor/controls/types/three_mouse.hpp>
@@ -19,6 +20,7 @@
 #include <motor/scene/node/logic_leaf.h>
 
 #include <motor/scene/component/name_component.hpp>
+#include <motor/scene/component/graphics/geometry_name_component.hpp>
 #include <motor/scene/component/graphics/msl_component.h>
 #include <motor/scene/component/graphics/render_settings_component.hpp>
 #include <motor/scene/component/trafo3d_component.h>
@@ -27,6 +29,7 @@
 #include <motor/scene/visitor/variable_update_visitor.h>
 #include <motor/scene/visitor/trafo_visitor.h>
 #include <motor/scene/visitor/graphics/render_visitor.h>
+#include <motor/scene/visitor/graphics/add_msl_to_set_visitor.hpp>
 
 #include <motor/tool/imgui/node_kit/imgui_node_visitor.h>
 
@@ -50,11 +53,13 @@ class my_app : public motor::application::app
     motor::scene::node_mtr_t _selected = nullptr;
 
     motor::graphics::state_object_mtr_t root_so;
-    motor::graphics::msl_object_mtr_t msl_obj;
-    motor::graphics::geometry_object_t geo_obj;
 
-    // this is the free moving camera
+    motor::graphics::geometry_object_t geo_obj1;
+    motor::graphics::geometry_object_t geo_obj2;
+
     motor::gfx::generic_camera_mtr_t _camera;
+
+    motor::gfx::msl_manager_mtr_t _mslm;
 
     //******************************************************************************************************
     virtual void_t on_init( void_t ) noexcept
@@ -138,100 +143,119 @@ class my_app : public motor::application::app
                     for( size_t i = 0; i < ne; ++i ) array[ i ] = ftm.indices[ i ];
                 } );
 
-                geo_obj = motor::graphics::geometry_object_t( "cube",
+                geo_obj1 = motor::graphics::geometry_object_t( "cube",
                     motor::graphics::primitive_type::triangles, std::move( vb ), std::move( ib ) );
             }
         }
 
-        // msl object for scene
+        // # : make geometry
         {
+            struct vertex
             {
-                motor::graphics::msl_object_t mslo( "scene_obj" );
+                motor::math::vec3f_t pos;
+                motor::math::vec3f_t nrm;
+                motor::math::vec2f_t tx;
+            };
 
-                mslo.add( motor::graphics::msl_api_type::msl_4_0, R"(
-                        config just_render
-                        {
-                            vertex_shader
-                            {
-                                mat4_t proj : projection ;
-                                mat4_t view : view ;
-                                mat4_t world : world ;
-
-                                in vec3_t pos : position ;
-                                in vec3_t nrm : normal ;
-                                in vec2_t tx : texcoord ;
-
-                                out vec4_t pos : position ;
-                                out vec2_t tx : texcoord ;
-                                out vec3_t nrm : normal ;
-
-                                void main()
-                                {
-                                    vec3_t pos = in.pos ;
-                                    pos.xyz = pos.xyz * 10.0 ;
-                                    out.tx = in.tx ;
-                                    out.pos = proj * view * world * vec4_t( pos, 1.0 ) ;
-                                    out.nrm = normalize( world * vec4_t( in.nrm, 0.0 ) ).xyz ;
-                                }
-                            }
-
-                            pixel_shader
-                            {
-                                tex2d_t tex ;
-                                vec4_t color ;
-
-                                in vec2_t tx : texcoord ;
-                                in vec3_t nrm : normal ;
-                                out vec4_t color0 : color0 ;
-
-                                void main()
-                                {
-                                    float_t light = dot( normalize( in.nrm ), normalize( vec3_t( 1.0, 1.0, 0.5) ) ) ;
-                                    out.color0 = vec4_t( light, light, light, 1.0 ) ;
-                                    out.color0 = out.color0 ' vec4_t( color.xyz, 1.0 ) ;
-                                    
-                                }
-                            }
-                        })" );
-
-                mslo.link_geometry( { "cube" } );
-
-                msl_obj = motor::shared( motor::graphics::msl_object_t( std::move( mslo ) ) );
-            }
-
+            // tetra
             {
-                motor::graphics::variable_set_t vars;
+                motor::geometry::tetra_t::input_params ip;
+                ip.scale = motor::math::vec3f_t( 1.0f );
 
+                motor::geometry::polygon_mesh pm;
+                motor::geometry::tetra::make( &pm, ip );
+
+                motor::geometry::flat_tri_mesh_t ftm;
+                pm.flatten( ftm );
+
+                auto vb =
+                    motor::graphics::vertex_buffer_t()
+                        .add_layout_element( motor::graphics::vertex_attribute::position,
+                            motor::graphics::type::tfloat, motor::graphics::type_struct::vec3 )
+                        .add_layout_element( motor::graphics::vertex_attribute::normal,
+                            motor::graphics::type::tfloat, motor::graphics::type_struct::vec3 )
+                        .add_layout_element( motor::graphics::vertex_attribute::texcoord0,
+                            motor::graphics::type::tfloat, motor::graphics::type_struct::vec2 )
+                        .resize( ftm.get_num_vertices() )
+                        .update< vertex >( [ & ]( vertex * array, size_t const ne )
                 {
-                    auto * var = vars.data_variable< motor::math::vec4f_t >( "color" );
-                    var->set( motor::math::vec4f_t( 0.0f, 0.0f, 1.0f, 1.0f ) );
-                }
+                    for( size_t i = 0; i < ne; ++i )
+                    {
+                        array[ i ].pos = ftm.get_vertex_position_3d( i );
+                        array[ i ].nrm = ftm.get_vertex_normal_3d( i );
+                        array[ i ].tx = ftm.get_vertex_texcoord( 0, i );
+                    }
+                } );
 
+                auto ib = motor::graphics::index_buffer_t()
+                              .set_layout_element( motor::graphics::type::tuint )
+                              .resize( ftm.indices.size() )
+                              .update< uint_t >( [ & ]( uint_t * array, size_t const ne )
                 {
-                    auto * var = vars.data_variable< float_t >( "u_time" );
-                    var->set( 0.0f );
-                }
+                    for( size_t i = 0; i < ne; ++i ) array[ i ] = ftm.indices[ i ];
+                } );
 
-                msl_obj->add_variable_set(
-                    motor::memory::create_ptr( std::move( vars ), "a variable set" ) );
+                geo_obj2 = motor::graphics::geometry_object_t( "tetra",
+                    motor::graphics::primitive_type::triangles, std::move( vb ), std::move( ib ) );
             }
+        }
 
+        // manager stuff
+        {
+            motor::io::database_t db =
+                motor::io::database_t( motor::io::path_t( DATAPATH ), "./working", "data" );
+            motor::gfx::msl_manager_t mgr( motor::shared( std::move( db ) ) );
+
+            motor::string_t shd = R"(
+            config just_render
             {
-                motor::graphics::variable_set_t vars;
-
+                vertex_shader
                 {
-                    auto * var = vars.data_variable< motor::math::vec4f_t >( "color" );
-                    var->set( motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) );
+                    mat4_t proj : projection ;
+                    mat4_t view : view ;
+                    mat4_t world : world ;
+
+                    in vec3_t pos : position ;
+                    in vec3_t nrm : normal ;
+                    in vec2_t tx : texcoord ;
+
+                    out vec4_t pos : position ;
+                    out vec2_t tx : texcoord ;
+                    out vec3_t nrm : normal ;
+
+                    void main()
+                    {
+                        vec3_t pos = in.pos ;
+                        pos.xyz = pos.xyz * 10.0 ;
+                        out.tx = in.tx ;
+                        out.pos = proj * view * world * vec4_t( pos, 1.0 ) ;
+                        out.nrm = normalize( world * vec4_t( in.nrm, 0.0 ) ).xyz ;
+                    }
                 }
 
+                pixel_shader
                 {
-                    auto * var = vars.data_variable< float_t >( "u_time" );
-                    var->set( 0.0f );
-                }
+                    tex2d_t tex ;
+                    vec4_t color ;
 
-                msl_obj->add_variable_set(
-                    motor::memory::create_ptr( std::move( vars ), "a variable set" ) );
-            }
+                    in vec2_t tx : texcoord ;
+                    in vec3_t nrm : normal ;
+                    out vec4_t color0 : color0 ;
+
+                    void main()
+                    {
+                        float_t light = dot( normalize( in.nrm ), normalize( vec3_t( 1.0, 1.0, 0.5) ) ) ;
+                        out.color0 = vec4_t( light, light, light, 1.0 ) ;
+                        out.color0 = out.color0 ' vec4_t( color.xyz, 1.0 ) ;
+                    }
+                }
+            })";
+
+            mgr.add( "scene_obj", shd );
+            // variables are set when the shader is done.
+            // @see on_update
+
+            _mslm = motor::shared( std::move( mgr ) );
         }
 
         {
@@ -286,10 +310,10 @@ class my_app : public motor::application::app
                     t->add_component( motor::shared( std::move( tc ) ) );
                 }
 
-                // add render settings
                 {
                     auto rs = motor::shared( motor::scene::logic_group_t() );
 
+                    // add render settings
                     {
                         motor::scene::render_settings_component_t rsc( motor::share( root_so ) );
                         rs->add_component( motor::shared( std::move( rsc ) ) );
@@ -309,13 +333,21 @@ class my_app : public motor::application::app
                             rn.add_component( motor::shared(
                                 motor::scene::name_component_t( "Render Object 0" ) ) );
                         }
+
+                        // add geometry name ref so the run-time can link that
+                        // geometry to the new msl in the future.
                         {
-                            auto mslcomp =
-                                motor::scene::msl_component_t( motor::share( msl_obj ), 0 );
-                            auto mslset_comp = motor::scene::msl_set_component_t(
-                                0, motor::shared( std::move( mslcomp ) ) );
+                            motor::scene::geometry_name_component_t gn( "cube" );
+                            rn.add_component( motor::shared( std::move( gn ) ) );
+                        }
+
+                        // add empty msl set component so the visitor can
+                        // just add a msl component to the set
+                        {
+                            auto mslset_comp = motor::scene::msl_set_component_t();
                             rn.add_component( motor::shared( std::move( mslset_comp ) ) );
                         }
+
                         rs->add_child( motor::shared( std::move( rn ) ) );
                     }
 
@@ -333,11 +365,18 @@ class my_app : public motor::application::app
 
                             rn.add_component( motor::shared( std::move( tc ) ) );
                         }
+
+                        // add geometry name ref so the run-time can link that
+                        // geometry to the new msl in the future.
                         {
-                            auto mslcomp =
-                                motor::scene::msl_component_t( motor::share( msl_obj ), 1 );
-                            auto mslset_comp = motor::scene::msl_set_component_t(
-                                0, motor::shared( std::move( mslcomp ) ) );
+                            motor::scene::geometry_name_component_t gn( "tetra" );
+                            rn.add_component( motor::shared( std::move( gn ) ) );
+                        }
+
+                        // add empty msl set component so the visitor can
+                        // just add a msl component to the set
+                        {
+                            auto mslset_comp = motor::scene::msl_set_component_t();
                             rn.add_component( motor::shared( std::move( mslset_comp ) ) );
                         }
                         rs->add_child( motor::shared( std::move( rn ) ) );
@@ -382,12 +421,14 @@ class my_app : public motor::application::app
         motor::graphics::gen4::frontend_ptr_t fe,
         motor::application::app::render_data_in_t rd ) noexcept
     {
+        _mslm->on_render( fe );
+
         // configure needs to be done only once per window
         if( rd.first_frame )
         {
             fe->configure< motor::graphics::state_object_t >( root_so );
-            fe->configure< motor::graphics::geometry_object_t >( &geo_obj );
-            fe->configure< motor::graphics::msl_object_t >( msl_obj );
+            fe->configure< motor::graphics::geometry_object_t >( &geo_obj1 );
+            fe->configure< motor::graphics::geometry_object_t >( &geo_obj2 );
         }
 
         {
@@ -397,10 +438,44 @@ class my_app : public motor::application::app
     }
 
     //******************************************************************************************************
+    virtual void_t on_frame_done( void_t ) noexcept
+    {
+        _mslm->on_frame_done();
+    }
+
+    //******************************************************************************************************
     virtual void_t on_update( motor::application::app::update_data_in_t ) noexcept
     {
         MOTOR_PROBE( "application", "on_update" );
 
+        // push method: call completion listeners
+        _mslm->on_update();
+
+        // pull method: ask completion and react
+        _mslm->for_each_configure_done(
+            [ & ]( motor::string_in_t msl_name, motor::graphics::msl_object_mtr_t msl ) //
+        {
+            if( msl_name == "scene_obj" )
+            {
+                motor::scene::add_msl_to_set_visitor_t v( 0, motor::share( msl ),
+                    [ & ]( motor::string_in_t node_name, motor::graphics::variable_set_mtr_t vs )
+                {
+                    if( node_name == "Render Object 0" )
+                    {
+                        auto * var = vs->data_variable< motor::math::vec4f_t >( "color" );
+                        var->set( motor::math::vec4f_t( 0.0f, 0.0f, 1.0f, 1.0f ) );
+                    }
+                    else if( node_name == "Render Object 1" )
+                    {
+                        auto * var = vs->data_variable< motor::math::vec4f_t >( "color" );
+                        var->set( motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) );
+                    }
+                } );
+                motor::scene::node_t::traverser( _root ).apply( &v );
+            }
+        } );
+
+        // must use this in order to update trafo components.
         {
             motor::scene::variable_update_visitor_t v;
             motor::scene::node_t::traverser( _root ).apply( &v );
@@ -428,6 +503,15 @@ class my_app : public motor::application::app
                 ImGui::End() ;
             }
 #endif
+
+        {
+            if( ImGui::Button( "Init/Release Scene" ) )
+            {
+
+                // motor::scene::add_msl_to_set_visitor_t v();
+                // motor::scene::node_t::traverser( _root ).apply( &v );
+            }
+        }
         return true;
     }
 
@@ -436,8 +520,9 @@ class my_app : public motor::application::app
         motor::memory::release_ptr( motor::move( _selected ) );
         motor::memory::release_ptr( _root );
         motor::memory::release_ptr( root_so );
-        motor::memory::release_ptr( msl_obj );
         motor::memory::release_ptr( _camera );
+
+        motor::release( motor::move( _mslm ) ) ;
     }
 };
 } // namespace this_file

@@ -359,8 +359,10 @@ namespace this_file
                             motor::scene::msl_component_mtr_t msl_comp ;
                             if( comp->borrow_msl_component( 0, msl_comp ) )
                             {
+                            #if 0
                                 auto clone = msl_comp->light_clone( "my_new_msl_clone") ;
                                 comp->add_component( 1, motor::shared( std::move( clone ) ) ) ;
+                                #endif
                             }
                             
                             if( comp->borrow_msl_component(1, msl_comp ) ) 
