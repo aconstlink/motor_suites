@@ -219,15 +219,15 @@ namespace this_file
         {
             for( size_t i=0; i<msl_obj.borrow_varibale_sets().size(); ++i )
             {
-                auto * vars = msl_obj.borrow_varibale_set(i) ;
+                auto vars = msl_obj.borrow_varibale_set(i) ;
 
                 {
-                    auto * var = vars->data_variable< motor::math::mat4f_t >( "view" ) ;
+                    auto * var = vars.vs->data_variable< motor::math::mat4f_t >( "view" ) ;
                     var->set( cam.get_view_matrix() ) ;
                 }
 
                 {
-                    auto * var = vars->data_variable< motor::math::mat4f_t >( "proj" ) ;
+                    auto * var = vars.vs->data_variable< motor::math::mat4f_t >( "proj" ) ;
                     var->set( cam.get_proj_matrix() ) ;
                 }
 
@@ -242,7 +242,7 @@ namespace this_file
                     t.set_scale( 5.0f ) ;
                     t.set_translation( motor::math::vec3f_t( s, 0.0f, 0.0f ) ) ;
 
-                    auto * var = vars->data_variable< motor::math::mat4f_t >( "world" ) ;
+                    auto * var = vars.vs->data_variable< motor::math::mat4f_t >( "world" ) ;
                     var->set( t.get_transformation() ) ;
                 }
             }

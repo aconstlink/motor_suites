@@ -261,15 +261,15 @@ namespace this_file
             if( animate )
                 my_mult = motor::math::interpolation<float_t>::linear( 1.0f, 20.0f, t2 ) ;
 
-            msl_obj->for_each( [&]( size_t const, motor::graphics::variable_set_mtr_t vs )
+            msl_obj->for_each( [&]( size_t const, motor::graphics::render_object_t::variable_set_cref_t vs )
             {
                 {
-                    auto * var = vs->data_variable<float_t>( "u_mult" ) ;
+                    auto * var = vs.vs->data_variable<float_t>( "u_mult" ) ;
                     var->set( my_mult ) ;
                 }
 
                 {
-                    auto * var = vs->data_variable<float_t>( "u_layer" ) ;
+                    auto * var = vs.vs->data_variable<float_t>( "u_layer" ) ;
                     var->set( my_layer ) ;
                 }
             } ) ;

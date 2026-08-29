@@ -519,10 +519,10 @@ namespace this_file
             static float_t time = 0.0f ;
             time += rd.sec_dt ;
             if( time > max_time ) time = 0.0f ;
-            ro_so_obj.for_each( [&] ( size_t const i, motor::graphics::variable_set_mtr_t vs )
+            ro_so_obj.for_each( [&] ( size_t const i, motor::graphics::render_object_t::variable_set_cref_t vs )
             {
                 {
-                    auto * var = vs->data_variable<motor::math::float_t>("u_ani") ;
+                    auto * var = vs.vs->data_variable<motor::math::float_t>("u_ani") ;
                     var->set( time / max_time ) ;
                 }
             } ) ;

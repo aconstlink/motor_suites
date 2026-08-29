@@ -424,10 +424,10 @@ namespace this_file
                 fe->configure<motor::graphics::render_object_t>( &rd_obj ) ;
             }
 
-            rd_obj.for_each( [&] ( size_t const i, motor::graphics::variable_set_mtr_t vs )
+            rd_obj.for_each( [&] ( size_t const i, motor::graphics::render_object_t::variable_set_cref_t vs )
             {
                 {
-                    auto* var = vs->data_variable< int32_t >( "u_texture" ) ;
+                    auto* var = vs.vs->data_variable< int32_t >( "u_texture" ) ;
                     var->set( used_texture ) ;
                 }
             } ) ;

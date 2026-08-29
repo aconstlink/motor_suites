@@ -322,14 +322,14 @@ namespace this_file
                 fe->unuse( motor::graphics::gen4::backend::unuse_type::streamout ) ;
             }
                         
-            msl_so_obj->for_each( [&] ( size_t const i, motor::graphics::variable_set_mtr_t vs )
+            msl_so_obj->for_each( [&] ( size_t const i, motor::graphics::render_object_t::variable_set_cref_t vs )
             {
                 {
-                    auto * var = vs->data_variable<motor::math::float_t>("u_dt") ;
+                    auto * var = vs.vs->data_variable<motor::math::float_t>("u_dt") ;
                     var->set( float_t( rd.sec_dt ) ) ;
                 }
                 {
-                    auto * var = vs->data_variable<motor::math::vec4f_t>("u_bounds") ;
+                    auto * var = vs.vs->data_variable<motor::math::vec4f_t>("u_bounds") ;
                     var->set( particle_bounds ) ;
                 }
             } ) ;

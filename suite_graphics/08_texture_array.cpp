@@ -296,10 +296,10 @@ namespace this_file
                 fe->configure<motor::graphics::msl_object_t>( msl_obj ) ;
             }
 
-            msl_obj->for_each( [&] ( size_t const i, motor::graphics::variable_set_mtr_t vs )
+            msl_obj->for_each( [&] ( size_t const i, motor::graphics::render_object_t::variable_set_cref_t vs )
             {
                 {
-                    auto* var = vs->data_variable< int32_t >( "tx_id" ) ;
+                    auto* var = vs.vs->data_variable< int32_t >( "tx_id" ) ;
                     var->set( used_texture ) ;
                 }
             } ) ;

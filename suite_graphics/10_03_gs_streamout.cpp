@@ -380,9 +380,9 @@ namespace this_file
                 //_ae.get_prim_render()->draw_line( 0, p0, p1, motor::math::vec4f_t( 0.0f, 1.0f, 0.0f, 1.0f ) ) ;
             }
 
-            msl_filter_obj->for_each( [&] ( size_t const i, motor::graphics::variable_set_mtr_t vs )
+            msl_filter_obj->for_each( [&] ( size_t const i, motor::graphics::render_object_t::variable_set_cref_t vs )
             {
-                auto * var = vs->data_variable<motor::math::vec3f_t>("plane") ;
+                auto * var = vs.vs->data_variable<motor::math::vec3f_t>("plane") ;
                 var->set( dir ) ;
             } ) ;
             

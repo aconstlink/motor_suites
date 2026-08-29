@@ -22,298 +22,325 @@
 
 namespace this_file
 {
-    using namespace motor::core::types ;
+using namespace motor::core::types;
 
-    class my_app : public motor::application::app
+class my_app : public motor::application::app
+{
+    motor_this_typedefs( my_app );
+
+    motor::math::vec4ui_t fb_dims = motor::math::vec4ui_t( 0, 0, 1920, 1080 );
+
+    motor::graphics::state_object_t scene_so;
+    motor::graphics::geometry_object_t geo_obj0;
+    motor::graphics::geometry_object_t geo_obj1;
+    motor::graphics::geometry_object_t geo_obj2;
+    motor::graphics::msl_object_mtr_t msl_obj_scene;
+
+    bool_t _check_geo0 = false;
+    bool_t _check_geo1 = false;
+    bool_t _check_geo2 = false;
+
+    size_t _geo0_idx = size_t( -1 );
+    size_t _geo1_idx = size_t( -1 );
+    size_t _geo2_idx = size_t( -1 );
+
+    size_t _vs0_idx = size_t( -1 );
+    size_t _vs1_idx = size_t( -1 );
+    size_t _vs2_idx = size_t( -1 );
+
+    motor::graphics::state_object_t fb_so;
+
+    size_t _cam_id = 0;
+    motor::vector< motor::gfx::generic_camera_mtr_t > _cameras;
+
+    virtual void_t on_init( void_t ) noexcept
     {
-        motor_this_typedefs( my_app ) ;
-
-        motor::math::vec4ui_t fb_dims = motor::math::vec4ui_t(0, 0, 1920, 1080) ;
-
-        motor::graphics::state_object_t scene_so ;
-        motor::graphics::geometry_object_t geo_obj0 ;
-        motor::graphics::geometry_object_t geo_obj1 ;
-        motor::graphics::geometry_object_t geo_obj2 ;
-        motor::graphics::msl_object_mtr_t msl_obj_scene ;
-                
-        bool_t _check_geo0 = false ;
-        bool_t _check_geo1 = false ;
-        bool_t _check_geo2 = false ;
-
-        size_t _geo0_idx = size_t(-1) ;
-        size_t _geo1_idx = size_t(-1) ;
-        size_t _geo2_idx = size_t(-1) ;
-
-        motor::graphics::state_object_t fb_so ;
-
-        size_t _cam_id = 0 ;
-        motor::vector<motor::gfx::generic_camera_mtr_t> _cameras ;
-
-        virtual void_t on_init( void_t ) noexcept
+#if 1
         {
-            #if 1
+            motor::application::window_info_t wi;
+            wi.x = 100;
+            wi.y = 100;
+            wi.w = 800;
+            wi.h = 600;
+            wi.gen = motor::application::graphics_generation::gen4_auto;
+
+            this_t::send_window_message( this_t::create_window( wi ),
+                [ & ]( motor::application::app::window_view & wnd )
             {
-                motor::application::window_info_t wi ;
-                wi.x = 100 ;
-                wi.y = 100 ;
-                wi.w = 800 ;
-                wi.h = 600 ;
-                wi.gen = motor::application::graphics_generation::gen4_auto ;
-                
-                this_t::send_window_message( this_t::create_window( wi ), [&]( motor::application::app::window_view & wnd )
-                {
-                    wnd.send_message( motor::application::show_message( { true } ) ) ;
-                    wnd.send_message( motor::application::cursor_message_t( {true} ) ) ;
-                    wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
-                } ) ;
-            }
-            #endif
+                wnd.send_message( motor::application::show_message( { true } ) );
+                wnd.send_message( motor::application::cursor_message_t( { true } ) );
+                wnd.send_message( motor::application::vsync_message_t( { true } ) );
+            } );
+        }
+#endif
+        {
+            motor::application::window_info_t wi;
+            wi.x = 400;
+            wi.y = 100;
+            wi.w = 800;
+            wi.h = 600;
+            wi.gen = motor::application::graphics_generation::gen4_gl4;
+            this_t::send_window_message( this_t::create_window( wi ),
+                [ & ]( motor::application::app::window_view & wnd )
             {
-                motor::application::window_info_t wi ;
-                wi.x = 400 ;
-                wi.y = 100 ;
-                wi.w = 800 ;
-                wi.h = 600 ;
-                wi.gen = motor::application::graphics_generation::gen4_gl4 ;
-                this_t::send_window_message( this_t::create_window( wi ), [&]( motor::application::app::window_view & wnd )
-                {
-                    wnd.send_message( motor::application::show_message( { true } ) ) ;
-                    wnd.send_message( motor::application::cursor_message_t( {true} ) ) ;
-                    wnd.send_message( motor::application::vsync_message_t( { true } ) ) ;
-                } ) ;
-            }
+                wnd.send_message( motor::application::show_message( { true } ) );
+                wnd.send_message( motor::application::cursor_message_t( { true } ) );
+                wnd.send_message( motor::application::vsync_message_t( { true } ) );
+            } );
+        }
 
-            
-
+        {
+            // camera
             {
-                // camera
-                {
-                    auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 0.1f, 1000.0f ) ;
-                    #if 1
-                    cam.perspective_fov( motor::math::angle<float_t>::degree_to_radian( 45.0f ) ) ;
-                    cam.look_at( motor::math::vec3f_t( 0.0f, 0.0f, 50.0f ),
-                        motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ;
-                    #else
-                    cam.orthographic() ;
-                    cam.look_at( motor::math::vec3f_t( 0.0f, 0.0f, -100.0f ),
-                        motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ;
-                    #endif
-                    _cameras.emplace_back( motor::shared( std::move( cam ) ) ) ;
-                }
-
-                // camera
-                {
-                    auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 1.0f, 100.0f ) ;
-                    cam.perspective_fov( motor::math::angle<float_t>::degree_to_radian( 45.0f ) ) ;
-                    cam.look_at( motor::math::vec3f_t( -50.0f, 00.0f, 0.0f ),
-                        motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ;
-
-                    _cameras.emplace_back( motor::shared( std::move( cam ) ) ) ;
-                } 
-                
-            }
-            {
-                motor::graphics::render_state_sets_t rss ;
-                rss.depth_s.do_change = true ;
-                rss.depth_s.ss.do_activate = false ;
-                rss.depth_s.ss.do_depth_write = false ;
-                rss.polygon_s.do_change = true ;
-                rss.polygon_s.ss.do_activate = true ;
-                rss.polygon_s.ss.ff = motor::graphics::front_face::clock_wise ;
-                rss.polygon_s.ss.cm = motor::graphics::cull_mode::back ;
-                rss.polygon_s.ss.fm = motor::graphics::fill_mode::fill ;
-                rss.clear_s.do_change = true ;
-                rss.clear_s.ss.clear_color = motor::math::vec4f_t(0.5f, 0.9f, 0.5f, 1.0f ) ;
-                rss.clear_s.ss.do_activate = true ;
-                rss.clear_s.ss.do_color_clear = true ;
-                rss.clear_s.ss.do_depth_clear = true ;
-                rss.view_s.do_change = true ;
-                rss.view_s.ss.do_activate = true ;
-                rss.view_s.ss.vp = fb_dims ;
-
-                scene_so = motor::graphics::state_object_t("scene_render_states") ;
-                scene_so.add_render_state_set( rss ) ;
+                auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 0.1f, 1000.0f );
+#if 1
+                cam.perspective_fov( motor::math::angle< float_t >::degree_to_radian( 45.0f ) );
+                cam.look_at( motor::math::vec3f_t( 0.0f, 0.0f, 50.0f ),
+                    motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ),
+                    motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) );
+#else
+                cam.orthographic();
+                cam.look_at( motor::math::vec3f_t( 0.0f, 0.0f, -100.0f ),
+                    motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ),
+                    motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) );
+#endif
+                _cameras.emplace_back( motor::shared( std::move( cam ) ) );
             }
 
+            // camera
             {
-                motor::graphics::render_state_sets_t rss ;
-                rss.depth_s.do_change = true ;
-                rss.depth_s.ss.do_activate = false ;
-                rss.depth_s.ss.do_depth_write = false ;
+                auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 1.0f, 100.0f );
+                cam.perspective_fov( motor::math::angle< float_t >::degree_to_radian( 45.0f ) );
+                cam.look_at( motor::math::vec3f_t( -50.0f, 00.0f, 0.0f ),
+                    motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ),
+                    motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) );
 
-                rss.polygon_s.ss.do_activate = true ;
-                rss.polygon_s.ss.ff = motor::graphics::front_face::clock_wise ;
-                rss.polygon_s.ss.cm = motor::graphics::cull_mode::back ;
-
-                rss.clear_s.do_change = false ;
-
-                fb_so = motor::graphics::state_object_t("framebuffer_render_states") ;
-                fb_so.add_render_state_set( rss ) ;
+                _cameras.emplace_back( motor::shared( std::move( cam ) ) );
             }
-                
-            struct vertex { motor::math::vec4f_t pos ; motor::math::vec4f_t col ; } ;
+        }
+        {
+            motor::graphics::render_state_sets_t rss;
+            rss.depth_s.do_change = true;
+            rss.depth_s.ss.do_activate = false;
+            rss.depth_s.ss.do_depth_write = false;
+            rss.polygon_s.do_change = true;
+            rss.polygon_s.ss.do_activate = true;
+            rss.polygon_s.ss.ff = motor::graphics::front_face::clock_wise;
+            rss.polygon_s.ss.cm = motor::graphics::cull_mode::back;
+            rss.polygon_s.ss.fm = motor::graphics::fill_mode::fill;
+            rss.clear_s.do_change = true;
+            rss.clear_s.ss.clear_color = motor::math::vec4f_t( 0.5f, 0.9f, 0.5f, 1.0f );
+            rss.clear_s.ss.do_activate = true;
+            rss.clear_s.ss.do_color_clear = true;
+            rss.clear_s.ss.do_depth_clear = true;
+            rss.view_s.do_change = true;
+            rss.view_s.ss.do_activate = true;
+            rss.view_s.ss.vp = fb_dims;
 
-            // geometry configuration 1
+            scene_so = motor::graphics::state_object_t( "scene_render_states" );
+            scene_so.add_render_state_set( rss );
+        }
+
+        {
+            motor::graphics::render_state_sets_t rss;
+            rss.depth_s.do_change = true;
+            rss.depth_s.ss.do_activate = false;
+            rss.depth_s.ss.do_depth_write = false;
+
+            rss.polygon_s.ss.do_activate = true;
+            rss.polygon_s.ss.ff = motor::graphics::front_face::clock_wise;
+            rss.polygon_s.ss.cm = motor::graphics::cull_mode::back;
+
+            rss.clear_s.do_change = false;
+
+            fb_so = motor::graphics::state_object_t( "framebuffer_render_states" );
+            fb_so.add_render_state_set( rss );
+        }
+
+        struct vertex
+        {
+            motor::math::vec4f_t pos;
+            motor::math::vec4f_t col;
+        };
+
+        // geometry configuration 1
+        {
+            auto vb = motor::graphics::vertex_buffer_t()
+                          .add_layout_element( motor::graphics::vertex_attribute::position,
+                              motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
+                          .add_layout_element( motor::graphics::vertex_attribute::color0,
+                              motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
+                          .resize( 4 )
+                          .update< vertex >( [ = ]( vertex * array, size_t const ne )
             {
-                auto vb = motor::graphics::vertex_buffer_t()
-                    .add_layout_element( motor::graphics::vertex_attribute::position, motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
-                    .add_layout_element( motor::graphics::vertex_attribute::color0, motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
-                    .resize( 4 ).update<vertex>( [=] ( vertex* array, size_t const ne )
-                {
-                    array[ 0 ].pos = motor::math::vec4f_t( -0.5f, -0.5f, 1.5f, 1.0f ) ;
-                    array[ 1 ].pos = motor::math::vec4f_t( -0.5f, +0.5f, 1.5f, 1.0f ) ;
-                    array[ 2 ].pos = motor::math::vec4f_t( +0.5f, +0.5f, 1.5f, 1.0f ) ;
-                    array[ 3 ].pos = motor::math::vec4f_t( +0.5f, -0.5f, 1.5f, 1.0f ) ;
+                array[ 0 ].pos = motor::math::vec4f_t( -0.5f, -0.5f, 0.0f, 1.0f );
+                array[ 1 ].pos = motor::math::vec4f_t( -0.5f, +0.5f, 0.0f, 1.0f );
+                array[ 2 ].pos = motor::math::vec4f_t( +0.5f, +0.5f, 0.0f, 1.0f );
+                array[ 3 ].pos = motor::math::vec4f_t( +0.5f, -0.5f, 0.0f, 1.0f );
 
-                    array[ 0 ].col = motor::math::vec4f_t( 1.0f, 0.0f,0.0f,1.0f ) ;
-                    array[ 1 ].col = motor::math::vec4f_t( 1.0f, 0.0f,0.0f,1.0f ) ;
-                    array[ 2 ].col = motor::math::vec4f_t( 1.0f, 0.0f,0.0f,1.0f ) ;
-                    array[ 3 ].col = motor::math::vec4f_t( 1.0f, 0.0f,0.0f,1.0f ) ;
+                array[ 0 ].col = motor::math::vec4f_t( 1.0f, 1.0f, 0.0f, 1.0f );
+                array[ 1 ].col = motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f );
+                array[ 2 ].col = motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f );
+                array[ 3 ].col = motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f );
+            } );
+
+            auto ib = motor::graphics::index_buffer_t()
+                          .set_layout_element( motor::graphics::type::tuint )
+                          .resize( 6 )
+                          .update< uint_t >( []( uint_t * array, size_t const ne )
+            {
+                array[ 0 ] = 0;
+                array[ 1 ] = 1;
+                array[ 2 ] = 2;
+
+                array[ 3 ] = 0;
+                array[ 4 ] = 2;
+                array[ 5 ] = 3;
+            } );
+
+            geo_obj0 = motor::graphics::geometry_object_t( "geo0",
+                motor::graphics::primitive_type::triangles, std::move( vb ), std::move( ib ) );
+        }
+
+        // geometry configuration 2
+        {
+            auto vb = motor::graphics::vertex_buffer_t()
+                          .add_layout_element( motor::graphics::vertex_attribute::position,
+                              motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
+                          .add_layout_element( motor::graphics::vertex_attribute::color0,
+                              motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
+                          .resize( 9 )
+                          .update< vertex >( [ = ]( vertex * array, size_t const ne )
+            {
+                array[ 0 ].pos = motor::math::vec4f_t( -0.25f, +0.50f, 0.0f, 1.0f );
+                array[ 1 ].pos = motor::math::vec4f_t( +0.25f, +0.50f, 0.0f, 1.0f );
+                array[ 2 ].pos = motor::math::vec4f_t( +0.50f, +0.25f, 0.0f, 1.0f );
+                array[ 3 ].pos = motor::math::vec4f_t( +0.50f, -0.25f, 0.0f, 1.0f );
+                array[ 4 ].pos = motor::math::vec4f_t( +0.25f, -0.50f, 0.0f, 1.0f );
+                array[ 5 ].pos = motor::math::vec4f_t( -0.25f, -0.50f, 0.0f, 1.0f );
+                array[ 6 ].pos = motor::math::vec4f_t( -0.50f, -0.25f, 0.0f, 1.0f );
+                array[ 7 ].pos = motor::math::vec4f_t( -0.50f, +0.25f, 0.0f, 1.0f );
+                array[ 8 ].pos = motor::math::vec4f_t( 0.0f, 0.0f, 0.0f, 1.0f );
+
+                array[ 0 ].col = motor::math::vec4f_t( 1.0f, 1.0f, 0.0f, 1.0f );
+                array[ 1 ].col = motor::math::vec4f_t( 1.0f, 1.0f, 0.0f, 1.0f );
+                array[ 2 ].col = motor::math::vec4f_t( 1.0f, 1.0f, 0.0f, 1.0f );
+                array[ 3 ].col = motor::math::vec4f_t( 1.0f, 1.0f, 0.0f, 1.0f );
+                array[ 4 ].col = motor::math::vec4f_t( 1.0f, 1.0f, 0.0f, 1.0f );
+                array[ 5 ].col = motor::math::vec4f_t( 1.0f, 1.0f, 0.0f, 1.0f );
+                array[ 6 ].col = motor::math::vec4f_t( 1.0f, 1.0f, 0.0f, 1.0f );
+                array[ 7 ].col = motor::math::vec4f_t( 1.0f, 1.0f, 0.0f, 1.0f );
+                array[ 8 ].col = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f );
+            } );
+
+            auto ib = motor::graphics::index_buffer_t()
+                          .set_layout_element( motor::graphics::type::tuint )
+                          .resize( 24 )
+                          .update< uint_t >( []( uint_t * array, size_t const ne )
+            {
+                array[ 0 ] = 0;
+                array[ 1 ] = 1;
+                array[ 2 ] = 8;
+
+                array[ 3 ] = 1;
+                array[ 4 ] = 2;
+                array[ 5 ] = 8;
+
+                array[ 6 ] = 2;
+                array[ 7 ] = 3;
+                array[ 8 ] = 8;
+
+                array[ 9 ] = 3;
+                array[ 10 ] = 4;
+                array[ 11 ] = 8;
+
+                array[ 12 ] = 4;
+                array[ 13 ] = 5;
+                array[ 14 ] = 8;
+
+                array[ 15 ] = 5;
+                array[ 16 ] = 6;
+                array[ 17 ] = 8;
+
+                array[ 18 ] = 6;
+                array[ 19 ] = 7;
+                array[ 20 ] = 8;
+
+                array[ 21 ] = 7;
+                array[ 22 ] = 0;
+                array[ 23 ] = 8;
+            } );
+
+            geo_obj1 = motor::graphics::geometry_object_t( "geo1",
+                motor::graphics::primitive_type::triangles, std::move( vb ), std::move( ib ) );
+        }
+
+        // # : make geometry
+        {
+            struct vertex
+            {
+                motor::math::vec4f_t pos;
+                motor::math::vec4f_t col;
+            };
+
+            // cube
+            {
+                motor::geometry::cube_t::input_params ip;
+                ip.scale = motor::math::vec3f_t( 1.0f );
+                ip.tess = 100;
+
+                motor::geometry::tri_mesh_t tm;
+                motor::geometry::cube_t::make( &tm, ip );
+
+                motor::geometry::flat_tri_mesh_t ftm;
+                tm.flatten( ftm );
+
+                auto vb =
+                    motor::graphics::vertex_buffer_t()
+                        .add_layout_element( motor::graphics::vertex_attribute::position,
+                            motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
+                        .add_layout_element( motor::graphics::vertex_attribute::color0,
+                            motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
+
+                        .resize( ftm.get_num_vertices() )
+                        .update< vertex >( [ & ]( vertex * array, size_t const ne )
+                {
+                    for( size_t i = 0; i < ne; ++i )
+                    {
+                        array[ i ].pos =
+                            motor::math::vec4f_t( ftm.get_vertex_position_3d( i ), 1.0f );
+                        array[ i ].col =
+                            motor::math::vec4f_t( ftm.get_vertex_normal_3d( i ), 1.0f );
+                        // array[ i ].col = motor::math::vec4f_t( 1.0f ) ;
+                    }
                 } );
 
-                auto ib = motor::graphics::index_buffer_t().
-                    set_layout_element( motor::graphics::type::tuint ).resize( 6 ).
-                    update<uint_t>( [] ( uint_t* array, size_t const ne )
+                auto ib = motor::graphics::index_buffer_t()
+                              .set_layout_element( motor::graphics::type::tuint )
+                              .resize( ftm.indices.size() )
+                              .update< uint_t >( [ & ]( uint_t * array, size_t const ne )
                 {
-                    array[ 0 ] = 0 ;
-                    array[ 1 ] = 1 ;
-                    array[ 2 ] = 2 ;
-
-                    array[ 3 ] = 0 ;
-                    array[ 4 ] = 2 ;
-                    array[ 5 ] = 3 ;
-                } ) ;
-
-                geo_obj0 = motor::graphics::geometry_object_t( "geo0",
-                    motor::graphics::primitive_type::triangles, std::move( vb ), std::move( ib ) ) ;
-                    
-            }
-
-            // geometry configuration 2
-            {
-                auto vb = motor::graphics::vertex_buffer_t()
-                    .add_layout_element( motor::graphics::vertex_attribute::position, motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
-                    .add_layout_element( motor::graphics::vertex_attribute::color0, motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
-                    .resize( 9 ).update<vertex>( [=] ( vertex* array, size_t const ne )
-                {
-                    array[ 0 ].pos = motor::math::vec4f_t( -0.25f, +0.50f, 0.0f, 1.0f ) ;
-                    array[ 1 ].pos = motor::math::vec4f_t( +0.25f, +0.50f, 0.0f, 1.0f ) ;
-                    array[ 2 ].pos = motor::math::vec4f_t( +0.50f, +0.25f, 0.0f, 1.0f ) ;
-                    array[ 3 ].pos = motor::math::vec4f_t( +0.50f, -0.25f, 0.0f, 1.0f ) ;
-                    array[ 4 ].pos = motor::math::vec4f_t( +0.25f, -0.50f, 0.0f, 1.0f ) ;
-                    array[ 5 ].pos = motor::math::vec4f_t( -0.25f, -0.50f, 0.0f, 1.0f ) ;
-                    array[ 6 ].pos = motor::math::vec4f_t( -0.50f, -0.25f, 0.0f, 1.0f ) ;
-                    array[ 7 ].pos = motor::math::vec4f_t( -0.50f, +0.25f, 0.0f, 1.0f ) ;
-                    array[ 8 ].pos = motor::math::vec4f_t( 0.0f, 0.0f, 0.0f, 1.0f ) ;
-
-                    array[ 0 ].col = motor::math::vec4f_t( 1.0f, 1.0f, 0.0f, 1.0f ) ;
-                    array[ 1 ].col = motor::math::vec4f_t( 1.0f, 1.0f, 0.0f, 1.0f ) ;
-                    array[ 2 ].col = motor::math::vec4f_t( 1.0f, 1.0f, 0.0f, 1.0f ) ;
-                    array[ 3 ].col = motor::math::vec4f_t( 1.0f, 1.0f, 0.0f, 1.0f ) ;
-                    array[ 4 ].col = motor::math::vec4f_t( 1.0f, 1.0f, 0.0f, 1.0f ) ;
-                    array[ 5 ].col = motor::math::vec4f_t( 1.0f, 1.0f, 0.0f, 1.0f ) ;
-                    array[ 6 ].col = motor::math::vec4f_t( 1.0f, 1.0f, 0.0f, 1.0f ) ;
-                    array[ 7 ].col = motor::math::vec4f_t( 1.0f, 1.0f, 0.0f, 1.0f ) ;
-                    array[ 8 ].col = motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, 1.0f ) ;
+                    for( size_t i = 0; i < ne; ++i ) array[ i ] = ftm.indices[ i ];
                 } );
 
-                auto ib = motor::graphics::index_buffer_t().
-                    set_layout_element( motor::graphics::type::tuint ).resize( 24 ).
-                    update<uint_t>( [] ( uint_t* array, size_t const ne )
-                {
-                    array[ 0 ] = 0 ;
-                    array[ 1 ] = 1 ;
-                    array[ 2 ] = 8 ;
-
-                    array[ 3 ] = 1 ;
-                    array[ 4 ] = 2 ;
-                    array[ 5 ] = 8 ;
-
-                    array[ 6 ] = 2 ;
-                    array[ 7 ] = 3 ;
-                    array[ 8 ] = 8 ;
-
-                    array[ 9 ] = 3 ;
-                    array[ 10 ] = 4 ;
-                    array[ 11 ] = 8 ;
-
-                    array[ 12 ] = 4 ;
-                    array[ 13 ] = 5 ;
-                    array[ 14 ] = 8 ;
-
-                    array[ 15 ] = 5 ;
-                    array[ 16 ] = 6 ;
-                    array[ 17 ] = 8 ;
-
-                    array[ 18 ] = 6 ;
-                    array[ 19 ] = 7 ;
-                    array[ 20 ] = 8 ;
-
-                    array[ 21 ] = 7 ;
-                    array[ 22 ] = 0 ;
-                    array[ 23 ] = 8 ;
-                } ) ;
-
-                geo_obj1 = motor::graphics::geometry_object_t( "geo1",
-                    motor::graphics::primitive_type::triangles, std::move( vb ), std::move( ib ) ) ;
+                geo_obj2 = motor::graphics::geometry_object_t( "cube",
+                    motor::graphics::primitive_type::triangles, std::move( vb ), std::move( ib ) );
             }
+        }
 
-            // # : make geometry
+        // msl object for scene
+        {
+            // quad object
             {
-                struct vertex { motor::math::vec4f_t pos ; motor::math::vec4f_t col ; } ;
+                motor::graphics::msl_object_t mslo( "scene" );
 
-                // cube
-                {
-                    motor::geometry::cube_t::input_params ip ;
-                    ip.scale = motor::math::vec3f_t( 1.0f ) ;
-                    ip.tess = 100 ;
-
-                    motor::geometry::tri_mesh_t tm ;
-                    motor::geometry::cube_t::make( &tm, ip ) ;
-
-                    motor::geometry::flat_tri_mesh_t ftm ;
-                    tm.flatten( ftm ) ;
-
-                    auto vb = motor::graphics::vertex_buffer_t()
-                        .add_layout_element( motor::graphics::vertex_attribute::position, motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
-                        .add_layout_element( motor::graphics::vertex_attribute::color0, motor::graphics::type::tfloat, motor::graphics::type_struct::vec4 )
-                        
-                        .resize( ftm.get_num_vertices() ).update<vertex>( [&] ( vertex * array, size_t const ne )
-                    {
-                        for ( size_t i = 0; i < ne; ++i )
-                        {
-                            array[ i ].pos = motor::math::vec4f_t( ftm.get_vertex_position_3d( i ), 1.0f ) ;
-                            array[ i ].col = motor::math::vec4f_t( ftm.get_vertex_normal_3d( i ), 1.0f ) ;
-                            //array[ i ].col = motor::math::vec4f_t( 1.0f ) ;
-                        }
-                    } );
-
-                    auto ib = motor::graphics::index_buffer_t().
-                        set_layout_element( motor::graphics::type::tuint ).resize( ftm.indices.size() ).
-                        update<uint_t>( [&] ( uint_t * array, size_t const ne )
-                    {
-                        for ( size_t i = 0; i < ne; ++i ) array[ i ] = ftm.indices[ i ] ;
-                    } ) ;
-
-                    geo_obj2 = motor::graphics::geometry_object_t( "cube",
-                        motor::graphics::primitive_type::triangles, std::move( vb ), std::move( ib ) ) ;
-                }
-            }
-            
-            // msl object for scene
-            {
-                // quad object
-                {
-                    motor::graphics::msl_object_t mslo("scene") ;
-
-                    mslo.add( motor::graphics::msl_api_type::msl_4_0, R"(
+                mslo.add( motor::graphics::msl_api_type::msl_4_0, R"(
                     config test_multi_geometry
                     {
                         vertex_shader
                         {
                             in vec4_t pos : position ;
-                            in vec4_t col : color0 ;
-                            
+                            in vec4_t col : color0 ;                           
 
                             out vec4_t pos : position ;
                             out vec4_t col ;
@@ -322,11 +349,13 @@ namespace this_file
                             mat4_t u_view : view ;
                             mat4_t u_world : world ;
 
+                            float_t y_offset(5.0) ;
+
                             void main()
                             {
                                 out.col = in.col ;
-                                vec4_t new_pos = u_view * u_world * (in.pos) ;
-                                out.pos = u_proj * (new_pos + vec4_t(0.0, 0.0, 0.0, 0.0 ) );
+                                vec4_t pos = vec4_t( in.pos.xyz + vec3_t(0.0, y_offset, 0.0), 1.0 ) ;
+                                out.pos = u_proj * u_view * u_world * pos ;
                             }
                         }
 
@@ -335,22 +364,27 @@ namespace this_file
                             in vec4_t col ;
                             out vec4_t color : color0 ;
 
+                            vec4_t color ;
+
                             void main()
                             {
                                 out.color = vec4_t(in.col.x,in.col.y, in.col.z,1.0) ;
+                                //out.color = vec4_t(1.0,0.0,0.0,1.0) ;
+                                //out.color = vec4_t( color.xyz, 1.0 ) ;
                             }
                         }
-                    })" ) ;
+                    })" );
 
-                    
-                    // we want to do this during run-time
-                    #if 0
+// we want to do this during run-time
+#if 0
                     mslo.link_geometry({"geo0","geo1", "cube"}) ;
-                    #endif
+#endif
 
-                    msl_obj_scene = motor::shared( std::move( mslo ) ) ;
-                }
-                    
+                msl_obj_scene = motor::shared( std::move( mslo ) );
+            }
+
+// we want to do this during run-time
+#if 0
                 {
                     motor::graphics::variable_set_t vars ;
                     msl_obj_scene->add_variable_set( motor::memory::create_ptr( std::move( vars ), "a variable set" ) ) ;
@@ -365,244 +399,258 @@ namespace this_file
                     motor::graphics::variable_set_t vars ;
                     msl_obj_scene->add_variable_set( motor::memory::create_ptr( std::move(vars), "a variable set" ) ) ;
                 }
-            }             
+#endif
         }
+    }
 
-        virtual void_t on_event( window_id_t const wid, 
-                motor::application::window_message_listener::state_vector_cref_t sv ) noexcept
+    virtual void_t on_event( window_id_t const wid,
+        motor::application::window_message_listener::state_vector_cref_t sv ) noexcept
+    {
+        if( sv.create_changed )
         {
-            if( sv.create_changed )
-            {
-                motor::log::global_t::status("[my_app] : window created") ;
-            }
-            if( sv.close_changed )
-            {
-                motor::log::global_t::status("[my_app] : window closed") ;
-                this->close() ;
-            }
-            if ( sv.resize_changed )
-            {
-                float_t const w = float_t( sv.resize_msg.w ) ;
-                float_t const h = float_t( sv.resize_msg.h ) ;
-                for( size_t i=0; i<_cameras.size();++i)
-                {
-                    _cameras[i]->set_dims( w*2.0f, h*2.0f, 0.1f, 1000.0f ) ;
-                    _cameras[i]->perspective_fov() ;
-                }
-                
-
-                scene_so.access_render_state( 0, [&]( motor::graphics::render_state_sets_ref_t rss )
-                {
-                    rss.view_s.ss.vp = motor::math::vec4ui_t(0,0,uint_t(sv.resize_msg.w), uint_t(sv.resize_msg.h)) ;
-                    return true ;
-                } ) ;
-            }
+            motor::log::global_t::status( "[my_app] : window created" );
         }
-
-        virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
-            motor::application::app::render_data_in_t rd ) noexcept 
-        {            
-            if( rd.first_frame )
-            {
-                {
-                    fe->configure<motor::graphics::state_object_t>( &scene_so ) ;
-                    fe->configure<motor::graphics::state_object_t>( &fb_so ) ;
-                }
-
-                {
-                    fe->configure<motor::graphics::geometry_object_t>( &geo_obj0 ) ;
-                    fe->configure<motor::graphics::geometry_object_t>( &geo_obj1 ) ;
-                    fe->configure<motor::graphics::geometry_object_t>( &geo_obj2 ) ;
-                    fe->configure<motor::graphics::msl_object_t>( msl_obj_scene ) ;
-                }
-
-            }
-
-            // render
-            {
-                {
-                    size_t i = 0 ;
-                    for( auto * vs : msl_obj_scene->borrow_varibale_sets() )
-                    {
-                        {
-                            auto * var = vs->data_variable<motor::math::mat4f_t>( "u_proj" ) ;
-                            var->set( _cameras[_cam_id]->mat_proj() ) ;
-                        }
-                        
-                        {
-                            auto * var = vs->data_variable<motor::math::mat4f_t>("u_view") ;
-                            var->set( _cameras[_cam_id]->mat_view() ) ;
-                        }
-                        
-                        {
-                            auto const of = float_t(i) /float_t(msl_obj_scene->borrow_varibale_sets().size()-1) ;
-                            motor::math::m3d::trafof_t t ;
-                            t.scale_fl( 2.0f ) ;
-                            t.translate_fl( motor::math::vec3f_t( 6.0f * (of * 2.0f - 1.0f), 0.0f, 0.0f ) ) ;
-
-                            auto * var = vs->data_variable<motor::math::mat4f_t>("u_world") ;
-                            var->set( t.get_transformation() ) ;
-                        }
-                        
-                        ++i ;
-                    }
-                }
-
-                // we have the following geometies:
-                // "geo0", "geo1", "cube"
-                if( _check_geo0 && _geo0_idx == size_t(-1) )
-                {
-                    _geo0_idx = msl_obj_scene->link_geometry( "geo0" ) ;
-                    // optional. will be done in the render, lazy.
-                    //fe->update_geometry_link( msl_obj_scene, _geo0_idx ) ;
-                }
-                else if( !_check_geo0 && _geo0_idx != size_t(-1) )
-                {
-                    msl_obj_scene->unlink_geometry( _geo0_idx ) ;
-                    // must be communicated to the backends.
-                    // otherwise, the linke
-                    fe->update_geometry_link( msl_obj_scene, _geo0_idx ) ;
-
-                    _geo0_idx = size_t(-1) ;
-                }
-
-                if( _check_geo1 && _geo1_idx == size_t(-1) )
-                {
-                    _geo1_idx = msl_obj_scene->link_geometry( "geo1" ) ;
-                    // optional. will be done in the render, lazy.
-                    //fe->update_geometry_link( msl_obj_scene, _geo0_idx ) ;
-                }
-                else if( !_check_geo1 && _geo1_idx != size_t(-1) )
-                {
-                    msl_obj_scene->unlink_geometry( _geo1_idx ) ;
-                    // must be communicated to the backends.
-                    // otherwise, the linke
-                    fe->update_geometry_link( msl_obj_scene, _geo1_idx ) ;
-
-                    _geo1_idx = size_t(-1) ;
-                }
-
-                if( _check_geo2 && _geo2_idx == size_t(-1) )
-                {
-                    _geo2_idx = msl_obj_scene->link_geometry( "cube" ) ;
-                    // optional. will be done in the render, lazy.
-                    //fe->update_geometry_link( msl_obj_scene, _geo0_idx ) ;
-                }
-                else if( !_check_geo2 && _geo2_idx != size_t(-1) )
-                {
-                    msl_obj_scene->unlink_geometry( _geo2_idx ) ;
-                    // must be communicated to the backends.
-                    // otherwise, the linke
-                    fe->update_geometry_link( msl_obj_scene, _geo2_idx ) ;
-
-                    _geo2_idx = size_t(-1) ;
-                }
-                
-                
-                fe->push( &scene_so ) ;
-
-                if( _check_geo0 )
-                {
-                    motor::graphics::gen4::backend_t::render_detail_t detail ;
-                    detail.varset = 0 ;
-                    detail.geo = _geo0_idx ;
-                    fe->render(  msl_obj_scene, detail ) ;
-                }
-
-                if( _check_geo1 )
-                {
-                    motor::graphics::gen4::backend_t::render_detail_t detail ;
-                    detail.varset = 1 ;
-                    detail.geo = _geo1_idx ;
-                    fe->render(  msl_obj_scene, detail ) ;
-                }
-
-                if( _check_geo2 )
-                {
-                    motor::graphics::gen4::backend_t::render_detail_t detail ;
-                    detail.varset = 2 ;
-                    detail.geo = _geo2_idx ;
-                    fe->render(  msl_obj_scene, detail ) ;
-                }
-                fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ; 
-                
-                fe->fence( [=]( void_t ){} ) ;
-            }
-        }
-
-        //******************************************************************************************************
-        virtual bool_t on_tool( this_t::window_id_t const wid, motor::application::app::tool_data_ref_t ) noexcept 
-        { 
-            {
-                if ( ImGui::Begin( "Camera Window" ) )
-                {
-                    {
-                        int used_cam = int_t( _cam_id ) ;
-                        ImGui::SliderInt( "Choose Camera", &used_cam, 0, 1 ) ;
-                        _cam_id = std::min( size_t( used_cam ), size_t( 2 ) ) ;
-                    }
-
-                    {
-                        auto const cam_pos = _cameras[_cam_id]->get_position() ;
-                        float x = cam_pos.x() ;
-                        float y = cam_pos.y() ;
-                        float z = cam_pos.z() ;
-                        ImGui::SliderFloat( "Cur Cam X", &x, -100.0f, 100.0f ) ;
-                        ImGui::SliderFloat( "Cur Cam Y", &y, -100.0f, 100.0f ) ;
-                        ImGui::SliderFloat( "Cur Cam Z", &z, -100.0f, 100.0f ) ;
-                        _cameras[_cam_id]->translate_to( motor::math::vec3f_t( x, y, z ) ) ;
-                        
-                    }
-                }
-                ImGui::End() ;
-
-                if ( ImGui::Begin( "Geometry Link Window" ) )
-                {
-                    if( ImGui::Checkbox( "Link Geo 0", &_check_geo0 ) )
-                    {
-                    }
-
-                    if( ImGui::Checkbox( "Link Geo 1", &_check_geo1 ) )
-                    {
-                    }
-
-                    if( ImGui::Checkbox( "Link Geo 2", &_check_geo2 ) )
-                    {
-                    }
-                }
-                ImGui::End() ;
-            }
-            
-            return true ; 
-        }
-
-        virtual void_t on_shutdown( void_t ) noexcept 
+        if( sv.close_changed )
         {
-            motor::release( motor::move( msl_obj_scene ) ) ;
-
-            for( auto * mtr : _cameras )
+            motor::log::global_t::status( "[my_app] : window closed" );
+            this->close();
+        }
+        if( sv.resize_changed )
+        {
+            float_t const w = float_t( sv.resize_msg.w );
+            float_t const h = float_t( sv.resize_msg.h );
+            for( size_t i = 0; i < _cameras.size(); ++i )
             {
-                motor::release( motor::move( mtr ) ) ;
+                _cameras[ i ]->set_dims( w * 2.0f, h * 2.0f, 0.1f, 1000.0f );
+                _cameras[ i ]->perspective_fov();
+            }
+
+            scene_so.access_render_state( 0, [ & ]( motor::graphics::render_state_sets_ref_t rss )
+            {
+                rss.view_s.ss.vp = motor::math::vec4ui_t(
+                    0, 0, uint_t( sv.resize_msg.w ), uint_t( sv.resize_msg.h ) );
+                return true;
+            } );
+        }
+    }
+
+    virtual void_t on_render( this_t::window_id_t const wid,
+        motor::graphics::gen4::frontend_ptr_t fe,
+        motor::application::app::render_data_in_t rd ) noexcept
+    {
+        if( rd.first_frame )
+        {
+            {
+                fe->configure< motor::graphics::state_object_t >( &scene_so );
+                fe->configure< motor::graphics::state_object_t >( &fb_so );
+            }
+
+            {
+                fe->configure< motor::graphics::geometry_object_t >( &geo_obj0 );
+                fe->configure< motor::graphics::geometry_object_t >( &geo_obj1 );
+                fe->configure< motor::graphics::geometry_object_t >( &geo_obj2 );
+                fe->configure< motor::graphics::msl_object_t >( msl_obj_scene );
             }
         }
-    };
-}
+
+        // render
+        {
+            msl_obj_scene->for_each(
+                [ & ]( size_t const i, motor::graphics::render_object_t::variable_set_cref_t vs )
+            {
+                {
+                    auto * var = vs.vs->data_variable< motor::math::mat4f_t >( "u_proj" );
+                    var->set( _cameras[ _cam_id ]->mat_proj() );
+                }
+
+                {
+                    auto * var = vs.vs->data_variable< motor::math::mat4f_t >( "u_view" );
+                    var->set( _cameras[ _cam_id ]->mat_view() );
+                }
+
+                {
+                    auto const of =
+                        float_t( i ) / float_t( msl_obj_scene->borrow_varibale_sets().size() );
+                    motor::math::m3d::trafof_t t;
+                    t.scale_fl( 2.0f );
+                    t.translate_fl(
+                        motor::math::vec3f_t( 6.0f * ( of * 2.0f - 1.0f ), 0.0f, 0.0f ) );
+
+                    auto * var = vs.vs->data_variable< motor::math::mat4f_t >( "u_world" );
+                    var->set( t.get_transformation() );
+                }
+
+                {
+                    auto * var = vs.vs->data_variable< motor::math::vec4f_t >( "color" );
+                    var->set( motor::math::vec4f_t( 1.0f, 1.0f, 0.0f, 1.0f ) );
+                }
+            } );
+
+            // we have the following geometies:
+            // "geo0", "geo1", "cube"
+            if( _check_geo0 && _geo0_idx == size_t( -1 ) )
+            {
+                _geo0_idx = msl_obj_scene->link_geometry( "geo0" );
+                _vs0_idx = msl_obj_scene->add_empty_variable_set();
+
+                // optional. will be done in the render, lazy.
+                // fe->update_geometry_link( msl_obj_scene, _geo0_idx ) ;
+            }
+            else if( !_check_geo0 && _geo0_idx != size_t( -1 ) )
+            {
+                msl_obj_scene->unlink_geometry( _geo0_idx );
+                msl_obj_scene->drop_variable_set( _vs0_idx );
+
+                // must be communicated to the backends.
+                // otherwise, the linke
+                // fe->update_geometry_link( msl_obj_scene, _geo0_idx );
+
+                _geo0_idx = size_t( -1 );
+            }
+
+            if( _check_geo1 && _geo1_idx == size_t( -1 ) )
+            {
+                _geo1_idx = msl_obj_scene->link_geometry( "geo1" );
+                _vs1_idx = msl_obj_scene->add_empty_variable_set();
+
+                // optional. will be done in the render, lazy.
+                // fe->update_geometry_link( msl_obj_scene, _geo0_idx ) ;
+            }
+            else if( !_check_geo1 && _geo1_idx != size_t( -1 ) )
+            {
+                msl_obj_scene->unlink_geometry( _geo1_idx );
+                msl_obj_scene->drop_variable_set( _vs1_idx );
+
+                // must be communicated to the backends.
+                // otherwise, the linke
+                fe->update_geometry_link( msl_obj_scene, _geo1_idx );
+
+                _geo1_idx = size_t( -1 );
+            }
+
+            if( _check_geo2 && _geo2_idx == size_t( -1 ) )
+            {
+                _geo2_idx = msl_obj_scene->link_geometry( "cube" );
+                _vs2_idx = msl_obj_scene->add_empty_variable_set();
+
+                // optional. will be done in the render, lazy.
+                // fe->update_geometry_link( msl_obj_scene, _geo0_idx ) ;
+            }
+            else if( !_check_geo2 && _geo2_idx != size_t( -1 ) )
+            {
+                msl_obj_scene->unlink_geometry( _geo2_idx );
+                msl_obj_scene->drop_variable_set( _vs2_idx );
+
+                // must be communicated to the backends.
+                // otherwise, the linke
+                fe->update_geometry_link( msl_obj_scene, _geo2_idx );
+
+                _geo2_idx = size_t( -1 );
+            }
+
+            fe->push( &scene_so );
+
+            if( _check_geo0 )
+            {
+                motor::graphics::gen4::backend_t::render_detail_t detail;
+                detail.varset = _vs0_idx;
+                detail.geo = _geo0_idx;
+                fe->render( msl_obj_scene, detail );
+            }
+
+            if( _check_geo1 )
+            {
+                motor::graphics::gen4::backend_t::render_detail_t detail;
+                detail.varset = _vs1_idx;
+                detail.geo = _geo1_idx;
+                fe->render( msl_obj_scene, detail );
+            }
+
+            if( _check_geo2 )
+            {
+                motor::graphics::gen4::backend_t::render_detail_t detail;
+                detail.varset = _vs2_idx;
+                detail.geo = _geo2_idx;
+                fe->render( msl_obj_scene, detail );
+            }
+            fe->pop( motor::graphics::gen4::backend::pop_type::render_state );
+
+            fe->fence( [ = ]( void_t ) {} );
+        }
+    }
+
+    //******************************************************************************************************
+    virtual bool_t on_tool(
+        this_t::window_id_t const wid, motor::application::app::tool_data_ref_t ) noexcept
+    {
+        {
+            if( ImGui::Begin( "Camera Window" ) )
+            {
+                {
+                    int used_cam = int_t( _cam_id );
+                    ImGui::SliderInt( "Choose Camera", &used_cam, 0, 1 );
+                    _cam_id = std::min( size_t( used_cam ), size_t( 2 ) );
+                }
+
+                {
+                    auto const cam_pos = _cameras[ _cam_id ]->get_position();
+                    float x = cam_pos.x();
+                    float y = cam_pos.y();
+                    float z = cam_pos.z();
+                    ImGui::SliderFloat( "Cur Cam X", &x, -100.0f, 100.0f );
+                    ImGui::SliderFloat( "Cur Cam Y", &y, -100.0f, 100.0f );
+                    ImGui::SliderFloat( "Cur Cam Z", &z, -100.0f, 100.0f );
+                    _cameras[ _cam_id ]->translate_to( motor::math::vec3f_t( x, y, z ) );
+                }
+            }
+            ImGui::End();
+
+            if( ImGui::Begin( "Geometry Link Window" ) )
+            {
+                if( ImGui::Checkbox( "Link Geo 0", &_check_geo0 ) )
+                {
+                }
+
+                if( ImGui::Checkbox( "Link Geo 1", &_check_geo1 ) )
+                {
+                }
+
+                if( ImGui::Checkbox( "Link Geo 2", &_check_geo2 ) )
+                {
+                }
+            }
+            ImGui::End();
+        }
+
+        return true;
+    }
+
+    virtual void_t on_shutdown( void_t ) noexcept
+    {
+        motor::release( motor::move( msl_obj_scene ) );
+
+        for( auto * mtr : _cameras )
+        {
+            motor::release( motor::move( mtr ) );
+        }
+    }
+};
+} // namespace this_file
 
 int main( int argc, char ** argv )
 {
-    using namespace motor::core::types ;
+    using namespace motor::core::types;
 
-    motor::application::carrier_mtr_t carrier = motor::platform::global_t::create_carrier(
-        motor::shared( this_file::my_app() ) ) ;
-    
-    auto const ret = carrier->exec() ;
-    
-    motor::memory::release_ptr( carrier ) ;
+    motor::application::carrier_mtr_t carrier =
+        motor::platform::global_t::create_carrier( motor::shared( this_file::my_app() ) );
 
-    motor::concurrent::global::deinit() ;
-    motor::log::global::deinit() ;
-    motor::memory::global::dump_to_std() ;
+    auto const ret = carrier->exec();
 
+    motor::memory::release_ptr( carrier );
 
-    return ret ;
+    motor::concurrent::global::deinit();
+    motor::log::global::deinit();
+    motor::memory::global::dump_to_std();
+
+    return ret;
 }

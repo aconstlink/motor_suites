@@ -290,25 +290,25 @@ namespace this_file
 
                 for ( size_t i = 0; i < ptr->borrow_varibale_sets().size(); ++i )
                 {
-                    auto & vs = *ptr->borrow_varibale_set(i) ;
+                    auto vs = ptr->borrow_varibale_set(i) ;
 
                     {
-                        auto * mat = vs.data_variable<motor::math::mat4f_t>( "world" ) ;
+                        auto * mat = vs.vs->data_variable<motor::math::mat4f_t>( "world" ) ;
                         mat->set( motor::math::mat4f_t::make_scaling( motor::math::vec3f_t( 300.0f ) ) ) ;
                     }
 
                     {
-                        auto * mat = vs.data_variable<motor::math::mat4f_t>( "view" );
+                        auto * mat = vs.vs->data_variable<motor::math::mat4f_t>( "view" );
                         mat->set( _camera.get_view_matrix() ) ;
                     }
 
                     {
-                        auto * mat = vs.data_variable<motor::math::mat4f_t>( "proj" );
+                        auto * mat = vs.vs->data_variable<motor::math::mat4f_t>( "proj" );
                         mat->set( _camera.get_proj_matrix() ) ;
                     }
 
                     {
-                        auto * v = vs.data_variable<motor::math::vec3f_t>( "light_dir" );
+                        auto * v = vs.vs->data_variable<motor::math::vec3f_t>( "light_dir" );
                         v->set( motor::math::vec3f_t( -1.0f ).normalized() ) ;
                     }
                 }
@@ -533,8 +533,8 @@ namespace this_file
 
                 for ( size_t i = 0; i < ptr->borrow_varibale_sets().size(); ++i )
                 {
-                    auto * vs = ptr->borrow_varibale_set( i ) ;
-                    auto * mat = vs->data_variable<motor::math::mat4f_t>( "view" );
+                    auto vs = ptr->borrow_varibale_set( i ) ;
+                    auto * mat = vs.vs->data_variable<motor::math::mat4f_t>( "view" );
                     mat->set( _camera.get_view_matrix() ) ;
                 }
             }

@@ -710,20 +710,20 @@ namespace this_file
 
             // update render object variable sets
             {
-                rd_obj.for_each( [&]( size_t const i, motor::graphics::variable_set_mtr_t vs )
+                rd_obj.for_each( [&]( size_t const i, motor::graphics::render_object_t::variable_set_cref_t vs )
                 {
                     {
-                        auto * var = vs->data_variable< motor::math::mat4f_t>("u_view") ;
+                        auto * var = vs.vs->data_variable< motor::math::mat4f_t>("u_view") ;
                         var->set( camera.mat_view() ) ;
                     }
 
                     {
-                        auto * var = vs->data_variable< motor::math::mat4f_t>("u_proj") ;
+                        auto * var = vs.vs->data_variable< motor::math::mat4f_t>("u_proj") ;
                         var->set( camera.mat_proj() ) ;
                     }
 
                     {
-                        auto* var = vs->data_variable< motor::math::vec4f_t >( "u_color" ) ;
+                        auto* var = vs.vs->data_variable< motor::math::vec4f_t >( "u_color" ) ;
                         var->set( motor::math::vec4f_t( v, 0.0f, 1.0f, 0.5f ) ) ;
                     }
 
@@ -732,7 +732,7 @@ namespace this_file
                         angle = ( ( (dt/10.0f)  ) * 2.0f * motor::math::constants<float_t>::pi() ) ;
                         if( angle > 2.0f * motor::math::constants<float_t>::pi() ) angle = 0.0f ;
                         
-                        auto* var = vs->data_variable< motor::math::mat4f_t >( "u_world" ) ;
+                        auto* var = vs.vs->data_variable< motor::math::mat4f_t >( "u_world" ) ;
                         motor::math::m3d::trafof_t trans( var->get() ) ;
 
                         motor::math::m3d::trafof_t rotation ;

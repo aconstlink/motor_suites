@@ -545,20 +545,20 @@ namespace this_file
             // update render object variable sets
             {
                 size_t i = 0 ;
-                for( auto * vs : msl_obj->borrow_varibale_sets() )
+                for( auto & vs : msl_obj->borrow_varibale_sets() )
                 {
                     {
-                        auto * var = vs->data_variable< motor::math::mat4f_t>("view") ;
+                        auto * var = vs.vs->data_variable< motor::math::mat4f_t>("view") ;
                         var->set( camera.mat_view() ) ;
                     }
 
                     {
-                        auto * var = vs->data_variable< motor::math::mat4f_t>("proj") ;
+                        auto * var = vs.vs->data_variable< motor::math::mat4f_t>("proj") ;
                         var->set( camera.mat_proj() ) ;
                     }
 
                     {
-                        auto* var = vs->data_variable< motor::math::vec4f_t >( "color" ) ;
+                        auto* var = vs.vs->data_variable< motor::math::vec4f_t >( "color" ) ;
                         var->set( motor::math::vec4f_t( v, 0.0f, 1.0f, 0.5f ) ) ;
                     }
 
@@ -567,7 +567,7 @@ namespace this_file
                         angle = ( ( (dt/10.0f)  ) * 2.0f * motor::math::constants<float_t>::pi() ) ;
                         if( angle > 2.0f * motor::math::constants<float_t>::pi() ) angle = 0.0f ;
                         
-                        auto* var = vs->data_variable< motor::math::mat4f_t >( "world" ) ;
+                        auto* var = vs.vs->data_variable< motor::math::mat4f_t >( "world" ) ;
                         motor::math::m3d::trafof_t trans( var->get() ) ;
 
                         motor::math::m3d::trafof_t rotation ;

@@ -61,6 +61,116 @@ class my_app : public motor::application::app
 
     motor::gfx::msl_manager_mtr_t _mslm;
 
+    bool_t _msls_are_init = false;
+    bool_t _button_pressed = true;
+
+    void_t init_manager_shaders( motor::gfx::msl_manager_mtr_t mgr ) noexcept
+    {
+        {
+            motor::string_t shd = R"(
+                config render_config_0
+                {
+                    vertex_shader
+                    {
+                        mat4_t proj : projection ;
+                        mat4_t view : view ;
+                        mat4_t world : world ;
+
+                        in vec3_t pos : position ;
+                        in vec3_t nrm : normal ;
+                        in vec2_t tx : texcoord ;
+
+                        out vec4_t pos : position ;
+                        out vec2_t tx : texcoord ;
+                        out vec3_t nrm : normal ;
+
+                        void main()
+                        {
+                            vec3_t pos = in.pos ;
+                            pos.xyz = pos.xyz * 10.0 ;
+                            out.tx = in.tx ;
+                            out.pos = proj * view * world * vec4_t( pos, 1.0 ) ;
+                            out.nrm = normalize( world * vec4_t( in.nrm, 0.0 ) ).xyz ;
+                        }
+                    }
+
+                    pixel_shader
+                    {
+                        tex2d_t tex ;
+                        vec4_t color ;
+
+                        in vec2_t tx : texcoord ;
+                        in vec3_t nrm : normal ;
+                        out vec4_t color0 : color0 ;
+
+                        void main()
+                        {
+                            float_t light = dot( normalize( in.nrm ), normalize( vec3_t( 1.0, 1.0, 0.5) ) ) ;
+                            out.color0 = vec4_t( light, light, light, 1.0 ) ;
+                            out.color0 = out.color0 ' vec4_t( color.xyz, 1.0 ) ;
+                        }
+                    }
+                })";
+
+            mgr->add( "shader_0", shd );
+            // variables are set when the shader is done.
+            // @see on_update
+        }
+
+        {
+            motor::string_t shd = R"(
+                config render_config_1
+                {
+                    vertex_shader
+                    {
+                        mat4_t proj : projection ;
+                        mat4_t view : view ;
+                        mat4_t world : world ;
+
+                        in vec3_t pos : position ;
+                        in vec3_t nrm : normal ;
+                        in vec2_t tx : texcoord ;
+
+                        out vec4_t pos : position ;
+                        out vec2_t tx : texcoord ;
+                        out vec3_t nrm : normal ;
+
+                        void main()
+                        {
+                            vec3_t pos = in.pos ;
+                            pos.xyz = pos.xyz * 10.0 ;
+                            out.tx = in.tx ;
+                            out.pos = proj * view * world * vec4_t( pos, 1.0 ) ;
+                            out.nrm = normalize( world * vec4_t( in.nrm, 0.0 ) ).xyz ;
+                        }
+                    }
+
+                    pixel_shader
+                    {
+                        tex2d_t tex ;
+                        vec4_t color ;
+
+                        in vec2_t tx : texcoord ;
+                        in vec3_t nrm : normal ;
+                        out vec4_t color0 : color0 ;
+
+                        void main()
+                        {
+                            float_t light = dot( normalize( in.nrm ), normalize( vec3_t( 1.0, 1.0, 0.5) ) ) ;
+                            out.color0 = vec4_t( light, light, light, 1.0 ) ;
+                            out.color0 = out.color0 ' vec4_t( vec3_t(1.0,1.0,1.0) - color.xyz, 1.0 ) ;
+                        }
+                    }
+                })";
+
+            mgr->add( "shader_1", shd );
+            // variables are set when the shader is done.
+            // @see on_update
+        }
+    }
+
+    void_t release_manager_shaders( void_t ) noexcept {}
+
     //******************************************************************************************************
     virtual void_t on_init( void_t ) noexcept
     {
@@ -206,54 +316,7 @@ class my_app : public motor::application::app
                 motor::io::database_t( motor::io::path_t( DATAPATH ), "./working", "data" );
             motor::gfx::msl_manager_t mgr( motor::shared( std::move( db ) ) );
 
-            motor::string_t shd = R"(
-            config just_render
-            {
-                vertex_shader
-                {
-                    mat4_t proj : projection ;
-                    mat4_t view : view ;
-                    mat4_t world : world ;
-
-                    in vec3_t pos : position ;
-                    in vec3_t nrm : normal ;
-                    in vec2_t tx : texcoord ;
-
-                    out vec4_t pos : position ;
-                    out vec2_t tx : texcoord ;
-                    out vec3_t nrm : normal ;
-
-                    void main()
-                    {
-                        vec3_t pos = in.pos ;
-                        pos.xyz = pos.xyz * 10.0 ;
-                        out.tx = in.tx ;
-                        out.pos = proj * view * world * vec4_t( pos, 1.0 ) ;
-                        out.nrm = normalize( world * vec4_t( in.nrm, 0.0 ) ).xyz ;
-                    }
-                }
-
-                pixel_shader
-                {
-                    tex2d_t tex ;
-                    vec4_t color ;
-
-                    in vec2_t tx : texcoord ;
-                    in vec3_t nrm : normal ;
-                    out vec4_t color0 : color0 ;
-
-                    void main()
-                    {
-                        float_t light = dot( normalize( in.nrm ), normalize( vec3_t( 1.0, 1.0, 0.5) ) ) ;
-                        out.color0 = vec4_t( light, light, light, 1.0 ) ;
-                        out.color0 = out.color0 ' vec4_t( color.xyz, 1.0 ) ;
-                    }
-                }
-            })";
-
-            mgr.add( "scene_obj", shd );
-            // variables are set when the shader is done.
-            // @see on_update
+            ///this_t::init_manager_shaders( &mgr );
 
             _mslm = motor::shared( std::move( mgr ) );
         }
@@ -382,6 +445,37 @@ class my_app : public motor::application::app
                         rs->add_child( motor::shared( std::move( rn ) ) );
                     }
 
+                    // render object 3
+                    {
+                        auto rn = motor::scene::logic_leaf_t();
+                        {
+                            rn.add_component( motor::shared(
+                                motor::scene::name_component_t( "Render Object 2" ) ) );
+
+                            motor::scene::trafo3d_component_t tc( motor::math::m3d::trafof_t(
+                                motor::math::vec3f_t( 1.0f, 1.0f, 1.0f ),
+                                motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ),
+                                motor::math::vec3f_t( 10.0f, 0.0f, -50.0f ) ) );
+
+                            rn.add_component( motor::shared( std::move( tc ) ) );
+                        }
+
+                        // add geometry name ref so the run-time can link that
+                        // geometry to the new msl in the future.
+                        {
+                            motor::scene::geometry_name_component_t gn( "tetra" );
+                            rn.add_component( motor::shared( std::move( gn ) ) );
+                        }
+
+                        // add empty msl set component so the visitor can
+                        // just add a msl component to the set
+                        {
+                            auto mslset_comp = motor::scene::msl_set_component_t();
+                            rn.add_component( motor::shared( std::move( mslset_comp ) ) );
+                        }
+                        rs->add_child( motor::shared( std::move( rn ) ) );
+                    }
+
                     t->add_child( motor::move( rs ) );
                 }
 
@@ -423,6 +517,21 @@ class my_app : public motor::application::app
     {
         _mslm->on_render( fe );
 
+        if( _msls_are_init && _button_pressed )
+        {
+            _mslm->on_render_release( fe );
+            _button_pressed = false;
+            _msls_are_init = false;
+        }
+
+        if( !_msls_are_init && _button_pressed )
+        {
+            this_t::init_manager_shaders( _mslm ) ;
+            _mslm->on_render_init( fe ) ;
+            _msls_are_init = true ;
+            _button_pressed = false;
+        }
+
         // configure needs to be done only once per window
         if( rd.first_frame )
         {
@@ -432,9 +541,16 @@ class my_app : public motor::application::app
         }
 
         {
-            motor::scene::render_visitor_t vis( fe, _camera );
+            motor::scene::render_visitor_t vis( 0, fe, _camera );
             motor::scene::node_t::traverser( _root ).apply( &vis );
         }
+
+#if 0
+        {
+            motor::scene::render_visitor_t vis( 1, fe, _camera );
+            motor::scene::node_t::traverser( _root ).apply( &vis );
+        }
+#endif
     }
 
     //******************************************************************************************************
@@ -455,7 +571,7 @@ class my_app : public motor::application::app
         _mslm->for_each_configure_done(
             [ & ]( motor::string_in_t msl_name, motor::graphics::msl_object_mtr_t msl ) //
         {
-            if( msl_name == "scene_obj" )
+            if( msl_name == "shader_0" )
             {
                 motor::scene::add_msl_to_set_visitor_t v( 0, motor::share( msl ),
                     [ & ]( motor::string_in_t node_name, motor::graphics::variable_set_mtr_t vs )
@@ -470,6 +586,25 @@ class my_app : public motor::application::app
                         auto * var = vs->data_variable< motor::math::vec4f_t >( "color" );
                         var->set( motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) );
                     }
+
+                    // apply on all others
+                    else
+                    {
+                        auto * var = vs->data_variable< motor::math::vec4f_t >( "color" );
+                        var->set( motor::math::vec4f_t( 0.0f, 1.0f, 0.0f, 1.0f ) );
+                    }
+                } );
+                motor::scene::node_t::traverser( _root ).apply( &v );
+            }
+
+            // added but not rendered.
+            if( msl_name == "shader_1" )
+            {
+                motor::scene::add_msl_to_set_visitor_t v( 1, motor::share( msl ),
+                    [ & ]( motor::string_in_t node_name, motor::graphics::variable_set_mtr_t vs )
+                {
+                    auto * var = vs->data_variable< motor::math::vec4f_t >( "color" );
+                    var->set( motor::math::vec4f_t( 0.0f, 1.0f, 1.0f, 1.0f ) );
                 } );
                 motor::scene::node_t::traverser( _root ).apply( &v );
             }
@@ -504,13 +639,19 @@ class my_app : public motor::application::app
             }
 #endif
 
+        if( _msls_are_init )
         {
-            if( ImGui::Button( "Init/Release Scene" ) )
+            if( ImGui::Button( "Release msls" ) )
             {
 
                 // motor::scene::add_msl_to_set_visitor_t v();
                 // motor::scene::node_t::traverser( _root ).apply( &v );
+                _button_pressed = true;
             }
+        }
+        else
+        {
+            _button_pressed = true;
         }
         return true;
     }
@@ -522,7 +663,7 @@ class my_app : public motor::application::app
         motor::memory::release_ptr( root_so );
         motor::memory::release_ptr( _camera );
 
-        motor::release( motor::move( _mslm ) ) ;
+        motor::release( motor::move( _mslm ) );
     }
 };
 } // namespace this_file
