@@ -29,11 +29,13 @@
 
 #include <future>
 
+// this test look long and complex, but it really also does some things.
 // this test shows how the hdr post processing pipeline works
 // 1. it loads a gltf scene(only geometry, cameras and animation)
-// 2. connects animation timing nodes(from the wire layer)
-// 3. renders depth pass into post processing pipeline(ppp)
-// 4. renders light pass into ppp
+// 2. distributes loaded shaders to the scene graph
+// 3. connects animation timing nodes(from the wire layer)
+// 4. renders depth pass into post processing pipeline(ppp)
+// 5. renders light pass into ppp
 namespace this_file
 {
 
@@ -60,9 +62,6 @@ class my_app : public motor::application::app
     motor_this_typedefs( my_app );
 
     motor::graphics::state_object_mtr_t _final_so = nullptr;
-
-    motor::gfx::primitive_render_3d_t pr;
-    motor::gfx::generic_camera_t camera;
 
     motor::io::database_mtr_t _db = nullptr;
 
@@ -110,11 +109,9 @@ class my_app : public motor::application::app
     // store all the wire nodes for easier destruction.
     motor::vector< motor::wire::inode_mtr_t > _node_dump;
 
+    // we need this flag for proper release.
+    // if the async chain is done, this flag is tirggered.
     bool_t _async_done = false;
-
-  private: // manager
-
-    motor::gfx::msl_manager_mtr_t _mmgr = nullptr;
 
   public:
 
@@ -164,18 +161,10 @@ class my_app : public motor::application::app
             } );
         }
 #endif
-        pr.init( "my_prim_render" );
-
-        {
-            camera.set_dims( 1.0f, 1.0f, 1.0f, 1000.0f );
-            camera.perspective_fov( motor::math::angle< float_t >::degree_to_radian( 45.0f ) );
-            camera.look_at( motor::math::vec3f_t( 0.0f, 0.0f, -500.0f ),
-                motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ),
-                motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) );
-        }
+        
 
         // the main state sets comes for the ppp. This is only doing a
-        // difference for rendering this scene.
+        // difference state change for rendering this scene.
         // the ppp provides
         // 1. render states for the depth pass
         // 2. render states for the color/light pass
@@ -227,6 +216,10 @@ class my_app : public motor::application::app
         }
 
         // init scene tree
+        // - import the gltf file
+        // - connect animation nodes from the import with
+        // app nodes/slots for easy animation update.
+        // - collect the cameras
         {
             motor::scene::logic_group_t root;
             root.add_component( motor::shared( motor::scene::name_component_t( "intro scene" ) ) );
@@ -384,8 +377,6 @@ class my_app : public motor::application::app
         {
             float_t const w = float_t( sv.resize_msg.w );
             float_t const h = float_t( sv.resize_msg.h );
-            camera.set_sensor_dims( w, h );
-            camera.perspective_fov();
         }
     }
 
@@ -435,6 +426,15 @@ class my_app : public motor::application::app
                 _time_node->get_task(), motor::concurrent::schedule_type::pool );
         }
 
+        // sync of pool tasks need to be done by the user itself.
+        // this is just an example. Do syncronization by any means 
+        // you find necessarry.
+        #if 1
+        {
+            while( !_async_done ) ;
+        }
+        #endif
+
         // absolutely required. this visitor bakes local
         // transformations, i.e. if animations occure or if
         // the local trafor is just commited to the usable
@@ -456,6 +456,8 @@ class my_app : public motor::application::app
         motor::graphics::gen4::frontend_ptr_t fe,
         motor::application::app::render_data_in_t rd ) noexcept
     {
+        motor::log::global_t::status( !_async_done, "[07_ppp] : async not done yet but rendering." );
+
         if( rd.first_frame )
         {
             _pp_pipe->init_render( fe );
@@ -549,9 +551,6 @@ class my_app : public motor::application::app
     bool_t on_tool(
         this_t::window_id_t const wid, motor::application::app::tool_data_ref_t td ) noexcept
     {
-#if 1
-        return false;
-#else
         // SECTION: cameras
         {
             auto cams = _cc.get_cameras();
@@ -611,7 +610,6 @@ class my_app : public motor::application::app
         }
         ImGui::End();
         return true;
-#endif
     }
 
     //******************************************************************************************************
