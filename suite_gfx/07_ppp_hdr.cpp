@@ -110,6 +110,8 @@ class my_app : public motor::application::app
     // store all the wire nodes for easier destruction.
     motor::vector< motor::wire::inode_mtr_t > _node_dump;
 
+    bool_t _async_done = false;
+
   private: // manager
 
     motor::gfx::msl_manager_mtr_t _mmgr = nullptr;
@@ -126,6 +128,7 @@ class my_app : public motor::application::app
             _scale_os = motor::shared( os_trafo_t() );
         }
 
+#if 1
         {
             motor::application::window_info_t wi;
             wi.x = 100;
@@ -142,7 +145,8 @@ class my_app : public motor::application::app
                 wnd.send_message( motor::application::vsync_message_t( { true } ) );
             } );
         }
-
+#endif
+#if 1
         {
             motor::application::window_info_t wi;
             wi.x = 100 + ( 1920 >> 1 );
@@ -159,7 +163,7 @@ class my_app : public motor::application::app
                 wnd.send_message( motor::application::vsync_message_t( { true } ) );
             } );
         }
-
+#endif
         pr.init( "my_prim_render" );
 
         {
@@ -170,9 +174,9 @@ class my_app : public motor::application::app
                 motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) );
         }
 
-        // the main state sets comes for the ppp. This is only doing a 
+        // the main state sets comes for the ppp. This is only doing a
         // difference for rendering this scene.
-        // the ppp provides 
+        // the ppp provides
         // 1. render states for the depth pass
         // 2. render states for the color/light pass
         {
@@ -319,6 +323,18 @@ class my_app : public motor::application::app
             _root = motor::shared( std::move( root ) );
         }
 
+        // reconnect nodes
+        {
+            this_t::release_node_dump();
+
+            auto t = motor::shared( motor::wire::funk_node_t(
+                [ = ]( motor::wire::funk_node_ptr_t ) { this->_async_done = true; } ) );
+
+            _node_dump.emplace_back( motor::share( t ) );
+            _merger->then( motor::move( t ) );
+        }
+        // motor::release( motor::move( _selected_node ) );
+
         // reload cameras
         {
             this_t::release_cameras();
@@ -414,6 +430,7 @@ class my_app : public motor::application::app
         // _time_node is connected to the imported scene and
         // is responsible for the animations.
         {
+            _async_done = false;
             motor::concurrent::global_t::schedule(
                 _time_node->get_task(), motor::concurrent::schedule_type::pool );
         }
@@ -447,9 +464,7 @@ class my_app : public motor::application::app
 
         if( rd.last_frame )
         {
-            _pp_pipe->release();
-            motor::release( motor::move( _pp_pipe ) );
-
+            _pp_pipe->release_render( fe );
             fe->release< motor::graphics::state_object_t >( _final_so );
             return;
         }
@@ -534,6 +549,9 @@ class my_app : public motor::application::app
     bool_t on_tool(
         this_t::window_id_t const wid, motor::application::app::tool_data_ref_t td ) noexcept
     {
+#if 1
+        return false;
+#else
         // SECTION: cameras
         {
             auto cams = _cc.get_cameras();
@@ -593,15 +611,17 @@ class my_app : public motor::application::app
         }
         ImGui::End();
         return true;
+#endif
     }
 
     //******************************************************************************************************
     void_t on_shutdown( void_t ) noexcept
     {
-        motor::release( motor::move( _pp_pipe ) );
-        motor::release( motor::move( _final_so ) );
-        motor::release( motor::move( _db ) );
+        while( !_async_done );
+        release_all_objects();
     }
+
+  private:
 
     void_t release_cameras( void_t ) noexcept
     {
@@ -614,6 +634,36 @@ class my_app : public motor::application::app
 
         for( auto & csi : _cs ) motor::release( motor::move( csi.cam ) );
         _cs.clear();
+    }
+
+    void_t release_node_dump( void_t ) noexcept
+    {
+        for( auto * ptr : _node_dump )
+        {
+            ptr->disconnect();
+            motor::release( motor::move( ptr ) );
+        }
+        _node_dump.clear();
+    }
+
+    void_t release_all_objects( void_t ) noexcept
+    {
+        motor::release( motor::move( _pp_pipe ) );
+        motor::release( motor::move( _db ) );
+
+        motor::wire::release( motor::move( _time ) );
+        motor::wire::release( motor::move( _scale_os ) );
+        motor::wire::release( motor::move( _time_node ) );
+        motor::wire::release( motor::move( _merger ) );
+
+        motor::release( motor::move( _final_so ) );
+
+        motor::release( motor::move( _root ) );
+
+        this_t::release_cameras();
+        this_t::release_node_dump();
+
+        motor::release( motor::move( _own_mmgr ) );
     }
 };
 } // namespace this_file
@@ -629,6 +679,7 @@ int main( int argc, char ** argv )
 
     motor::memory::release_ptr( carrier );
 
+    motor::io::global::deinit();
     motor::concurrent::global::deinit();
     motor::log::global::deinit();
     motor::memory::global::dump_to_std();
