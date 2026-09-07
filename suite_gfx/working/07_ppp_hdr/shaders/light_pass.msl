@@ -5,9 +5,8 @@ config light_pass
         mat4_t proj : projection ;
         mat4_t view : view ;
         mat4_t world : world ;
-
-        vec3_t cam_pos : camera_position ;
         vec3_t light_dir : light_direction ;
+        vec3_t cam_pos : camera_position ;
 
         in vec3_t pos : position ;
         in vec3_t nrm : normal ;
@@ -20,48 +19,31 @@ config light_pass
         out vec3_t to_cam ;
         out vec3_t to_light ;
 
-        
-        out vec3_t light_dir ;
-
         void main()
         {
             out.to_cam = cam_pos - (world * vec4_t(in.pos, 1.0)).xyz ;
             out.to_light = -light_dir ;
 
-            vec3_t pos = in.pos ;
-            //pos.xyz = pos.xyz * 10.0 ;
             out.tx = in.tx ;
-            out.pos = proj * view * world * vec4_t( pos, 1.0 ) ;
+            out.pos = proj * view * world * vec4_t( in.pos, 1.0 ) ;
             out.nrm = normalize( world * vec4_t( in.nrm, 0.0 ) ).xyz ;
-            //out.pos = vec4_t( sign( in.pos.xy), 0.0, 1.0 ) ;
-
-            out.light_dir = light_dir ;
         }
     }
 
     pixel_shader
     {
-        vec4_t color( 1.0,0.0,0.0,1.0);
-        float_t kick ;
-
         in vec2_t tx : texcoord ;
         in vec3_t nrm : normal ;
         in vec3_t to_cam ;
         in vec3_t to_light ;
-        
 
-        
-        in vec3_t light_dir ;
-
-        float_t specular_strength(10.0) ;
+        float_t specular_strength(20.0) ;
         float_t shininess(40.0);
         float_t light_intensity(3.0);
         vec3_t light_color(1.0,1.1,1.0) ;
 
-        vec3_t hemi_top_color( 0.0,0.0, 1.0 ) ;
-        vec3_t hemi_bottom_color( 1.0,0.0, 0.0 ) ;
-
-        
+        vec3_t hemi_top_color( 0.0,0.0, 10.0 ) ;
+        vec3_t hemi_bottom_color( .8,.8, .8 ) ;
 
         out vec4_t color0 : color0 ;
         out vec4_t color1 : color1 ;
@@ -97,9 +79,8 @@ config light_pass
             //specular = light_color ' vec3_t(1.4,10.4,11.4) ' vec3_t(spec,spec,spec) ;
 
             out.color0 = vec4_t(specular + diffuse,1.0) ;
-            
             //out.color0 = vec4_t( as_vec3( light_depth ), 1.0 ) ;
-            out.color0 *= vec4_t( as_vec3( ndl), 1.0 ) ;
+            //out.color0 *= vec4_t( as_vec3( ndl), 1.0 ) ;
             //out.color0 = vec4_t( as_vec3( ndl), 1.0 ) ;
             //out.color0 = vec4_t( as_vec3( light_bias), 1.0 ) ;
             //out.color0 = vec4_t(in.light_dir, 1.0 ) ;

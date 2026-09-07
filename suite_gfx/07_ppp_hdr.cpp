@@ -355,9 +355,9 @@ class my_app : public motor::application::app
         // manager
         {
             _own_mmgr = motor::shared( motor::gfx::msl_manager_t( motor::share( _db ) ) );
-            _own_mmgr->add( "color_pass", motor::io::location_t( "shaders.color_pass.msl" ) );
-            _own_mmgr->add( "light_pass", motor::io::location_t( "shaders.light_pass.msl" ) );
-            _own_mmgr->add( "depth_pass", motor::io::location_t( "shaders.depth_pass.msl" ) );
+            _own_mmgr->add( "color_pass", motor::io::location_t( "07_ppp_hdr.shaders.color_pass.msl" ) );
+            _own_mmgr->add( "light_pass", motor::io::location_t( "07_ppp_hdr.shaders.light_pass.msl" ) );
+            _own_mmgr->add( "depth_pass", motor::io::location_t( "07_ppp_hdr.shaders.depth_pass.msl" ) );
         }
     }
 
