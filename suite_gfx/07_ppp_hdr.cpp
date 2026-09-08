@@ -7,6 +7,7 @@
 #include <motor/scene/visitor/trafo_visitor.h>
 #include <motor/scene/visitor/variable_update_visitor.h>
 #include <motor/scene/visitor/graphics/add_msl_to_set_visitor.hpp>
+#include <motor/scene/visitor/graphics/connect_msl_slot_visitor.hpp>
 
 #include <motor/scene/node/logic_group.h>
 #include <motor/scene/component/trafo3d_component.h>
@@ -21,6 +22,8 @@
 #include <motor/math/animation/keyframe_sequence.hpp>
 
 #include <motor/tool/imgui/imgui_property.h>
+
+#include <motor/wire/slot/output_slot.h>
 
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
@@ -113,6 +116,21 @@ class my_app : public motor::application::app
     // if the async chain is done, this flag is tirggered.
     bool_t _async_done = false;
 
+  private: // shader variable slots
+
+    motor_typedefs( motor::wire::input_slot< float_t >, float_is );
+    motor_typedefs( motor::wire::input_slot< motor::math::vec3f_t >, vec3_is );
+
+    motor_typedefs( motor::wire::output_slot< float_t >, float_os );
+    motor_typedefs( motor::wire::output_slot< motor::math::vec3f_t >, vec3_os );
+
+    float_os_mtr_t _shininess = motor::shared( float_os_t( 80.0f ) );
+    float_os_mtr_t _specular_strength = motor::shared( float_os_t( 30.0f ) );
+    float_os_mtr_t _light_intensity = motor::shared( float_os_t( 2.0f ) );
+
+    vec3_os_mtr_t _hemi_top_color =
+        motor::shared( vec3_os_t( motor::math::vec3f_t( 0.0f, 0.0f, 10.0f ) ) );
+
   public:
 
     virtual void_t on_init( void_t ) noexcept
@@ -161,7 +179,6 @@ class my_app : public motor::application::app
             } );
         }
 #endif
-        
 
         // the main state sets comes for the ppp. This is only doing a
         // difference state change for rendering this scene.
@@ -355,9 +372,12 @@ class my_app : public motor::application::app
         // manager
         {
             _own_mmgr = motor::shared( motor::gfx::msl_manager_t( motor::share( _db ) ) );
-            _own_mmgr->add( "color_pass", motor::io::location_t( "07_ppp_hdr.shaders.color_pass.msl" ) );
-            _own_mmgr->add( "light_pass", motor::io::location_t( "07_ppp_hdr.shaders.light_pass.msl" ) );
-            _own_mmgr->add( "depth_pass", motor::io::location_t( "07_ppp_hdr.shaders.depth_pass.msl" ) );
+            _own_mmgr->add(
+                "color_pass", motor::io::location_t( "07_ppp_hdr.shaders.color_pass.msl" ) );
+            _own_mmgr->add(
+                "light_pass", motor::io::location_t( "07_ppp_hdr.shaders.light_pass.msl" ) );
+            _own_mmgr->add(
+                "depth_pass", motor::io::location_t( "07_ppp_hdr.shaders.depth_pass.msl" ) );
         }
     }
 
@@ -395,9 +415,43 @@ class my_app : public motor::application::app
             }
             if( name == "light_pass" )
             {
-                motor::scene::add_msl_to_set_visitor_t v(
-                    this_file::to_id( this_file::msl_id::light_pass_id ), motor::share( msl ) );
-                motor::scene::node_t::traverser( _root ).apply( &v );
+                {
+                    motor::scene::add_msl_to_set_visitor_t v(
+                        this_file::to_id( this_file::msl_id::light_pass_id ), motor::share( msl ) );
+                    motor::scene::node_t::traverser( _root ).apply( &v );
+                }
+
+                {
+                    motor::scene::connect_msl_slot_visitor_t v(
+                        this_file::to_id( this_file::msl_id::light_pass_id ),
+                        [ & ]( motor::wire::inputs_ref_t inputs )
+                    {
+                        {
+                            auto * input = inputs.borrow_or_add(
+                                "shininess", motor::shared( this_t::float_is_t( 0.0f ) ) );
+                            if( input ) input->connect( motor::share( _shininess ) );
+                        }
+
+                        {
+                            auto * input = inputs.borrow_or_add(
+                                "specular_strength", motor::shared( this_t::float_is_t( 0.0f ) ) );
+                            if( input ) input->connect( motor::share( _specular_strength ) );
+                        }
+
+                        {
+                            auto * input = inputs.borrow_or_add(
+                                "light_intensity", motor::shared( this_t::float_is_t( 0.0f ) ) );
+                            if( input ) input->connect( motor::share( _light_intensity ) );
+                        }
+
+                        {
+                            auto * input = inputs.borrow_or_add(
+                                "hemi_top_color", motor::shared( this_t::vec3_is_t() ) );
+                            if( input ) input->connect( motor::share( _hemi_top_color ) );
+                        }
+                    } );
+                    motor::scene::node_t::traverser( _root ).apply( &v );
+                }
             }
             else if( name == "depth_pass" )
             {
@@ -426,14 +480,14 @@ class my_app : public motor::application::app
                 _time_node->get_task(), motor::concurrent::schedule_type::pool );
         }
 
-        // sync of pool tasks need to be done by the user itself.
-        // this is just an example. Do syncronization by any means 
-        // you find necessarry.
-        #if 1
+// sync of pool tasks need to be done by the user itself.
+// this is just an example. Do syncronization by any means
+// you find necessarry.
+#if 1
         {
-            while( !_async_done ) ;
+            while( !_async_done );
         }
-        #endif
+#endif
 
         // absolutely required. this visitor bakes local
         // transformations, i.e. if animations occure or if
@@ -456,7 +510,8 @@ class my_app : public motor::application::app
         motor::graphics::gen4::frontend_ptr_t fe,
         motor::application::app::render_data_in_t rd ) noexcept
     {
-        motor::log::global_t::status( !_async_done, "[07_ppp] : async not done yet but rendering." );
+        motor::log::global_t::status(
+            !_async_done, "[07_ppp] : async not done yet but rendering." );
 
         if( rd.first_frame )
         {
@@ -605,6 +660,45 @@ class my_app : public motor::application::app
                         //"gfx.postprocess.hdr.framebuffer.0.depth"
                         //"scene.00.shadow_accum_framebuffer.0"
                         "gfx.postprocess.hdr.framebuffer.0.depth" );
+                }
+            }
+        }
+        ImGui::End();
+
+        if( ImGui::Begin( "Light Variables" ) )
+        {
+            {
+                float_t v = _shininess->get_value();
+                if( ImGui::SliderFloat( "Shininess", &v, 0.0f, 100.0f ) )
+                {
+                    _shininess->set_and_exchange( v );
+                }
+            }
+
+            {
+                float_t v = _specular_strength->get_value();
+                if( ImGui::SliderFloat( "specular_strength", &v, 0.0f, 100.0f ) )
+                {
+                    _specular_strength->set_and_exchange( v );
+                }
+            }
+
+            {
+                float_t v = _light_intensity->get_value();
+                if( ImGui::SliderFloat( "light_intensity", &v, 0.1f, 10.0f ) )
+                {
+                    _light_intensity->set_and_exchange( v );
+                }
+            }
+
+            {
+
+                float_t v[ 3 ] = { _hemi_top_color->get_value().x(),
+                    _hemi_top_color->get_value().y(), _hemi_top_color->get_value().z() };
+
+                if( ImGui::SliderFloat3( "upper hemnisphere color", v, 0.1f, 10.0f ) )
+                {
+                    _hemi_top_color->set_and_exchange( motor::math::vec3f_t( v ) );
                 }
             }
         }
