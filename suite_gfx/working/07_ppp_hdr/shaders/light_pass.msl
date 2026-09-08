@@ -70,11 +70,11 @@ config light_pass
             // albedo * light_color * light_intensity * ndotl
             vec3_t diffuse = 
                    vec3_t(1.0,1.0,1.0) ' hemi_color ' 
-                   vec3_t(light_intensity,light_intensity,light_intensity) ; 
+                   as_vec3(light_intensity) ; 
 
             // specular color ' light_color * light_intensity * spec
             vec3_t specular = vec3_t(10.,10.0,10.0) ' light_color '
-                   vec3_t(light_intensity,light_intensity,light_intensity) ' vec3_t(spec,spec,spec) ; 
+                   as_vec3(light_intensity) ' as_vec3(spec) ; 
 
             //specular = light_color ' vec3_t(1.4,10.4,11.4) ' vec3_t(spec,spec,spec) ;
 
