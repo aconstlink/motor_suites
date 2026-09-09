@@ -1,6 +1,7 @@
 
 set( tests
     "00_camera_movement.cpp"
+    "01_shadow_mapping.cpp"
     )
 
 foreach( _test ${tests} )

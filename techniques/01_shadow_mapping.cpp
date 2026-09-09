@@ -72,11 +72,18 @@ class my_app : public motor::application::app
 
     motor::scene::node_mtr_t _root = nullptr;
 
-  private: // post processing
+  private: // post processing and shadow mapping
 
     motor::gfx::hdr_postprocess_pipeline_mtr_t _pp_pipe = nullptr;
     motor::property::property_sheet_t _pp_sheet;
     bool_t _show_temp_rt = false;
+
+    // this is where the depth of the light source is rendered to.
+    // rendered from the light perspective.
+    motor::graphics::framebuffer_object_mtr_t _shadow_depth_fb = nullptr;
+    motor::graphics::state_object_mtr_t _shadow_depth_so = nullptr;
+
+    motor::gfx::generic_camera_mtr_t _sun_cam = nullptr;
 
   private: // camera
 
@@ -127,6 +134,7 @@ class my_app : public motor::application::app
     float_os_mtr_t _shininess = motor::shared( float_os_t( 80.0f ) );
     float_os_mtr_t _specular_strength = motor::shared( float_os_t( 30.0f ) );
     float_os_mtr_t _light_intensity = motor::shared( float_os_t( 2.0f ) );
+    float_os_mtr_t _bias = motor::shared( float_os_t(0.0f) ) ;
 
     vec3_os_mtr_t _hemi_top_color =
         motor::shared( vec3_os_t( motor::math::vec3f_t( 0.0f, 0.0f, 10.0f ) ) );
@@ -228,6 +236,36 @@ class my_app : public motor::application::app
         }
 
         {
+            motor::graphics::state_object_t so =
+                motor::graphics::state_object_t( "shadow_render_states" );
+
+            {
+                motor::graphics::render_state_sets_t rss;
+                rss.depth_s.do_change = true;
+                rss.depth_s.ss.do_activate = true;
+                rss.depth_s.ss.do_depth_write = true;
+                rss.polygon_s.do_change = true;
+                rss.polygon_s.ss.do_activate = true;
+                rss.polygon_s.ss.fm = motor::graphics::fill_mode::fill;
+                rss.polygon_s.ss.ff = motor::graphics::front_face::counter_clock_wise;
+                rss.polygon_s.ss.cm = motor::graphics::cull_mode::front;
+                rss.depth_s.ss.compare_funk = motor::graphics::depth_compare::less;
+
+                rss.clear_s.do_change = true;
+                rss.clear_s.ss.clear_color = motor::math::vec4f_t( 0.0f, 0.0f, 0.0f, 1.0f );
+                rss.clear_s.ss.do_activate = true;
+                rss.clear_s.ss.do_color_clear = true;
+                rss.clear_s.ss.do_depth_clear = true;
+                rss.view_s.do_change = true;
+                rss.view_s.ss.do_activate = true;
+                rss.view_s.ss.vp = motor::math::vec4ui_t( 0, 0, 1920>>1, 1080>>1 );
+                so.add_render_state_set( rss );
+            }
+
+            _shadow_depth_so = motor::shared( motor::graphics::state_object_t( std::move( so ) ) );
+        }
+
+        {
             _pp_pipe = motor::shared( motor::gfx::hdr_postprocess_pipeline_t() );
             _pp_pipe->init();
         }
@@ -256,11 +294,12 @@ class my_app : public motor::application::app
                     // import the gltf asset.
                     {
                         motor::property::property_sheet_t ps;
-                        ps.add_property< motor::string_t >( "base_name",
-                            motor::property::generic_property< motor::string_t >( "07_ppp_hdr" ) );
+                        ps.add_property< motor::string_t >(
+                            "base_name", motor::property::generic_property< motor::string_t >(
+                                             "01_shadow_mapping" ) );
 
                         auto item = mod_reg->import_from(
-                            motor::io::location_t( "assets.test_scene1.gltf" ), _db,
+                            motor::io::location_t( "assets.shadow_mapping_scene.gltf" ), _db,
                             motor::shared( std::move( ps ) ) );
 
                         auto * ret_item = item.get();
@@ -369,15 +408,39 @@ class my_app : public motor::application::app
             }
         }
 
+        // get sun camera and create shadow framebuffer
+        {
+            for( auto & cam : _cameras )
+            {
+                if( cam.first != "cam.sun" ) continue;
+                _sun_cam = motor::share( cam.second );
+                break;
+            }
+
+            float_t const w = _sun_cam->get_dims().x();
+            float_t const h = _sun_cam->get_dims().y();
+
+            auto fb = motor::graphics::framebuffer_object_t(
+                "01_shadow_mapping.shadow_depth_framebuffer" );
+            fb.set_target( motor::graphics::color_target_type::rgba_uint_8, 1 )
+                .set_target( motor::graphics::depth_stencil_target_type::depth32 )
+                .resize( size_t( 1920 >> 1 ), size_t( 1080 >> 1 ) );
+
+            motor::release( motor::move( _shadow_depth_fb ) );
+            _shadow_depth_fb = motor::shared( std::move( fb ) );
+        }
+
         // manager
         {
             _own_mmgr = motor::shared( motor::gfx::msl_manager_t( motor::share( _db ) ) );
             _own_mmgr->add(
-                "color_pass", motor::io::location_t( "07_ppp_hdr.shaders.color_pass.msl" ) );
+                "color_pass", motor::io::location_t( "01_shadow_mapping.shaders.color_pass.msl" ) );
             _own_mmgr->add(
-                "light_pass", motor::io::location_t( "07_ppp_hdr.shaders.light_pass.msl" ) );
+                "light_pass", motor::io::location_t( "01_shadow_mapping.shaders.light_pass.msl" ) );
             _own_mmgr->add(
-                "depth_pass", motor::io::location_t( "07_ppp_hdr.shaders.depth_pass.msl" ) );
+                "depth_pass", motor::io::location_t( "01_shadow_mapping.shaders.depth_pass.msl" ) );
+            _own_mmgr->add( "shadow_depth_pass",
+                motor::io::location_t( "01_shadow_mapping.shaders.shadow_depth_pass.msl" ) );
         }
     }
 
@@ -446,12 +509,26 @@ class my_app : public motor::application::app
 
                         {
                             auto * input = inputs.borrow_or_add(
+                                "bias", motor::shared( this_t::float_is_t( 0.0f ) ) );
+                            if( input ) input->connect( motor::share( _bias ) );
+                        }
+
+
+                        {
+                            auto * input = inputs.borrow_or_add(
                                 "hemi_top_color", motor::shared( this_t::vec3_is_t() ) );
                             if( input ) input->connect( motor::share( _hemi_top_color ) );
                         }
+
                     } );
                     motor::scene::node_t::traverser( _root ).apply( &v );
                 }
+            }
+            else if( name == "shadow_depth_pass" )
+            {
+                motor::scene::add_msl_to_set_visitor_t v(
+                    this_file::to_id( this_file::msl_id::shadow_depth_id ), motor::share( msl ) );
+                motor::scene::node_t::traverser( _root ).apply( &v );
             }
             else if( name == "depth_pass" )
             {
@@ -517,18 +594,34 @@ class my_app : public motor::application::app
         {
             _pp_pipe->init_render( fe );
             fe->configure< motor::graphics::state_object_t >( _final_so );
+            fe->configure< motor::graphics::state_object_t >( _shadow_depth_so );
+            fe->configure< motor::graphics::framebuffer_object_t >( _shadow_depth_fb );
         }
 
         if( rd.last_frame )
         {
             _pp_pipe->release_render( fe );
             fe->release< motor::graphics::state_object_t >( _final_so );
+            fe->release< motor::graphics::state_object_t >( _shadow_depth_so );
+            fe->release< motor::graphics::framebuffer_object_t >( _shadow_depth_fb );
             return;
         }
 
         _own_mmgr->on_render( fe );
 
-        // render into framebuffer
+        // make shadow pass for sun light
+        {
+            fe->use( _shadow_depth_fb );
+            fe->push( _shadow_depth_so );
+            motor::gfx::generic_camera_mtr_t cam = _sun_cam;
+            motor::scene::render_visitor_t vis(
+                this_file::to_id( this_file::msl_id::shadow_depth_id ), fe, cam );
+            motor::scene::node_t::traverser( _root ).apply( &vis );
+            fe->pop( motor::graphics::gen4::backend::pop_type::render_state );
+            fe->unuse( motor::graphics::gen4::backend::unuse_type::framebuffer );
+        }
+
+        // render into final framebuffer
         {
             // activate fb 0
             fe->use( _pp_pipe->borrow_hdr_fb( 0 ) );
@@ -579,6 +672,7 @@ class my_app : public motor::application::app
         if( _cam_id != size_t( -1 ) )
         {
             fe->push( _final_so );
+            #if 0
             {
 
                 motor::gfx::generic_camera_mtr_t cam = _cameras[ _cam_id ].second;
@@ -592,6 +686,21 @@ class my_app : public motor::application::app
 
                 motor::scene::node_t::traverser( _root ).apply( &vis );
             }
+            #else
+            {
+                motor::gfx::generic_camera_mtr_t cam = _cameras[ _cam_id ].second;
+                motor::scene::light_pass_render_visitor_t vis(
+                    this_file::to_id( this_file::msl_id::light_pass_id ), fe, cam,
+                    motor::scene::light_pass_render_visitor_t::light{
+                        motor::scene::light_pass_render_visitor_t::light_type::directional_light,
+                        _sun_cam->get_direction().negated(),
+                        _sun_cam->get_proj_matrix(), _sun_cam->get_view_matrix(), 
+                        "01_shadow_mapping.shadow_depth_framebuffer.depth"
+                    } );
+
+                motor::scene::node_t::traverser( _root ).apply( &vis );
+            }
+            #endif
             fe->pop( motor::graphics::gen4::backend::pop_type::render_state );
         }
     }
@@ -658,8 +767,10 @@ class my_app : public motor::application::app
                     //);
                     _pp_pipe->set_map_to_screen_texture_temp(
                         //"gfx.postprocess.hdr.framebuffer.0.depth"
-                        //"scene.00.shadow_accum_framebuffer.0"
-                        "gfx.postprocess.hdr.framebuffer.0.depth" );
+                        "gfx.postprocess.hdr.framebuffer.0.1"
+                        
+                        //"01_shadow_mapping.shadow_depth_framebuffer.depth" 
+                        );
                 }
             }
         }
@@ -699,6 +810,14 @@ class my_app : public motor::application::app
                 if( ImGui::SliderFloat3( "upper hemnisphere color", v, 0.1f, 10.0f ) )
                 {
                     _hemi_top_color->set_and_exchange( motor::math::vec3f_t( v ) );
+                }
+            }
+
+            {
+                float_t v = _bias->get_value();
+                if( ImGui::SliderFloat( "bias", &v, 0.0001f, 0.1f ) )
+                {
+                    _bias->set_and_exchange( v );
                 }
             }
         }
@@ -761,6 +880,12 @@ class my_app : public motor::application::app
         motor::release( motor::move( _specular_strength ) );
         motor::release( motor::move( _light_intensity ) );
         motor::release( motor::move( _hemi_top_color ) );
+        motor::release( motor::move( _bias ) ) ;
+
+        motor::release( motor::move( _shadow_depth_fb ) );
+        motor::release( motor::move( _shadow_depth_so ) );
+        motor::release( motor::move( _sun_cam ) );
+
     }
 };
 } // namespace this_file
