@@ -9,6 +9,7 @@ set( tests
     "05_spline_rendering_3d.cpp"
     "06_keyframes_3d.cpp"
     "07_ppp_hdr.cpp"
+    "08_ppp_hdr_fxaa.cpp"
     )
 
 foreach( _test ${tests} )
