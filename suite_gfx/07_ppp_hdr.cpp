@@ -657,9 +657,10 @@ class my_app : public motor::application::app
                     //_pp_pipe->set_map_to_screen_texture_temp( "scene.00.shadow_framebuffer.depth"
                     //);
                     _pp_pipe->set_map_to_screen_texture_temp(
-                        //"gfx.postprocess.hdr.framebuffer.0.depth"
+                        "gfx.postprocess.fb.full.hdr.0.0"
                         //"scene.00.shadow_accum_framebuffer.0"
-                        "gfx.postprocess.hdr.framebuffer.0.depth" );
+                        //"gfx.postprocess.hdr.framebuffer.0.depth" 
+                        );
                 }
             }
         }

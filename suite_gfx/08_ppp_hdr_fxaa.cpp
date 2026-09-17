@@ -228,7 +228,7 @@ class my_app : public motor::application::app
         }
 
         {
-            _pp_pipe = motor::shared( motor::gfx::hdr_postprocess_pipeline_t() );
+            _pp_pipe = motor::shared( motor::gfx::hdr_postprocess_pipeline_t(1920,1080) );
             _pp_pipe->init();
         }
 
@@ -257,7 +257,7 @@ class my_app : public motor::application::app
                     {
                         motor::property::property_sheet_t ps;
                         ps.add_property< motor::string_t >( "base_name",
-                            motor::property::generic_property< motor::string_t >( "07_ppp_hdr" ) );
+                            motor::property::generic_property< motor::string_t >( "08_ppp_hdr_fxaa" ) );
 
                         auto item = mod_reg->import_from(
                             motor::io::location_t( "assets.test_scene1.gltf" ), _db,
@@ -373,11 +373,11 @@ class my_app : public motor::application::app
         {
             _own_mmgr = motor::shared( motor::gfx::msl_manager_t( motor::share( _db ) ) );
             _own_mmgr->add(
-                "color_pass", motor::io::location_t( "07_ppp_hdr.shaders.color_pass.msl" ) );
+                "color_pass", motor::io::location_t( "08_ppp_hdr_fxaa.shaders.color_pass.msl" ) );
             _own_mmgr->add(
-                "light_pass", motor::io::location_t( "07_ppp_hdr.shaders.light_pass.msl" ) );
+                "light_pass", motor::io::location_t( "08_ppp_hdr_fxaa.shaders.light_pass.msl" ) );
             _own_mmgr->add(
-                "depth_pass", motor::io::location_t( "07_ppp_hdr.shaders.depth_pass.msl" ) );
+                "depth_pass", motor::io::location_t( "08_ppp_hdr_fxaa.shaders.depth_pass.msl" ) );
         }
     }
 
@@ -511,7 +511,7 @@ class my_app : public motor::application::app
         motor::application::app::render_data_in_t rd ) noexcept
     {
         motor::log::global_t::status(
-            !_async_done, "[07_ppp] : async not done yet but rendering." );
+            !_async_done, "[08_ppp] : async not done yet but rendering." );
 
         if( rd.first_frame )
         {
@@ -666,7 +666,7 @@ class my_app : public motor::application::app
                     //_pp_pipe->set_map_to_screen_texture_temp( "scene.00.shadow_framebuffer.depth"
                     //);
                     _pp_pipe->set_map_to_screen_texture_temp(
-                        "gfx.postprocess.hdr.framebuffer.0.0"
+                        "gfx.postprocess.fb.full.hdr.0.0"
                         //"scene.00.shadow_accum_framebuffer.0"
                         //"gfx.postprocess.hdr.framebuffer.0.depth" 
                         );
