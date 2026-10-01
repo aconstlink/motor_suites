@@ -140,7 +140,7 @@ namespace this_file
 
                     return motor::gfx::primitive_render_2d_t::rect_t{ 
                         {points[0], points[1], points[2], points[3]}, 
-                        motor::math::vec4f_t( 0.0f, 0.0f, 0.5f, alpha ),
+                        motor::math::vec4f_t( 1.0f, 1.0f, 1.0f, alpha ),
                         motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, alpha ) } ;
                 } ) ;
                 #else

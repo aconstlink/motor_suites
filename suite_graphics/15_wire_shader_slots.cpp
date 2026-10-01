@@ -13,7 +13,7 @@
 
 #include <motor/graphics/object/geometry_object.h>
 #include <motor/graphics/object/msl_object.h>
-#include <motor/graphics/variable/wire_variable_bridge.h>
+#include <motor/graphics/variable/wire_variable_input_bridge.hpp>
 
 #include <motor/math/utility/3d/transformation.hpp>
 #include <motor/math/utility/angle.hpp>
@@ -49,7 +49,7 @@ namespace this_file
         motor::vector< motor::graphics::msl_object_ptr_t > reconfigs ;
         motor::vector< motor::graphics::msl_object_ptr_t > renderables ;
 
-        motor::vector< motor::graphics::wire_variable_bridge_mtr_t > _bridges ;
+        motor::vector< motor::graphics::wire_variable_input_bridge_mtr_t > _bridges ;
 
         size_t _cam_id = 0 ;
         // 0 : this is the free moving camera
@@ -253,25 +253,25 @@ namespace this_file
                 mslo.link_geometry( "cube" ) ;
                 
                 {
-                    auto b = motor::shared( motor::graphics::wire_variable_bridge_t( mslo.get_varibale_set(0) ) ) ;
-                    b->borrow_inputs()->add( "proj", motor::shared( motor::wire::input_slot< motor::math::mat4f_t >() ) ) ;
-                    b->borrow_inputs()->add( "view", motor::shared( motor::wire::input_slot< motor::math::mat4f_t >() ) ) ;
-                    b->borrow_inputs()->add( "u_tex", motor::shared( motor::wire::input_slot< motor::graphics::texture_variable_data >( "checker_board" ) ) ) ;
+                    auto b = motor::shared( motor::graphics::wire_variable_input_bridge_t( mslo.get_varibale_set(0) ) ) ;
+                    b->borrow_inputs().add( "proj", motor::shared( motor::wire::input_slot< motor::math::mat4f_t >() ) ) ;
+                    b->borrow_inputs().add( "view", motor::shared( motor::wire::input_slot< motor::math::mat4f_t >() ) ) ;
+                    b->borrow_inputs().add( "u_tex", motor::shared( motor::wire::input_slot< motor::graphics::texture_variable_data >( "checker_board" ) ) ) ;
 
                     {
                         auto s = motor::shared( motor::wire::input_slot< motor::math::vec4f_t >( motor::math::vec4f_t(1.0f) ) ) ;
                         _color->connect( motor::share( s ) ) ;
-                        b->borrow_inputs()->add( "u_color", motor::move( s ) ) ;
+                        b->borrow_inputs().add( "u_color", motor::move( s ) ) ;
                     }
                     b->update_bindings() ;
                     _bridges.emplace_back( motor::move( b ) ) ;
                 }
                 {
-                    auto b = motor::shared( motor::graphics::wire_variable_bridge_t( mslo.get_varibale_set( 1 ) ) ) ;
-                    b->borrow_inputs()->add( "proj", motor::shared( motor::wire::input_slot< motor::math::mat4f_t >() ) ) ;
-                    b->borrow_inputs()->add( "view", motor::shared( motor::wire::input_slot< motor::math::mat4f_t >() ) ) ;
-                    b->borrow_inputs()->add( "u_color", motor::shared( motor::wire::input_slot< motor::math::vec4f_t >( motor::math::vec4f_t( 1.0f ) ) ) ) ;
-                    b->borrow_inputs()->add( "u_tex", motor::shared( motor::wire::input_slot< motor::graphics::texture_variable_data >( "checker_board" ) ) ) ;
+                    auto b = motor::shared( motor::graphics::wire_variable_input_bridge_t( mslo.get_varibale_set( 1 ) ) ) ;
+                    b->borrow_inputs().add( "proj", motor::shared( motor::wire::input_slot< motor::math::mat4f_t >() ) ) ;
+                    b->borrow_inputs().add( "view", motor::shared( motor::wire::input_slot< motor::math::mat4f_t >() ) ) ;
+                    b->borrow_inputs().add( "u_color", motor::shared( motor::wire::input_slot< motor::math::vec4f_t >( motor::math::vec4f_t( 1.0f ) ) ) ) ;
+                    b->borrow_inputs().add( "u_tex", motor::shared( motor::wire::input_slot< motor::graphics::texture_variable_data >( "checker_board" ) ) ) ;
                     b->update_bindings() ;
                     _bridges.emplace_back( motor::move( b ) ) ;
                 }
@@ -352,7 +352,7 @@ namespace this_file
                         
                         if ( sb.has_variable_binding( motor::graphics::binding_point::projection_matrix, name ) )
                         {
-                            auto s = b->borrow_inputs()->borrow_or_add( name,
+                            auto s = b->borrow_inputs().borrow_or_add( name,
                                 motor::shared( motor::wire::input_slot< motor::math::mat4f_t >() ) ) ;
                             
                             if ( !s->connect( motor::share( _proj ) ) )
@@ -363,7 +363,7 @@ namespace this_file
 
                         if ( sb.has_variable_binding( motor::graphics::binding_point::view_matrix, name ) )
                         {
-                            auto s = b->borrow_inputs()->borrow_or_add( name,
+                            auto s = b->borrow_inputs().borrow_or_add( name,
                                 motor::shared( motor::wire::input_slot< motor::math::mat4f_t >() ) ) ;
 
                             if ( !s->connect( motor::share( _view ) ) )
@@ -374,7 +374,7 @@ namespace this_file
                         
                         if ( sb.has_variable_binding( motor::graphics::binding_point::world_matrix, name ) )
                         {
-                            auto s = b->borrow_inputs()->borrow_or_add( name,
+                            auto s = b->borrow_inputs().borrow_or_add( name,
                                 motor::shared( motor::wire::input_slot< motor::math::mat4f_t >(), "test" ) ) ;
 
                             if ( !s->connect( motor::share( _world ) ) )
@@ -521,8 +521,8 @@ namespace this_file
                 {
                     auto * b = _bridges[ _render_vs ]  ;
                     {
-                        auto * inputs = b->borrow_inputs() ;
-                        inputs->for_each_slot( [&]( motor::string_in_t name, motor::wire::iinput_slot_ptr_t is )
+                        auto & inputs = b->borrow_inputs() ;
+                        inputs.for_each_slot( [&]( motor::string_in_t name, motor::wire::iinput_slot_ptr_t is )
                         {
                             if( motor::property::add_is_property< float_t >( name, is, _props ) ) return ;
                             if( motor::property::add_is_property< int_t >( name, is, _props ) ) return ;
