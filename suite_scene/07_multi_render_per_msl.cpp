@@ -69,7 +69,7 @@ class my_app : public motor::application::app
     {
         {
             motor::string_t shd = R"(
-                config light_pass_directional
+                config any_effect
                 {
                     vertex_shader
                     {
@@ -113,7 +113,7 @@ class my_app : public motor::application::app
                     }
                 })";
 
-            mgr->add( "light_pass_directional", shd );
+            mgr->add( "any_effect", shd );
             // variables are set when the shader is done.
             // @see on_update
         }
@@ -568,13 +568,15 @@ class my_app : public motor::application::app
             _mslm->on_render_init( fe ) ;
         }
 
+        // you can choose any render id number.
         {
             motor::scene::render_visitor_t vis( 0, 0, fe, _camera_0 );
             motor::scene::node_t::traverser( _root ).apply( &vis );
         }
 
+        // you can choose any render id number.
         {
-            motor::scene::render_visitor_t vis( 0, 1, fe, _camera_1 );
+            motor::scene::render_visitor_t vis( 0, 100, fe, _camera_1 );
             motor::scene::node_t::traverser( _root ).apply( &vis );
         }
 
@@ -604,7 +606,7 @@ class my_app : public motor::application::app
         _mslm->for_each_configure_done(
             [ & ]( motor::string_in_t msl_name, motor::graphics::msl_object_mtr_t msl ) //
         {
-            if( msl_name == "light_pass_directional" )
+            if( msl_name == "any_effect" )
             {
                 motor::scene::add_msl_to_set_visitor_t v( 0, motor::share( msl ),
                     [ & ]( motor::string_in_t node_name, motor::graphics::variable_set_mtr_t vs )
