@@ -194,11 +194,29 @@ class my_app : public motor::application::app
             } );
         }
 
+        // #2 : init window
+        {
+            motor::application::window_info_t wi;
+            wi.x = 900;
+            wi.y = 100;
+            wi.w = 800;
+            wi.h = 600;
+            wi.gen = motor::application::graphics_generation::gen4_auto;
+
+            this_t::send_window_message( this_t::create_window( wi ),
+                [ & ]( motor::application::app::window_view & wnd )
+            {
+                wnd.send_message( motor::application::show_message( { true } ) );
+                wnd.send_message( motor::application::cursor_message_t( { true } ) );
+                wnd.send_message( motor::application::vsync_message_t( { true } ) );
+            } );
+        }
+
         // camera
         {
-            auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 1.0f, 100.0f );
+            auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 1.0f, 1000.0f );
             cam.perspective_fov( motor::math::angle< float_t >::degree_to_radian( 45.0f ) );
-            cam.look_at( motor::math::vec3f_t( 0.0f, 50.0f, 80.0f ),
+            cam.look_at( motor::math::vec3f_t( 0.0f, 0.0f, 100.0f ),
                 motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ),
                 motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) );
 
@@ -446,7 +464,7 @@ class my_app : public motor::application::app
                         rs->add_child( motor::shared( std::move( rn ) ) );
                     }
                     #endif
-                    #if 0
+                    #if 1
                     // render object 3
                     {
                         auto rn = motor::scene::logic_leaf_t();
@@ -457,7 +475,7 @@ class my_app : public motor::application::app
                             motor::scene::trafo3d_component_t tc( motor::math::m3d::trafof_t(
                                 motor::math::vec3f_t( 1.0f, 1.0f, 1.0f ),
                                 motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ),
-                                motor::math::vec3f_t( 10.0f, 0.0f, -50.0f ) ) );
+                                motor::math::vec3f_t( 0.0f, 30.0f, -50.0f ) ) );
 
                             rn.add_component( motor::shared( std::move( tc ) ) );
                         }
@@ -487,6 +505,8 @@ class my_app : public motor::application::app
 
             _root = motor::shared( std::move( root ) );
         }
+
+        this_t::init_manager_shaders( _mslm ) ;
     }
 
     //******************************************************************************************************
@@ -526,13 +546,12 @@ class my_app : public motor::application::app
             fe->configure< motor::graphics::state_object_t >( root_so );
             fe->configure< motor::graphics::geometry_object_t >( &geo_obj1 );
             fe->configure< motor::graphics::geometry_object_t >( &geo_obj2 );
-
-            this_t::init_manager_shaders( _mslm ) ;
+            
             _mslm->on_render_init( fe ) ;
         }
 
         {
-            motor::scene::render_visitor_t vis( 0, /*0,*/ fe, _camera );
+            motor::scene::render_visitor_t vis( 0, 1, fe, _camera );
             motor::scene::node_t::traverser( _root ).apply( &vis );
         }
 
