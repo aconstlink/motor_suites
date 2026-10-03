@@ -24,9 +24,9 @@ namespace this_file
     {
         motor_this_typedefs( my_app ) ;
 
-        motor::graphics::state_object_t root_so ;
-        motor::graphics::geometry_object_t geo_obj ;
-        motor::graphics::msl_object_t msl_obj ;
+        motor::graphics::state_object_mtr_t root_so ;
+        motor::graphics::geometry_object_mtr_t geo_obj ;
+        motor::graphics::msl_object_mtr_t msl_obj ;
 
         motor::gfx::generic_camera_t cam ;
 
@@ -73,10 +73,10 @@ namespace this_file
                     .add_layout_element( motor::graphics::vertex_attribute::texcoord0, motor::graphics::type::tfloat, motor::graphics::type_struct::vec2 )
                     .resize( 4 ).update<vertex>( [=] ( vertex* array, size_t const ne )
                 {
-                    array[ 0 ].pos = motor::math::vec3f_t( -0.5f, -0.5f, 0.0f ) ;
-                    array[ 1 ].pos = motor::math::vec3f_t( -0.5f, +0.5f, 0.0f ) ;
-                    array[ 2 ].pos = motor::math::vec3f_t( +0.5f, +0.5f, 0.0f ) ;
-                    array[ 3 ].pos = motor::math::vec3f_t( +0.5f, -0.5f, 0.0f ) ;
+                    array[ 0 ].pos = motor::math::vec3f_t( -0.5f, -0.5f, -10.0f ) ;
+                    array[ 1 ].pos = motor::math::vec3f_t( -0.5f, +0.5f, -10.0f ) ;
+                    array[ 2 ].pos = motor::math::vec3f_t( +0.5f, +0.5f, -10.0f ) ;
+                    array[ 3 ].pos = motor::math::vec3f_t( +0.5f, -0.5f, -10.0f ) ;
 
                     array[ 0 ].tx = motor::math::vec2f_t( -0.0f, -0.0f ) ;
                     array[ 1 ].tx = motor::math::vec2f_t( -0.0f, +1.0f ) ;
@@ -97,8 +97,8 @@ namespace this_file
                     array[ 5 ] = 3 ;
                 } ) ;
 
-                geo_obj = motor::graphics::geometry_object_t( "quad",
-                    motor::graphics::primitive_type::triangles, std::move( vb ), std::move( ib ) ) ;
+                geo_obj = motor::shared( motor::graphics::geometry_object_t( "quad",
+                    motor::graphics::primitive_type::triangles, std::move( vb ), std::move( ib ) ) ) ;
             }
 
             // shaders
@@ -141,7 +141,7 @@ namespace this_file
 
                     mslo.link_geometry("quad") ;
 
-                    msl_obj = std::move( mslo ) ;
+                    msl_obj = motor::shared( std::move( mslo ) ) ;
                 }
 
                 // variable sets
@@ -159,7 +159,7 @@ namespace this_file
                     }
 
 
-                    msl_obj.add_variable_set( motor::memory::create_ptr( std::move( vars ), "a variable set" ) ) ;
+                    msl_obj->add_variable_set( motor::memory::create_ptr( std::move( vars ), "a variable set" ) ) ;
                 }
             }
 
@@ -170,8 +170,8 @@ namespace this_file
                 {
                     motor::graphics::render_state_sets_t rss ;
                     rss.depth_s.do_change = true ;
-                    rss.depth_s.ss.do_activate = true ;
-                    rss.depth_s.ss.do_depth_write = true ;
+                    rss.depth_s.ss.do_activate = false ;
+                    rss.depth_s.ss.do_depth_write = false ;
                     rss.polygon_s.do_change = true ;
                     rss.polygon_s.ss.do_activate = true ;
                     rss.polygon_s.ss.ff = motor::graphics::front_face::clock_wise ;
@@ -189,14 +189,14 @@ namespace this_file
                     so.add_render_state_set( rss ) ;
                 }
 
-                root_so = std::move( so ) ; 
+                root_so = motor::shared( std::move( so ) ) ; 
             }
 
             {
                 cam.set_dims( 1.0f, 1.0f, 1.0f, 10000.0f ) ;
                 cam.perspective_fov( motor::math::angle<float_t>::degree_to_radian( 45.0f ) ) ;
                 cam.set_sensor_dims( float_t( 1920 ), float_t( 1080 ) ) ;
-                cam.look_at( motor::math::vec3f_t( 0.0f, 0.0f, -100.0f ),
+                cam.look_at( motor::math::vec3f_t( 0.0f, 0.0f, 100.0f ),
                     motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) ;
             }
         }
@@ -217,9 +217,9 @@ namespace this_file
 
         virtual void_t on_graphics( motor::application::app::graphics_data_in_t gd ) noexcept 
         {
-            for( size_t i=0; i<msl_obj.borrow_varibale_sets().size(); ++i )
+            for( size_t i=0; i<msl_obj->borrow_varibale_sets().size(); ++i )
             {
-                auto vars = msl_obj.borrow_varibale_set(i) ;
+                auto vars = msl_obj->borrow_varibale_set(i) ;
 
                 {
                     auto * var = vars.vs->data_variable< motor::math::mat4f_t >( "view" ) ;
@@ -254,17 +254,17 @@ namespace this_file
             // configure needs to be done only once per window
             if( rd.first_frame )
             {
-                fe->configure<motor::graphics::state_object_t>( &root_so ) ;
-                fe->configure<motor::graphics::geometry_object_t>( &geo_obj ) ;
-                fe->configure<motor::graphics::msl_object_t>( &msl_obj ) ;
+                fe->configure<motor::graphics::state_object_t>( root_so ) ;
+                fe->configure<motor::graphics::geometry_object_t>( geo_obj ) ;
+                fe->configure<motor::graphics::msl_object_t>( msl_obj ) ;
             }
             
             // render
             {
-                fe->push( &root_so ) ;
+                fe->push( root_so ) ;
                 {
                     motor::graphics::gen4::backend_t::render_detail_t detail ;
-                    fe->render( &msl_obj, detail ) ;
+                    fe->render( msl_obj, detail ) ;
                 }
                 fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ;
             }

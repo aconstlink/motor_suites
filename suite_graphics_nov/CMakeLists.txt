@@ -1,15 +1,7 @@
 
-
 set( tests
-    "00_base_test.cpp"
-    "01_scene_render.cpp"
-    "02_scene_variables.cpp"
-    "03_scene_animation.cpp"
-    "04_scene_animation.cpp"
-    "05_scene_gltf.cpp"
-    "06_manager_render.cpp"
-    "07_multi_render_per_msl.cpp"
-    "08_light_pass.cpp"
+    "00_variable_set.cpp"
+    "01_wire_bridge.cpp"
     )
 
 foreach( _test ${tests} )
@@ -25,16 +17,18 @@ foreach( _test ${tests} )
 
     add_executable( ${app_name} ${_test} ) 
     target_link_libraries( ${app_name} 
+      PRIVATE motor::noise 
+      PRIVATE motor::io 
+      PRIVATE motor::concurrent 
+      PRIVATE motor::memory
       PRIVATE motor::application
-      PRIVATE motor::platform
-      PRIVATE motor::io
       PRIVATE motor::graphics
+      PRIVATE motor::platform
+      PRIVATE motor::gfx
       PRIVATE motor::geometry
-      PRIVATE motor::scene
-      PRIVATE motor::tool
-    )
+      PRIVATE motor::format )
 
-    set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_scene" )
+    set_target_properties( ${app_name} PROPERTIES FOLDER "suites/suite_graphics_nov" )
 
     set( data_path ${CMAKE_CURRENT_LIST_DIR} ) 
     target_compile_definitions( ${app_name} PRIVATE -DDATAPATH="${data_path}")

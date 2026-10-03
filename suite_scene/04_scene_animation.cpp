@@ -504,7 +504,7 @@ namespace this_file
                                 {                                    
                                     auto mslcomp = motor::scene::msl_component_t( motor::share(msl_obj), 0) ;
 
-                                    auto & inputs = *mslcomp.borrow_shader_inputs() ;
+                                    auto & inputs = mslcomp.borrow_shader_inputs() ;
                                     {
                                         auto s = motor::wire::input_slot( motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) ) ;
                                         inputs.add( "color", motor::shared( std::move( s ) ) ) ;
@@ -559,7 +559,7 @@ namespace this_file
                                 // add shader variable slots
                                 {
                                     auto mslcomp = motor::scene::msl_component_t( motor::share(msl_obj), 1) ;
-                                    auto & inputs = *mslcomp.borrow_shader_inputs() ;
+                                    auto & inputs = mslcomp.borrow_shader_inputs() ;
                                     {
                                         auto s = motor::wire::input_slot( motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) ) ;
                                         inputs.add( "color", motor::shared( std::move( s ) ) ) ;
