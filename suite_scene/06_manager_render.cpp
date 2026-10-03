@@ -183,7 +183,7 @@ class my_app : public motor::application::app
             wi.y = 100;
             wi.w = 800;
             wi.h = 600;
-            wi.gen = motor::application::graphics_generation::gen4_auto;
+            wi.gen = motor::application::graphics_generation::gen4_gl4;
 
             this_t::send_window_message( this_t::create_window( wi ),
                 [ & ]( motor::application::app::window_view & wnd )
@@ -192,13 +192,13 @@ class my_app : public motor::application::app
                 wnd.send_message( motor::application::cursor_message_t( { true } ) );
                 wnd.send_message( motor::application::vsync_message_t( { true } ) );
             } );
-        }
+        }        
 
         // camera
         {
-            auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 1.0f, 100.0f );
+            auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 1.0f, 1000.0f );
             cam.perspective_fov( motor::math::angle< float_t >::degree_to_radian( 45.0f ) );
-            cam.look_at( motor::math::vec3f_t( 0.0f, 50.0f, 80.0f ),
+            cam.look_at( motor::math::vec3f_t( 0.0f, 0.0f, 100.0f ),
                 motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ),
                 motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) );
 
@@ -339,9 +339,9 @@ class my_app : public motor::application::app
                 rss.clear_s.ss.do_activate = true;
                 rss.clear_s.ss.do_color_clear = true;
                 rss.clear_s.ss.do_depth_clear = true;
-                rss.view_s.do_change = true;
-                rss.view_s.ss.do_activate = false;
-                rss.view_s.ss.vp = motor::math::vec4ui_t( 0, 0, 500, 500 );
+                //rss.view_s.do_change = true;
+                //rss.view_s.ss.do_activate = false;
+                //rss.view_s.ss.vp = motor::math::vec4ui_t( 0, 0, 500, 500 );
                 so.add_render_state_set( rss );
             }
 
@@ -382,6 +382,7 @@ class my_app : public motor::application::app
                         rs->add_component( motor::shared( std::move( rsc ) ) );
                     }
 
+                    #if 1
                     // render object 1
                     {
                         auto rn = motor::scene::logic_leaf_t();
@@ -413,7 +414,7 @@ class my_app : public motor::application::app
 
                         rs->add_child( motor::shared( std::move( rn ) ) );
                     }
-
+                    #endif
                     // render object 2
                     {
                         auto rn = motor::scene::logic_leaf_t();
@@ -424,7 +425,7 @@ class my_app : public motor::application::app
                             motor::scene::trafo3d_component_t tc( motor::math::m3d::trafof_t(
                                 motor::math::vec3f_t( 1.0f, 1.0f, 1.0f ),
                                 motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ),
-                                motor::math::vec3f_t( 10.0f, 0.0f, 0.0f ) ) );
+                                motor::math::vec3f_t( 10.0f, 0.0f, 10.0f ) ) );
 
                             rn.add_component( motor::shared( std::move( tc ) ) );
                         }
@@ -445,6 +446,7 @@ class my_app : public motor::application::app
                         rs->add_child( motor::shared( std::move( rn ) ) );
                     }
 
+                    #if 1
                     // render object 3
                     {
                         auto rn = motor::scene::logic_leaf_t();
@@ -455,7 +457,7 @@ class my_app : public motor::application::app
                             motor::scene::trafo3d_component_t tc( motor::math::m3d::trafof_t(
                                 motor::math::vec3f_t( 1.0f, 1.0f, 1.0f ),
                                 motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ),
-                                motor::math::vec3f_t( 10.0f, 0.0f, -50.0f ) ) );
+                                motor::math::vec3f_t( 0.0f, 20.0f, 10.0f ) ) );
 
                             rn.add_component( motor::shared( std::move( tc ) ) );
                         }
@@ -475,6 +477,7 @@ class my_app : public motor::application::app
                         }
                         rs->add_child( motor::shared( std::move( rn ) ) );
                     }
+                    #endif
 
                     t->add_child( motor::move( rs ) );
                 }
