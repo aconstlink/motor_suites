@@ -57,7 +57,8 @@ class my_app : public motor::application::app
     motor::graphics::geometry_object_t geo_obj1;
     motor::graphics::geometry_object_t geo_obj2;
 
-    motor::gfx::generic_camera_mtr_t _camera;
+    motor::gfx::generic_camera_mtr_t _camera_0;
+    motor::gfx::generic_camera_mtr_t _camera_1;
 
     motor::gfx::msl_manager_mtr_t _mslm;
 
@@ -220,7 +221,18 @@ class my_app : public motor::application::app
                 motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ),
                 motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) );
 
-            _camera = motor::shared( std::move( cam ) );
+            _camera_0 = motor::shared( std::move( cam ) );
+        }
+
+        // camera
+        {
+            auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 1.0f, 1000.0f );
+            cam.perspective_fov( motor::math::angle< float_t >::degree_to_radian( 45.0f ) );
+            cam.look_at( motor::math::vec3f_t( 0.0f, 20.0f, 100.0f ),
+                motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ),
+                motor::math::vec3f_t( 0.0f, 10.0f, 0.0f ) );
+
+            _camera_1 = motor::shared( std::move( cam ) );
         }
 
         // # : make geometry
@@ -352,11 +364,15 @@ class my_app : public motor::application::app
                 rss.polygon_s.ss.do_activate = true;
                 rss.polygon_s.ss.ff = motor::graphics::front_face::clock_wise;
                 rss.polygon_s.ss.cm = motor::graphics::cull_mode::back;
-                rss.clear_s.do_change = true;
+                #if 0
+                // do not clear the screen, we would like to 
+                // render two times the scene with different cameras.
+                rss.clear_s.do_change = false;
                 rss.clear_s.ss.clear_color = motor::math::vec4f_t( 0.5f, 0.9f, 0.5f, 1.0f );
-                rss.clear_s.ss.do_activate = true;
+                rss.clear_s.ss.do_activate = false ;
                 rss.clear_s.ss.do_color_clear = true;
                 rss.clear_s.ss.do_depth_clear = true;
+                #endif
                 rss.view_s.do_change = true;
                 rss.view_s.ss.do_activate = false;
                 rss.view_s.ss.vp = motor::math::vec4ui_t( 0, 0, 500, 500 );
@@ -528,8 +544,10 @@ class my_app : public motor::application::app
         {
             float_t const w = float_t( sv.resize_msg.w );
             float_t const h = float_t( sv.resize_msg.h );
-            _camera->set_sensor_dims( w, h );
-            _camera->perspective_fov();
+            _camera_0->set_sensor_dims( w, h );
+            _camera_0->perspective_fov();
+            _camera_1->set_sensor_dims( w, h );
+            _camera_1->perspective_fov();
         }
     }
 
@@ -551,7 +569,12 @@ class my_app : public motor::application::app
         }
 
         {
-            motor::scene::render_visitor_t vis( 0, 1, fe, _camera );
+            motor::scene::render_visitor_t vis( 0, 0, fe, _camera_0 );
+            motor::scene::node_t::traverser( _root ).apply( &vis );
+        }
+
+        {
+            motor::scene::render_visitor_t vis( 0, 1, fe, _camera_1 );
             motor::scene::node_t::traverser( _root ).apply( &vis );
         }
 
@@ -643,7 +666,8 @@ class my_app : public motor::application::app
         motor::memory::release_ptr( motor::move( _selected ) );
         motor::memory::release_ptr( _root );
         motor::memory::release_ptr( root_so );
-        motor::memory::release_ptr( _camera );
+        motor::memory::release_ptr( _camera_0 );
+        motor::memory::release_ptr( _camera_1 );
 
         motor::release( motor::move( _mslm ) );
     }
