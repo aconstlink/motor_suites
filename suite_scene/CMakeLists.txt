@@ -8,7 +8,8 @@ set( tests
     "04_scene_animation.cpp"
     "05_scene_gltf.cpp"
     "06_manager_render.cpp"
-    "07_light_pass.cpp"
+    "07_multi_render_per_msl.cpp"
+    "08_light_pass.cpp"
     )
 
 foreach( _test ${tests} )
