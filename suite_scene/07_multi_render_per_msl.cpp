@@ -228,9 +228,9 @@ class my_app : public motor::application::app
         {
             auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 1.0f, 1000.0f );
             cam.perspective_fov( motor::math::angle< float_t >::degree_to_radian( 45.0f ) );
-            cam.look_at( motor::math::vec3f_t( 0.0f, 20.0f, 100.0f ),
+            cam.look_at( motor::math::vec3f_t( 50.0f, 50.0f, 100.0f ),
                 motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ),
-                motor::math::vec3f_t( 0.0f, 10.0f, 0.0f ) );
+                motor::math::vec3f_t( 0.0f, 30.0f, 0.0f ) );
 
             _camera_1 = motor::shared( std::move( cam ) );
         }

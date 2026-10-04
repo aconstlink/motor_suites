@@ -29,6 +29,7 @@
 #include <motor/scene/visitor/variable_update_visitor.h>
 #include <motor/scene/visitor/trafo_visitor.h>
 #include <motor/scene/visitor/graphics/render_visitor.h>
+#include <motor/scene/visitor/graphics/light_pass_render_visitor.h>
 #include <motor/scene/visitor/graphics/add_msl_to_set_visitor.hpp>
 
 #include <motor/tool/imgui/node_kit/imgui_node_visitor.h>
@@ -61,9 +62,6 @@ class my_app : public motor::application::app
 
     motor::gfx::msl_manager_mtr_t _mslm;
 
-    bool_t _msls_are_init = false;
-    bool_t _button_pressed = true;
-
     void_t init_manager_shaders( motor::gfx::msl_manager_mtr_t mgr ) noexcept
     {
         {
@@ -84,6 +82,10 @@ class my_app : public motor::application::app
                         out vec2_t tx : texcoord ;
                         out vec3_t nrm : normal ;
 
+                        vec3_t light_dir : light_direction ;
+
+                        out vec3_t light_dir ;
+
                         void main()
                         {
                             vec3_t pos = in.pos ;
@@ -91,6 +93,9 @@ class my_app : public motor::application::app
                             out.tx = in.tx ;
                             out.pos = proj * view * world * vec4_t( pos, 1.0 ) ;
                             out.nrm = normalize( world * vec4_t( in.nrm, 0.0 ) ).xyz ;
+
+                            
+                            out.light_dir = light_dir ;
                         }
                     }
 
@@ -103,11 +108,13 @@ class my_app : public motor::application::app
                         in vec3_t nrm : normal ;
                         out vec4_t color0 : color0 ;
 
+                        in vec3_t light_dir ;
+
                         void main()
                         {
-                            float_t light = dot( normalize( in.nrm ), normalize( vec3_t( 1.0, 1.0, 0.5) ) ) ;
+                            float_t light = dot( normalize( in.nrm ), normalize( in.light_dir) ) ;
                             out.color0 = vec4_t( light, light, light, 1.0 ) ;
-                            out.color0 = out.color0 ' vec4_t( color.xyz, 1.0 ) ;
+                            //out.color0 = out.color0 ' vec4_t( color.xyz, 1.0 ) ;
                         }
                     }
                 })";
@@ -194,11 +201,29 @@ class my_app : public motor::application::app
             } );
         }
 
+        // #2 : init window
+        {
+            motor::application::window_info_t wi;
+            wi.x = 820;
+            wi.y = 100;
+            wi.w = 800;
+            wi.h = 600;
+            wi.gen = motor::application::graphics_generation::gen4_auto;
+
+            this_t::send_window_message( this_t::create_window( wi ),
+                [ & ]( motor::application::app::window_view & wnd )
+            {
+                wnd.send_message( motor::application::show_message( { true } ) );
+                wnd.send_message( motor::application::cursor_message_t( { true } ) );
+                wnd.send_message( motor::application::vsync_message_t( { true } ) );
+            } );
+        }
+
         // camera
         {
-            auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 1.0f, 100.0f );
+            auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 1.0f, 1000.0f );
             cam.perspective_fov( motor::math::angle< float_t >::degree_to_radian( 45.0f ) );
-            cam.look_at( motor::math::vec3f_t( 0.0f, 50.0f, 80.0f ),
+            cam.look_at( motor::math::vec3f_t( 0.0f, 0.0f, 80.0f ),
                 motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ),
                 motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) );
 
@@ -316,7 +341,7 @@ class my_app : public motor::application::app
                 motor::io::database_t( motor::io::path_t( DATAPATH ), "./working", "data" );
             motor::gfx::msl_manager_t mgr( motor::shared( std::move( db ) ) );
 
-            ///this_t::init_manager_shaders( &mgr );
+            /// this_t::init_manager_shaders( &mgr );
 
             _mslm = motor::shared( std::move( mgr ) );
         }
@@ -334,14 +359,32 @@ class my_app : public motor::application::app
                 rss.polygon_s.ss.do_activate = true;
                 rss.polygon_s.ss.ff = motor::graphics::front_face::clock_wise;
                 rss.polygon_s.ss.cm = motor::graphics::cull_mode::back;
+
+                rss.blend_s.do_change = true ;
+                rss.blend_s.ss.do_activate = true ;
+                rss.blend_s.ss.blend_func = motor::graphics::blend_function::add ;
+                rss.blend_s.ss.dst_blend_factor = motor::graphics::blend_factor::one ;
+                rss.blend_s.ss.src_blend_factor = motor::graphics::blend_factor::one ;
+#if 0
+                // this is done in the frame restart of the
+                // rendering backends. Here we can not do it
+                // because we are using mutiple lights and therefore
+                // render the scene scene multiple times.
                 rss.clear_s.do_change = true;
                 rss.clear_s.ss.clear_color = motor::math::vec4f_t( 0.5f, 0.9f, 0.5f, 1.0f );
                 rss.clear_s.ss.do_activate = true;
                 rss.clear_s.ss.do_color_clear = true;
                 rss.clear_s.ss.do_depth_clear = true;
+#endif
+
+#if 0
+                // do not need to set the viewport here. It is
+                // done through the backends.
                 rss.view_s.do_change = true;
                 rss.view_s.ss.do_activate = false;
                 rss.view_s.ss.vp = motor::math::vec4ui_t( 0, 0, 500, 500 );
+#endif
+
                 so.add_render_state_set( rss );
             }
 
@@ -484,6 +527,8 @@ class my_app : public motor::application::app
 
             _root = motor::shared( std::move( root ) );
         }
+
+        this_t::init_manager_shaders( _mslm );
     }
 
     //******************************************************************************************************
@@ -517,45 +562,38 @@ class my_app : public motor::application::app
     {
         _mslm->on_render( fe );
 
-        if( _msls_are_init && _button_pressed )
-        {
-            _mslm->on_render_release( fe );
-            _button_pressed = false;
-            _msls_are_init = false;
-        }
-
-        if( !_msls_are_init && _button_pressed )
-        {
-            this_t::init_manager_shaders( _mslm ) ;
-            _mslm->on_render_init( fe ) ;
-            _msls_are_init = true ;
-            _button_pressed = false;
-        }
-
         // configure needs to be done only once per window
         if( rd.first_frame )
         {
             fe->configure< motor::graphics::state_object_t >( root_so );
             fe->configure< motor::graphics::geometry_object_t >( &geo_obj1 );
             fe->configure< motor::graphics::geometry_object_t >( &geo_obj2 );
+
+            _mslm->on_render_init( fe );
         }
 
+        if( rd.last_frame )
         {
-            motor::scene::render_visitor_t vis( 0, fe, _camera );
-            motor::scene::node_t::traverser( _root ).apply( &vis );
+            _mslm->on_render_release( fe );
         }
 
+        fe->push( root_so ) ;
         {
-            motor::scene::render_visitor_t vis( 0, fe, _camera );
-            motor::scene::node_t::traverser( _root ).apply( &vis );
-        }
+            auto light = motor::gfx::directional_light_t( motor::math::vec3f_t( -1.0f, -1.0f, 1.0f ) ) ;
 
-#if 0
-        {
-            motor::scene::render_visitor_t vis( 1, fe, _camera );
+            motor::scene::light_pass_render_visitor_t vis( 0, 0, fe, _camera, &light );
             motor::scene::node_t::traverser( _root ).apply( &vis );
+
         }
-#endif
+        {
+            auto light = motor::gfx::directional_light_t( motor::math::vec3f_t( 1.0f, -1.0f, 1.0f ) ) ;
+
+            motor::scene::light_pass_render_visitor_t vis( 0, 1, fe, _camera, &light );
+            motor::scene::node_t::traverser( _root ).apply( &vis );
+
+        }
+        fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ;
+
     }
 
     //******************************************************************************************************
@@ -629,7 +667,7 @@ class my_app : public motor::application::app
     //******************************************************************************************************
     virtual bool_t on_tool(
         this_t::window_id_t const wid, motor::application::app::tool_data_ref_t ) noexcept
-    {        
+    {
         return true;
     }
 
