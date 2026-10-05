@@ -16,6 +16,7 @@
 #include <motor/gfx/camera/generic_camera.h>
 #include <motor/gfx/postprocess/hdr_postprocess_pipeline.h>
 #include <motor/gfx/manager/msl_manager.h>
+#include <motor/gfx/util/light.hpp>
 
 #include <motor/math/utility/fn.hpp>
 #include <motor/math/utility/angle.hpp>
@@ -134,7 +135,7 @@ class my_app : public motor::application::app
     float_os_mtr_t _shininess = motor::shared( float_os_t( 80.0f ) );
     float_os_mtr_t _specular_strength = motor::shared( float_os_t( 30.0f ) );
     float_os_mtr_t _light_intensity = motor::shared( float_os_t( 2.0f ) );
-    float_os_mtr_t _bias = motor::shared( float_os_t(0.0f) ) ;
+    float_os_mtr_t _bias = motor::shared( float_os_t( 0.0f ) );
 
     vec3_os_mtr_t _hemi_top_color =
         motor::shared( vec3_os_t( motor::math::vec3f_t( 0.0f, 0.0f, 10.0f ) ) );
@@ -258,7 +259,7 @@ class my_app : public motor::application::app
                 rss.clear_s.ss.do_depth_clear = true;
                 rss.view_s.do_change = true;
                 rss.view_s.ss.do_activate = true;
-                rss.view_s.ss.vp = motor::math::vec4ui_t( 0, 0, 1920>>1, 1080>>1 );
+                rss.view_s.ss.vp = motor::math::vec4ui_t( 0, 0, 1920 >> 1, 1080 >> 1 );
                 so.add_render_state_set( rss );
             }
 
@@ -513,13 +514,11 @@ class my_app : public motor::application::app
                             if( input ) input->connect( motor::share( _bias ) );
                         }
 
-
                         {
                             auto * input = inputs.borrow_or_add(
                                 "hemi_top_color", motor::shared( this_t::vec3_is_t() ) );
                             if( input ) input->connect( motor::share( _hemi_top_color ) );
                         }
-
                     } );
                     motor::scene::node_t::traverser( _root ).apply( &v );
                 }
@@ -672,7 +671,7 @@ class my_app : public motor::application::app
         if( _cam_id != size_t( -1 ) )
         {
             fe->push( _final_so );
-            #if 0
+#if 0
             {
 
                 motor::gfx::generic_camera_mtr_t cam = _cameras[ _cam_id ].second;
@@ -686,21 +685,30 @@ class my_app : public motor::application::app
 
                 motor::scene::node_t::traverser( _root ).apply( &vis );
             }
-            #else
+#else
             {
+                motor::gfx::directional_light_t dl( _sun_cam->get_direction().negated() );
+                motor::gfx::single_shadow_data_t sd = { _sun_cam->get_proj_matrix(),
+                    _sun_cam->get_view_matrix(),
+                    "01_shadow_mapping.shadow_depth_framebuffer.depth" };
+
                 motor::gfx::generic_camera_mtr_t cam = _cameras[ _cam_id ].second;
+
+#if 1
                 motor::scene::light_pass_render_visitor_t vis(
-                    this_file::to_id( this_file::msl_id::light_pass_id ), fe, cam,
+                    this_file::to_id( this_file::msl_id::light_pass_id ), 0, fe, cam, &dl, &sd );
+#else
+                motor::scene::light_pass_render_visitor_t vis(
+                    this_file::to_id( this_file::msl_id::light_pass_id ), 0, fe, cam,
                     motor::scene::light_pass_render_visitor_t::light{
                         motor::scene::light_pass_render_visitor_t::light_type::directional_light,
-                        _sun_cam->get_direction().negated(),
-                        _sun_cam->get_proj_matrix(), _sun_cam->get_view_matrix(), 
-                        "01_shadow_mapping.shadow_depth_framebuffer.depth"
-                    } );
-
+                        _sun_cam->get_direction().negated(), _sun_cam->get_proj_matrix(),
+                        _sun_cam->get_view_matrix(),
+                        "01_shadow_mapping.shadow_depth_framebuffer.depth" } );
+#endif
                 motor::scene::node_t::traverser( _root ).apply( &vis );
             }
-            #endif
+#endif
             fe->pop( motor::graphics::gen4::backend::pop_type::render_state );
         }
     }
@@ -768,9 +776,9 @@ class my_app : public motor::application::app
                     _pp_pipe->set_map_to_screen_texture_temp(
                         //"gfx.postprocess.hdr.framebuffer.0.depth"
                         "gfx.postprocess.hdr.framebuffer.0.1"
-                        
-                        //"01_shadow_mapping.shadow_depth_framebuffer.depth" 
-                        );
+
+                        //"01_shadow_mapping.shadow_depth_framebuffer.depth"
+                    );
                 }
             }
         }
@@ -880,12 +888,11 @@ class my_app : public motor::application::app
         motor::release( motor::move( _specular_strength ) );
         motor::release( motor::move( _light_intensity ) );
         motor::release( motor::move( _hemi_top_color ) );
-        motor::release( motor::move( _bias ) ) ;
+        motor::release( motor::move( _bias ) );
 
         motor::release( motor::move( _shadow_depth_fb ) );
         motor::release( motor::move( _shadow_depth_so ) );
         motor::release( motor::move( _sun_cam ) );
-
     }
 };
 } // namespace this_file

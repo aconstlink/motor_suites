@@ -42,6 +42,16 @@
 
 namespace this_file
 {
+enum class passes
+{
+    base_color_pass = 0,
+    light_pass_directional = 1
+};
+static size_t to_idx( passes const p ) noexcept
+{
+    return size_t( p );
+}
+
 using namespace motor::core::types;
 
 class my_app : public motor::application::app
@@ -54,6 +64,7 @@ class my_app : public motor::application::app
     motor::scene::node_mtr_t _selected = nullptr;
 
     motor::graphics::state_object_mtr_t root_so;
+    motor::graphics::state_object_mtr_t light_so;
 
     motor::graphics::geometry_object_t geo_obj1;
     motor::graphics::geometry_object_t geo_obj2;
@@ -61,6 +72,9 @@ class my_app : public motor::application::app
     motor::gfx::generic_camera_mtr_t _camera;
 
     motor::gfx::msl_manager_mtr_t _mslm;
+
+    bool_t _use_light_1 = false ;
+    bool_t _use_light_2 = false ;
 
     void_t init_manager_shaders( motor::gfx::msl_manager_mtr_t mgr ) noexcept
     {
@@ -113,7 +127,8 @@ class my_app : public motor::application::app
                         void main()
                         {
                             float_t light = dot( normalize( in.nrm ), normalize( in.light_dir) ) ;
-                            out.color0 = vec4_t( light, light, light, 1.0 ) ;
+                            out.color0 = vec4_t( light, light, light, light ) ;
+                            //out.color0 = vec4_t( 0.0, 1.0, 0.0, 1.0 ) ;
                             //out.color0 = out.color0 ' vec4_t( color.xyz, 1.0 ) ;
                         }
                     }
@@ -126,7 +141,7 @@ class my_app : public motor::application::app
 
         {
             motor::string_t shd = R"(
-                config render_config_1
+                config base_color_pass
                 {
                     vertex_shader
                     {
@@ -163,14 +178,12 @@ class my_app : public motor::application::app
 
                         void main()
                         {
-                            float_t light = dot( normalize( in.nrm ), normalize( vec3_t( 1.0, 1.0, 0.5) ) ) ;
-                            out.color0 = vec4_t( light, light, light, 1.0 ) ;
-                            out.color0 = out.color0 ' vec4_t( vec3_t(1.0,1.0,1.0) - color.xyz, 1.0 ) ;
+                            out.color0 = vec4_t( color.xyz, 1.0 ) ;
                         }
                     }
                 })";
 
-            mgr->add( "shader_1", shd );
+            mgr->add( "base_color_pass", shd );
             // variables are set when the shader is done.
             // @see on_update
         }
@@ -190,7 +203,7 @@ class my_app : public motor::application::app
             wi.y = 100;
             wi.w = 800;
             wi.h = 600;
-            wi.gen = motor::application::graphics_generation::gen4_auto;
+            wi.gen = motor::application::graphics_generation::gen4_gl4;
 
             this_t::send_window_message( this_t::create_window( wi ),
                 [ & ]( motor::application::app::window_view & wnd )
@@ -353,18 +366,56 @@ class my_app : public motor::application::app
             {
                 motor::graphics::render_state_sets_t rss;
                 rss.depth_s.do_change = true;
-                rss.depth_s.ss.do_activate = false;
+                rss.depth_s.ss.do_activate = true;
                 rss.depth_s.ss.do_depth_write = true;
                 rss.polygon_s.do_change = true;
                 rss.polygon_s.ss.do_activate = true;
                 rss.polygon_s.ss.ff = motor::graphics::front_face::clock_wise;
                 rss.polygon_s.ss.cm = motor::graphics::cull_mode::back;
 
-                rss.blend_s.do_change = true ;
-                rss.blend_s.ss.do_activate = true ;
-                rss.blend_s.ss.blend_func = motor::graphics::blend_function::add ;
-                rss.blend_s.ss.dst_blend_factor = motor::graphics::blend_factor::one ;
-                rss.blend_s.ss.src_blend_factor = motor::graphics::blend_factor::one ;
+#if 1
+                // this is done in the frame restart of the
+                // rendering backends. Here we can not do it
+                // because we are using mutiple lights and therefore
+                // render the scene scene multiple times.
+                rss.clear_s.do_change = true;
+                rss.clear_s.ss.clear_color = motor::math::vec4f_t( 0.1f, 0.2f, 0.1f, 1.0f );
+                rss.clear_s.ss.do_activate = true;
+                rss.clear_s.ss.do_color_clear = true;
+                rss.clear_s.ss.do_depth_clear = true;
+#endif
+
+#if 0
+                // do not need to set the viewport here. It is
+                // done through the backends.
+                rss.view_s.do_change = true;
+                rss.view_s.ss.do_activate = false;
+                rss.view_s.ss.vp = motor::math::vec4ui_t( 0, 0, 500, 500 );
+#endif
+
+                so.add_render_state_set( rss );
+            }
+
+            root_so = motor::shared( motor::graphics::state_object_t( std::move( so ) ) );
+        }
+
+        {
+            motor::graphics::state_object_t so =
+                motor::graphics::state_object_t( "light_render_states" );
+
+            {
+                motor::graphics::render_state_sets_t rss;
+                rss.depth_s.do_change = true;
+                rss.depth_s.ss.do_activate = true;
+                rss.depth_s.ss.do_depth_write = false;
+                rss.depth_s.ss.compare_funk = motor::graphics::depth_compare::less_equal ;
+
+                rss.blend_s.do_change = true;
+                rss.blend_s.ss.do_activate = true;
+                rss.blend_s.ss.blend_func = motor::graphics::blend_function::add;
+                rss.blend_s.ss.dst_blend_factor = motor::graphics::blend_factor::one;
+                rss.blend_s.ss.src_blend_factor = motor::graphics::blend_factor::src_alpha;
+                
 #if 0
                 // this is done in the frame restart of the
                 // rendering backends. Here we can not do it
@@ -388,7 +439,7 @@ class my_app : public motor::application::app
                 so.add_render_state_set( rss );
             }
 
-            root_so = motor::shared( motor::graphics::state_object_t( std::move( so ) ) );
+            light_so = motor::shared( motor::graphics::state_object_t( std::move( so ) ) );
         }
 
         // #3 : init scene tree
@@ -421,8 +472,8 @@ class my_app : public motor::application::app
 
                     // add render settings
                     {
-                        motor::scene::render_settings_component_t rsc( motor::share( root_so ) );
-                        rs->add_component( motor::shared( std::move( rsc ) ) );
+                        //motor::scene::render_settings_component_t rsc( motor::share( root_so ) );
+                        //rs->add_component( motor::shared( std::move( rsc ) ) );
                     }
 
                     // render object 1
@@ -566,6 +617,7 @@ class my_app : public motor::application::app
         if( rd.first_frame )
         {
             fe->configure< motor::graphics::state_object_t >( root_so );
+            fe->configure< motor::graphics::state_object_t >( light_so );
             fe->configure< motor::graphics::geometry_object_t >( &geo_obj1 );
             fe->configure< motor::graphics::geometry_object_t >( &geo_obj2 );
 
@@ -577,23 +629,42 @@ class my_app : public motor::application::app
             _mslm->on_render_release( fe );
         }
 
-        fe->push( root_so ) ;
+        size_t render_id = size_t( -1 );
+
+        fe->push( root_so );
         {
-            auto light = motor::gfx::directional_light_t( motor::math::vec3f_t( -1.0f, -1.0f, 1.0f ) ) ;
-
-            motor::scene::light_pass_render_visitor_t vis( 0, 0, fe, _camera, &light );
+            motor::scene::render_visitor_t vis(
+                this_file::to_idx( this_file::passes::base_color_pass ), ++render_id, fe, _camera );
             motor::scene::node_t::traverser( _root ).apply( &vis );
-
         }
+        
+        fe->push( light_so );
+        #if 1
+        if( _use_light_1 )
         {
-            auto light = motor::gfx::directional_light_t( motor::math::vec3f_t( 1.0f, -1.0f, 1.0f ) ) ;
+            auto light =
+                motor::gfx::directional_light_t( motor::math::vec3f_t( -1.0f, -1.0f, 1.0f ) );
 
-            motor::scene::light_pass_render_visitor_t vis( 0, 1, fe, _camera, &light );
+            motor::scene::light_pass_render_visitor_t vis(
+                this_file::to_idx( this_file::passes::light_pass_directional ), ++render_id, fe,
+                _camera, &light );
             motor::scene::node_t::traverser( _root ).apply( &vis );
-
         }
-        fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ;
+        #endif
+        #if 1
+        if( _use_light_2 )
+        {
+            auto light =
+                motor::gfx::directional_light_t( motor::math::vec3f_t( 1.0f, -1.0f, 1.0f ) );
 
+            motor::scene::light_pass_render_visitor_t vis(
+                this_file::to_idx( this_file::passes::light_pass_directional ), ++render_id, fe,
+                _camera, &light );
+            motor::scene::node_t::traverser( _root ).apply( &vis );
+        }
+        #endif
+        fe->pop( motor::graphics::gen4::backend::pop_type::render_state );
+        fe->pop( motor::graphics::gen4::backend::pop_type::render_state );
     }
 
     //******************************************************************************************************
@@ -616,38 +687,40 @@ class my_app : public motor::application::app
         {
             if( msl_name == "light_pass_directional" )
             {
-                motor::scene::add_msl_to_set_visitor_t v( 0, motor::share( msl ),
+                motor::scene::add_msl_to_set_visitor_t v(
+                    this_file::to_idx( this_file::passes::light_pass_directional ),
+                    motor::share( msl ),
+                    [ & ]( motor::string_in_t node_name, motor::graphics::variable_set_mtr_t vs )
+                {
+                    
+                } );
+                motor::scene::node_t::traverser( _root ).apply( &v );
+            }
+
+            // added but not rendered.
+            if( msl_name == "base_color_pass" )
+            {
+                motor::scene::add_msl_to_set_visitor_t v(
+                    this_file::to_idx( this_file::passes::base_color_pass ), motor::share( msl ),
                     [ & ]( motor::string_in_t node_name, motor::graphics::variable_set_mtr_t vs )
                 {
                     if( node_name == "Render Object 0" )
                     {
                         auto * var = vs->data_variable< motor::math::vec4f_t >( "color" );
-                        var->set( motor::math::vec4f_t( 0.0f, 0.0f, 1.0f, 1.0f ) );
+                        var->set( motor::math::vec4f_t( 0.0f, 0.0f, 0.5f, 1.0f ) );
                     }
                     else if( node_name == "Render Object 1" )
                     {
                         auto * var = vs->data_variable< motor::math::vec4f_t >( "color" );
-                        var->set( motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) );
+                        var->set( motor::math::vec4f_t( 0.5f, 0.0f, 0.0f, 1.0f ) );
                     }
 
                     // apply on all others
                     else
                     {
                         auto * var = vs->data_variable< motor::math::vec4f_t >( "color" );
-                        var->set( motor::math::vec4f_t( 0.0f, 1.0f, 0.0f, 1.0f ) );
+                        var->set( motor::math::vec4f_t( 0.0f, 0.5f, 0.0f, 1.0f ) );
                     }
-                } );
-                motor::scene::node_t::traverser( _root ).apply( &v );
-            }
-
-            // added but not rendered.
-            if( msl_name == "shader_1" )
-            {
-                motor::scene::add_msl_to_set_visitor_t v( 1, motor::share( msl ),
-                    [ & ]( motor::string_in_t node_name, motor::graphics::variable_set_mtr_t vs )
-                {
-                    auto * var = vs->data_variable< motor::math::vec4f_t >( "color" );
-                    var->set( motor::math::vec4f_t( 0.0f, 1.0f, 1.0f, 1.0f ) );
                 } );
                 motor::scene::node_t::traverser( _root ).apply( &v );
             }
@@ -668,6 +741,15 @@ class my_app : public motor::application::app
     virtual bool_t on_tool(
         this_t::window_id_t const wid, motor::application::app::tool_data_ref_t ) noexcept
     {
+
+        {
+            if( ImGui::Begin("Properties") )
+            {
+                ImGui::Checkbox( "light 1", &_use_light_1 ) ;
+                ImGui::Checkbox( "light 2", &_use_light_2 ) ;
+            }
+            ImGui::End() ;
+        }
         return true;
     }
 
@@ -676,6 +758,7 @@ class my_app : public motor::application::app
         motor::memory::release_ptr( motor::move( _selected ) );
         motor::memory::release_ptr( _root );
         motor::memory::release_ptr( root_so );
+        motor::memory::release_ptr( light_so );
         motor::memory::release_ptr( _camera );
 
         motor::release( motor::move( _mslm ) );
