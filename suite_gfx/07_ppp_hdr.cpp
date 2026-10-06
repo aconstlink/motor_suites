@@ -580,15 +580,18 @@ class my_app : public motor::application::app
         {
             fe->push( _final_so );
             {
+                auto light =
+                motor::gfx::directional_light_t( motor::math::vec3f_t( 0.0f, -1.0f, 0.0f ) );
+
+                motor::gfx::single_shadow_data_t sd = { motor::math::mat4f_t::make_identity(),
+                    motor::math::mat4f_t::make_identity(),
+                    "shadow_depth_framebuffer.depth" };
 
                 motor::gfx::generic_camera_mtr_t cam = _cameras[ _cam_id ].second;
+
                 motor::scene::light_pass_render_visitor_t vis(
-                    this_file::to_id( this_file::msl_id::light_pass_id ), fe, cam,
-                    motor::scene::light_pass_render_visitor_t::light{
-                        motor::scene::light_pass_render_visitor_t::light_type::directional_light,
-                        motor::math::vec3f_t( 0.0f, -1.0f, 0.0f ),
-                        motor::math::mat4f_t::make_identity(),
-                        motor::math::mat4f_t::make_identity(), "shadow_depth_framebuffer.depth" } );
+                    this_file::to_id( this_file::msl_id::light_pass_id ), 0, fe, cam,
+                    &light);
 
                 motor::scene::node_t::traverser( _root ).apply( &vis );
             }
