@@ -410,29 +410,30 @@ namespace this_file
             }
         }
 
-        virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
-            motor::application::app::render_data_in_t rd ) noexcept 
-        {            
-            if( rd.first_frame )
+        virtual void_t on_first_frame( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept
+        {
             {
-                {
-                    fe->configure<motor::graphics::state_object_t>( &scene_so ) ;
-                    fe->configure<motor::graphics::state_object_t>( &fb_so ) ;
-                }
-
-                {
-                    fe->configure<motor::graphics::geometry_object_t>( &geo_obj0 ) ;
-                    fe->configure<motor::graphics::geometry_object_t>( &geo_obj1 ) ;
-                    fe->configure<motor::graphics::msl_object_t>( msl_obj_scene ) ;
-                }
-
-                {
-                    fe->configure<motor::graphics::geometry_object_t>( &fb_geo ) ;
-                    fe->configure<motor::graphics::framebuffer_object_t>( &fb_obj ) ;
-                    fe->configure<motor::graphics::msl_object_t>( msl_obj ) ;
-                }
+                fe->configure<motor::graphics::state_object_t>( &scene_so ) ;
+                fe->configure<motor::graphics::state_object_t>( &fb_so ) ;
             }
 
+            {
+                fe->configure<motor::graphics::geometry_object_t>( &geo_obj0 ) ;
+                fe->configure<motor::graphics::geometry_object_t>( &geo_obj1 ) ;
+                fe->configure<motor::graphics::msl_object_t>( msl_obj_scene ) ;
+            }
+
+            {
+                fe->configure<motor::graphics::geometry_object_t>( &fb_geo ) ;
+                fe->configure<motor::graphics::framebuffer_object_t>( &fb_obj ) ;
+                fe->configure<motor::graphics::msl_object_t>( msl_obj ) ;
+            }
+        }
+
+        virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept
+        {
             // render
             {
                 {
@@ -463,7 +464,6 @@ namespace this_file
                     }
                 }
 
-                
                 fe->use( &fb_obj ) ;
                 fe->push( &scene_so ) ;
                 {

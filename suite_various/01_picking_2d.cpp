@@ -182,14 +182,15 @@ namespace this_file
         } 
 
         //***************************************************************************************************
-        virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe, 
-            motor::application::app::render_data_in_t rd ) noexcept 
+        virtual void_t on_first_frame( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept
         {
-            if( rd.first_frame )
-            {
-                pr.configure( fe ) ;
-            }
+            pr.configure( fe ) ;
+        }
 
+        virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept
+        {
             {
                 pr.prepare_for_rendering( fe ) ;
                 for( size_t i=0; i<100; ++i )

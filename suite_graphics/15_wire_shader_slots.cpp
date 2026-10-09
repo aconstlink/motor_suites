@@ -449,17 +449,18 @@ namespace this_file
         } 
 
         //************************************************************************************************
-        virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
-            motor::application::app::render_data_in_t rd ) noexcept
+        virtual void_t on_first_frame( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept
         {
-            if ( rd.first_frame )
-            {
-                fe->configure<motor::graphics::geometry_object_t>( &geo_obj ) ;
-                fe->configure<motor::graphics::image_object_t>( &img_obj ) ;
-                fe->configure<motor::graphics::msl_object_t>( _msl_obj ) ;
-                fe->configure<motor::graphics::state_object_t>( &scene_so ) ;
-            }
-            
+            fe->configure<motor::graphics::geometry_object_t>( &geo_obj ) ;
+            fe->configure<motor::graphics::image_object_t>( &img_obj ) ;
+            fe->configure<motor::graphics::msl_object_t>( _msl_obj ) ;
+            fe->configure<motor::graphics::state_object_t>( &scene_so ) ;
+        }
+
+        virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept
+        {
             for ( auto * obj : reconfigs )
             {
                 fe->configure<motor::graphics::msl_object_t>( obj ) ;

@@ -514,9 +514,18 @@ class my_app : public motor::application::app
     }
 
     //******************************************************************************************************
+    virtual void_t on_first_frame( this_t::window_id_t const wid,
+        motor::graphics::gen4::frontend_ptr_t fe,
+        motor::application::app::render_data_in_t ) noexcept
+    {
+        fe->configure< motor::graphics::state_object_t >( root_so );
+        fe->configure< motor::graphics::geometry_object_t >( &geo_obj1 );
+        fe->configure< motor::graphics::geometry_object_t >( &geo_obj2 );
+    }
+
     virtual void_t on_render( this_t::window_id_t const wid,
         motor::graphics::gen4::frontend_ptr_t fe,
-        motor::application::app::render_data_in_t rd ) noexcept
+        motor::application::app::render_data_in_t ) noexcept
     {
         _mslm->on_render( fe );
 
@@ -533,14 +542,6 @@ class my_app : public motor::application::app
             _mslm->on_render_init( fe ) ;
             _msls_are_init = true ;
             _button_pressed = false;
-        }
-
-        // configure needs to be done only once per window
-        if( rd.first_frame )
-        {
-            fe->configure< motor::graphics::state_object_t >( root_so );
-            fe->configure< motor::graphics::geometry_object_t >( &geo_obj1 );
-            fe->configure< motor::graphics::geometry_object_t >( &geo_obj2 );
         }
 
         {

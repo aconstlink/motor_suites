@@ -582,29 +582,32 @@ class my_app : public motor::application::app
 
     virtual void_t on_graphics( motor::application::app::graphics_data_in_t gd ) noexcept {}
 
+    virtual void_t on_first_frame( this_t::window_id_t const wid,
+        motor::graphics::gen4::frontend_ptr_t fe,
+        motor::application::app::render_data_in_t ) noexcept
+    {
+        _pp_pipe->init_render( fe );
+        fe->configure< motor::graphics::state_object_t >( _final_so );
+        fe->configure< motor::graphics::state_object_t >( _shadow_depth_so );
+        fe->configure< motor::graphics::framebuffer_object_t >( _shadow_depth_fb );
+    }
+
+    virtual void_t on_last_frame( this_t::window_id_t const wid,
+        motor::graphics::gen4::frontend_ptr_t fe,
+        motor::application::app::render_data_in_t ) noexcept
+    {
+        _pp_pipe->release_render( fe );
+        fe->release< motor::graphics::state_object_t >( _final_so );
+        fe->release< motor::graphics::state_object_t >( _shadow_depth_so );
+        fe->release< motor::graphics::framebuffer_object_t >( _shadow_depth_fb );
+    }
+
     virtual void_t on_render( this_t::window_id_t const wid,
         motor::graphics::gen4::frontend_ptr_t fe,
-        motor::application::app::render_data_in_t rd ) noexcept
+        motor::application::app::render_data_in_t ) noexcept
     {
         motor::log::global_t::status(
             !_async_done, "[07_ppp] : async not done yet but rendering." );
-
-        if( rd.first_frame )
-        {
-            _pp_pipe->init_render( fe );
-            fe->configure< motor::graphics::state_object_t >( _final_so );
-            fe->configure< motor::graphics::state_object_t >( _shadow_depth_so );
-            fe->configure< motor::graphics::framebuffer_object_t >( _shadow_depth_fb );
-        }
-
-        if( rd.last_frame )
-        {
-            _pp_pipe->release_render( fe );
-            fe->release< motor::graphics::state_object_t >( _final_so );
-            fe->release< motor::graphics::state_object_t >( _shadow_depth_so );
-            fe->release< motor::graphics::framebuffer_object_t >( _shadow_depth_fb );
-            return;
-        }
 
         _own_mmgr->on_render( fe );
 

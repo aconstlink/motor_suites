@@ -479,29 +479,30 @@ namespace this_file
             }
         }
 
-        virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
-            motor::application::app::render_data_in_t rd ) noexcept 
-        {            
-            if( rd.first_frame )
-            {
-                fe->configure<motor::graphics::state_object_t>( &scene_so ) ;
-                fe->configure<motor::graphics::geometry_object_t>( &quad_geo ) ;
-                fe->configure<motor::graphics::geometry_object_t>( &points_geo ) ;
-                fe->configure<motor::graphics::streamout_object_t>( &so_obj ) ;
-                fe->configure<motor::graphics::shader_object_t>( &sh_obj ) ;
-                fe->configure<motor::graphics::shader_object_t>( &sh_so_obj ) ;
-                fe->configure<motor::graphics::render_object_t>( &ro_so_obj ) ;
-                fe->configure<motor::graphics::render_object_t>( &ro_orig_obj ) ;
+        virtual void_t on_first_frame( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept
+        {
+            fe->configure<motor::graphics::state_object_t>( &scene_so ) ;
+            fe->configure<motor::graphics::geometry_object_t>( &quad_geo ) ;
+            fe->configure<motor::graphics::geometry_object_t>( &points_geo ) ;
+            fe->configure<motor::graphics::streamout_object_t>( &so_obj ) ;
+            fe->configure<motor::graphics::shader_object_t>( &sh_obj ) ;
+            fe->configure<motor::graphics::shader_object_t>( &sh_so_obj ) ;
+            fe->configure<motor::graphics::render_object_t>( &ro_so_obj ) ;
+            fe->configure<motor::graphics::render_object_t>( &ro_orig_obj ) ;
 
-                // do initial streamout pass 
-                // in order to fill the buffer
-                {
-                    fe->use( &so_obj ) ;
-                    fe->render( &ro_so_obj, motor::graphics::gen4::backend::render_detail_t() ) ;
-                    fe->unuse( motor::graphics::gen4::backend::unuse_type::streamout ) ;
-                }
+            // do initial streamout pass
+            // in order to fill the buffer
+            {
+                fe->use( &so_obj ) ;
+                fe->render( &ro_so_obj, motor::graphics::gen4::backend::render_detail_t() ) ;
+                fe->unuse( motor::graphics::gen4::backend::unuse_type::streamout ) ;
             }
-            
+        }
+
+        virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t rd ) noexcept
+        {
             // do stream out
             {
                 fe->use( &so_obj ) ;

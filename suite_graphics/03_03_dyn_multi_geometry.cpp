@@ -434,25 +434,27 @@ class my_app : public motor::application::app
         }
     }
 
-    virtual void_t on_render( this_t::window_id_t const wid,
+    virtual void_t on_first_frame( this_t::window_id_t const wid,
         motor::graphics::gen4::frontend_ptr_t fe,
-        motor::application::app::render_data_in_t rd ) noexcept
+        motor::application::app::render_data_in_t ) noexcept
     {
-        if( rd.first_frame )
         {
-            {
-                fe->configure< motor::graphics::state_object_t >( &scene_so );
-                fe->configure< motor::graphics::state_object_t >( &fb_so );
-            }
-
-            {
-                fe->configure< motor::graphics::geometry_object_t >( &geo_obj0 );
-                fe->configure< motor::graphics::geometry_object_t >( &geo_obj1 );
-                fe->configure< motor::graphics::geometry_object_t >( &geo_obj2 );
-                fe->configure< motor::graphics::msl_object_t >( msl_obj_scene );
-            }
+            fe->configure< motor::graphics::state_object_t >( &scene_so );
+            fe->configure< motor::graphics::state_object_t >( &fb_so );
         }
 
+        {
+            fe->configure< motor::graphics::geometry_object_t >( &geo_obj0 );
+            fe->configure< motor::graphics::geometry_object_t >( &geo_obj1 );
+            fe->configure< motor::graphics::geometry_object_t >( &geo_obj2 );
+            fe->configure< motor::graphics::msl_object_t >( msl_obj_scene );
+        }
+    }
+
+    virtual void_t on_render( this_t::window_id_t const wid,
+        motor::graphics::gen4::frontend_ptr_t fe,
+        motor::application::app::render_data_in_t ) noexcept
+    {
         // render
         {
             msl_obj_scene->for_each(

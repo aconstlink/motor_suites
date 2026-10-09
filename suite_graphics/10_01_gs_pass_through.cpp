@@ -170,15 +170,16 @@ namespace this_file
             }
         }
 
-        virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
-            motor::application::app::render_data_in_t rd ) noexcept 
-        {            
-            if( rd.first_frame )
-            {
-                fe->configure<motor::graphics::geometry_object_t>( &geo_obj ) ;
-                fe->configure<motor::graphics::msl_object_t>( msl_obj ) ;
-            }
+        virtual void_t on_first_frame( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept
+        {
+            fe->configure<motor::graphics::geometry_object_t>( &geo_obj ) ;
+            fe->configure<motor::graphics::msl_object_t>( msl_obj ) ;
+        }
 
+        virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept
+        {
             {
                 motor::graphics::gen4::backend_t::render_detail_t detail ;
                 fe->render( msl_obj, detail ) ;

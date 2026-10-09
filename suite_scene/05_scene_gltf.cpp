@@ -428,15 +428,15 @@ namespace this_file
         } 
 
         //******************************************************************************************************
-        virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
-            motor::application::app::render_data_in_t rd ) noexcept
+        virtual void_t on_first_frame( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept
         {
-            // configure needs to be done only once per window
-            if ( rd.first_frame )
-            {
-                fe->configure<motor::graphics::state_object_t>( root_so ) ;
-            }            
-            
+            fe->configure<motor::graphics::state_object_t>( root_so ) ;
+        }
+
+        virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept
+        {
             {
                 motor::gfx::generic_camera_mtr_t cam = _selected_cam == nullptr ? _cameras[_cam_id] : _selected_cam ;
                 //cam->set_dims( 1000.0f, 1000.0f, 1.0f, 1000.0f) ;
@@ -450,8 +450,6 @@ namespace this_file
                 motor::scene::render_visitor_t vis( 1, fe, cam ) ;
                 motor::scene::node_t::traverser(_root).apply( &vis ) ;
             }
-
-            
 
         }
 

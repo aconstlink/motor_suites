@@ -541,33 +541,32 @@ namespace this_file
         }
 
         //******************************************************************************************************
-        virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
-            motor::application::app::render_data_in_t rd ) noexcept
+        virtual void_t on_first_frame( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept
         {
-            // rd.first_frame helps in hit and run apps
-            // just initialize all the used objects
-            if ( rd.first_frame )
+            fe->configure< motor::graphics::state_object_t>( &rs_solid ) ;
+            fe->configure< motor::graphics::state_object_t>( &rs_alpha ) ;
+
+            for( auto & i : images )
             {
-                fe->configure< motor::graphics::state_object_t>( &rs_solid ) ;
-                fe->configure< motor::graphics::state_object_t>( &rs_alpha ) ;
-
-                for( auto & i : images )
-                {
-                    fe->configure< motor::graphics::image_object_t>( i.io ) ;
-                }
-
-                for( auto * ptr : geometries )
-                {
-                    fe->configure< motor::graphics::geometry_object_t>( ptr ) ;
-                }
-
-                for ( auto & pmi : materials )
-                {
-                    auto * ptr = pmi.msl ;
-                    fe->configure< motor::graphics::msl_object_t>( ptr ) ;
-                }
+                fe->configure< motor::graphics::image_object_t>( i.io ) ;
             }
-            
+
+            for( auto * ptr : geometries )
+            {
+                fe->configure< motor::graphics::geometry_object_t>( ptr ) ;
+            }
+
+            for ( auto & pmi : materials )
+            {
+                auto * ptr = pmi.msl ;
+                fe->configure< motor::graphics::msl_object_t>( ptr ) ;
+            }
+        }
+
+        virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept
+        {
             // render all solid objects first
             // fills the depth buffer
             {

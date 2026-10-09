@@ -462,17 +462,17 @@ namespace this_file
         }
 
         //******************************************************************************************************
-        virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
-            motor::application::app::render_data_in_t rd ) noexcept
+        virtual void_t on_first_frame( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept
         {
-            // configure needs to be done only once per window
-            if ( rd.first_frame )
-            {
-                fe->configure<motor::graphics::state_object_t>( root_so ) ;
-                fe->configure<motor::graphics::geometry_object_t>( &geo_obj ) ;
-                fe->configure<motor::graphics::msl_object_t>( msl_obj ) ;
-            }
+            fe->configure<motor::graphics::state_object_t>( root_so ) ;
+            fe->configure<motor::graphics::geometry_object_t>( &geo_obj ) ;
+            fe->configure<motor::graphics::msl_object_t>( msl_obj ) ;
+        }
 
+        virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept
+        {
             {
                 motor::scene::render_visitor_t vis( fe, _cameras[_cam_id] ) ;
                 motor::scene::node_t::traverser(_root).apply( &vis ) ;

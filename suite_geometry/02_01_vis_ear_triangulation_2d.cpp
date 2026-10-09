@@ -341,15 +341,16 @@ namespace this_file
         } 
 
         //****************************************************************************************
-        virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe, 
-            motor::application::app::render_data_in_t rd ) noexcept 
+        virtual void_t on_first_frame( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept
         {
-            if( rd.first_frame )
-            {
-                pr.configure( fe ) ;
-                tr.configure( fe ) ;
-            }
+            pr.configure( fe ) ;
+            tr.configure( fe ) ;
+        }
 
+        virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept
+        {
             // render text layer 0 to screen
             {
                 pr.prepare_for_rendering( fe ) ;

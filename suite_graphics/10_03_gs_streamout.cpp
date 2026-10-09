@@ -338,26 +338,29 @@ namespace this_file
             }
         }
 
-        virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
-            motor::application::app::render_data_in_t rd ) noexcept 
+        virtual void_t on_first_frame( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept
         {
             if ( wid == 2 ) return ;
 
-            if( rd.first_frame )
-            {
-                fe->configure<motor::graphics::geometry_object_t>( &geo_pts_obj ) ;
-                fe->configure<motor::graphics::streamout_object_t>( &so_obj ) ;
-                fe->configure<motor::graphics::msl_object_t>( msl_filter_obj ) ;
-                fe->configure<motor::graphics::msl_object_t>( msl_obj ) ;
+            fe->configure<motor::graphics::geometry_object_t>( &geo_pts_obj ) ;
+            fe->configure<motor::graphics::streamout_object_t>( &so_obj ) ;
+            fe->configure<motor::graphics::msl_object_t>( msl_filter_obj ) ;
+            fe->configure<motor::graphics::msl_object_t>( msl_obj ) ;
 
-                // do initial streamout pass 
-                // in order to fill the buffer
-                {
-                    fe->use( &so_obj ) ;
-                    fe->render( msl_filter_obj, motor::graphics::gen4::backend::render_detail_t() ) ;
-                    fe->unuse( motor::graphics::gen4::backend::unuse_type::streamout ) ;
-                }
+            // do initial streamout pass
+            // in order to fill the buffer
+            {
+                fe->use( &so_obj ) ;
+                fe->render( msl_filter_obj, motor::graphics::gen4::backend::render_detail_t() ) ;
+                fe->unuse( motor::graphics::gen4::backend::unuse_type::streamout ) ;
             }
+        }
+
+        virtual void_t on_render( this_t::window_id_t const wid, motor::graphics::gen4::frontend_ptr_t fe,
+            motor::application::app::render_data_in_t ) noexcept
+        {
+            if ( wid == 2 ) return ;
 
             {
                 fe->use( &so_obj ) ;
