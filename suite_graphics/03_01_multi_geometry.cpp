@@ -438,7 +438,7 @@ namespace this_file
             {
                 {
                     size_t i = 0 ;
-                    for( auto & vs : msl_obj_scene->borrow_varibale_sets() )
+                    for( auto & vs : msl_obj_scene->borrow_variable_sets() )
                     {
                         {
                             auto * var = vs.vs->data_variable<motor::math::mat4f_t>( "u_proj" ) ;

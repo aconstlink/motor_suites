@@ -253,7 +253,7 @@ namespace this_file
                 mslo.link_geometry( "cube" ) ;
                 
                 {
-                    auto b = motor::shared( motor::graphics::wire_variable_input_bridge_t( mslo.get_varibale_set(0) ) ) ;
+                    auto b = motor::shared( motor::graphics::wire_variable_input_bridge_t( mslo.get_variable_set(0) ) ) ;
                     b->borrow_inputs().add( "proj", motor::shared( motor::wire::input_slot< motor::math::mat4f_t >() ) ) ;
                     b->borrow_inputs().add( "view", motor::shared( motor::wire::input_slot< motor::math::mat4f_t >() ) ) ;
                     b->borrow_inputs().add( "u_tex", motor::shared( motor::wire::input_slot< motor::graphics::texture_variable_data >( "checker_board" ) ) ) ;
@@ -267,7 +267,7 @@ namespace this_file
                     _bridges.emplace_back( motor::move( b ) ) ;
                 }
                 {
-                    auto b = motor::shared( motor::graphics::wire_variable_input_bridge_t( mslo.get_varibale_set( 1 ) ) ) ;
+                    auto b = motor::shared( motor::graphics::wire_variable_input_bridge_t( mslo.get_variable_set( 1 ) ) ) ;
                     b->borrow_inputs().add( "proj", motor::shared( motor::wire::input_slot< motor::math::mat4f_t >() ) ) ;
                     b->borrow_inputs().add( "view", motor::shared( motor::wire::input_slot< motor::math::mat4f_t >() ) ) ;
                     b->borrow_inputs().add( "u_color", motor::shared( motor::wire::input_slot< motor::math::vec4f_t >( motor::math::vec4f_t( 1.0f ) ) ) ) ;

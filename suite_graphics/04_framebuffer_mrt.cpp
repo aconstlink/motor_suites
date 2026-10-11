@@ -506,7 +506,7 @@ namespace this_file
 
                 {
                     size_t i = 0 ;
-                    for( auto & vs : msl_obj->borrow_varibale_sets() )
+                    for( auto & vs : msl_obj->borrow_variable_sets() )
                     {
                         {
                             auto * var = vs.vs->data_variable< motor::math::mat4f_t>("view") ;
@@ -546,7 +546,7 @@ namespace this_file
                 fe->use( &fb_obj ) ;
                 fe->push( &scene_so ) ;
 
-                auto var_sets = msl_obj->borrow_varibale_sets() ;
+                auto var_sets = msl_obj->borrow_variable_sets() ;
 
                 for( size_t i=0; i<var_sets.size(); ++i )
                 {

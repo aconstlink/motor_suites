@@ -217,9 +217,9 @@ namespace this_file
 
         virtual void_t on_graphics( motor::application::app::graphics_data_in_t gd ) noexcept 
         {
-            for( size_t i=0; i<msl_obj->borrow_varibale_sets().size(); ++i )
+            for( size_t i=0; i<msl_obj->borrow_variable_sets().size(); ++i )
             {
-                auto vars = msl_obj->borrow_varibale_set(i) ;
+                auto vars = msl_obj->borrow_variable_set(i) ;
 
                 {
                     auto * var = vars.vs->data_variable< motor::math::mat4f_t >( "view" ) ;

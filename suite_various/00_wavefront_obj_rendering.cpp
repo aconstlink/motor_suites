@@ -288,9 +288,9 @@ namespace this_file
             {
                 auto * ptr = pmi.msl ;
 
-                for ( size_t i = 0; i < ptr->borrow_varibale_sets().size(); ++i )
+                for ( size_t i = 0; i < ptr->borrow_variable_sets().size(); ++i )
                 {
-                    auto vs = ptr->borrow_varibale_set(i) ;
+                    auto vs = ptr->borrow_variable_set(i) ;
 
                     {
                         auto * mat = vs.vs->data_variable<motor::math::mat4f_t>( "world" ) ;
@@ -531,9 +531,9 @@ namespace this_file
             {
                 auto * ptr = pmi.msl ;
 
-                for ( size_t i = 0; i < ptr->borrow_varibale_sets().size(); ++i )
+                for ( size_t i = 0; i < ptr->borrow_variable_sets().size(); ++i )
                 {
-                    auto vs = ptr->borrow_varibale_set( i ) ;
+                    auto vs = ptr->borrow_variable_set( i ) ;
                     auto * mat = vs.vs->data_variable<motor::math::mat4f_t>( "view" );
                     mat->set( _camera.get_view_matrix() ) ;
                 }
@@ -582,7 +582,7 @@ namespace this_file
 
                     auto * ptr = pmi.msl ;
 
-                    for( size_t i=0; i<ptr->borrow_varibale_sets().size(); ++i )
+                    for( size_t i=0; i<ptr->borrow_variable_sets().size(); ++i )
                     {
                         motor::graphics::gen4::backend::render_detail det = 
                         { 
@@ -615,7 +615,7 @@ namespace this_file
 
                     auto * ptr = pmi.msl ;
 
-                    for ( size_t i = 0; i < ptr->borrow_varibale_sets().size(); ++i )
+                    for ( size_t i = 0; i < ptr->borrow_variable_sets().size(); ++i )
                     {
                         motor::graphics::gen4::backend::render_detail det =
                         {

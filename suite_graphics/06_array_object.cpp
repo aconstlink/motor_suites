@@ -545,7 +545,7 @@ namespace this_file
             // update render object variable sets
             {
                 size_t i = 0 ;
-                for( auto & vs : msl_obj->borrow_varibale_sets() )
+                for( auto & vs : msl_obj->borrow_variable_sets() )
                 {
                     {
                         auto * var = vs.vs->data_variable< motor::math::mat4f_t>("view") ;

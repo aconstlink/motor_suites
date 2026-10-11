@@ -411,7 +411,7 @@ namespace this_file
             {
                 {
                     size_t i = 0 ;
-                    for( auto & vs : msl_obj_scene->borrow_varibale_sets() )
+                    for( auto & vs : msl_obj_scene->borrow_variable_sets() )
                     {
                         {
                             auto * var = vs.vs->data_variable<motor::math::mat4f_t>( "u_proj" ) ;
@@ -424,7 +424,7 @@ namespace this_file
                         }
                         
                         {
-                            auto const of = float_t(i) /float_t(msl_obj_scene->borrow_varibale_sets().size()-1) ;
+                            auto const of = float_t(i) /float_t(msl_obj_scene->borrow_variable_sets().size()-1) ;
                             motor::math::m3d::trafof_t t ;
                             t.scale_fl( 2.0f ) ;
                             t.translate_fl( motor::math::vec3f_t( 6.0f * (of * 2.0f - 1.0f), 0.0f, 0.0f ) ) ;

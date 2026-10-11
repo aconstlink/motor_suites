@@ -472,7 +472,7 @@ class my_app : public motor::application::app
 
                 {
                     auto const of =
-                        float_t( i ) / float_t( msl_obj_scene->borrow_varibale_sets().size() );
+                        float_t( i ) / float_t( msl_obj_scene->borrow_variable_sets().size() );
                     motor::math::m3d::trafof_t t;
                     t.scale_fl( 2.0f );
                     t.translate_fl(
