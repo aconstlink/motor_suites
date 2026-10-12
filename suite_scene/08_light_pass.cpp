@@ -25,9 +25,11 @@
 #include <motor/scene/component/graphics/render_settings_component.hpp>
 #include <motor/scene/component/trafo3d_component.h>
 #include <motor/scene/component/camera_component.h>
+#include <motor/scene/component/light_component.hpp>
 
 #include <motor/scene/visitor/variable_update_visitor.h>
 #include <motor/scene/visitor/trafo_visitor.h>
+#include <motor/scene/visitor/light_collector_visitor.hpp>
 #include <motor/scene/visitor/graphics/render_visitor.h>
 #include <motor/scene/visitor/graphics/light_pass_render_visitor.h>
 #include <motor/scene/visitor/graphics/add_msl_to_set_visitor.hpp>
@@ -45,7 +47,7 @@ namespace this_file
 enum class passes
 {
     base_color_pass = 0,
-    light_pass_directional = 1
+    light_pass = 1
 };
 static size_t to_idx( passes const p ) noexcept
 {
@@ -73,14 +75,15 @@ class my_app : public motor::application::app
 
     motor::gfx::msl_manager_mtr_t _mslm;
 
-    bool_t _use_light_1 = false ;
-    bool_t _use_light_2 = false ;
+    bool_t _use_light_traversal = true ;
+    bool_t _use_light_1 = false;
+    bool_t _use_light_2 = false;
 
     void_t init_manager_shaders( motor::gfx::msl_manager_mtr_t mgr ) noexcept
     {
         {
             motor::string_t shd = R"(
-                config light_pass_directional
+                config light_pass
                 {
                     vertex_shader
                     {
@@ -96,20 +99,29 @@ class my_app : public motor::application::app
                         out vec2_t tx : texcoord ;
                         out vec3_t nrm : normal ;
 
+                        vec3_t light_pos : light_position ;
                         vec3_t light_dir : light_direction ;
+
+                        bool_t is_point_light(false) ;
 
                         out vec3_t light_dir ;
 
                         void main()
                         {
+                            
                             vec3_t pos = in.pos ;
                             pos.xyz = pos.xyz * 10.0 ;
                             out.tx = in.tx ;
+
                             out.pos = proj * view * world * vec4_t( pos, 1.0 ) ;
                             out.nrm = normalize( world * vec4_t( in.nrm, 0.0 ) ).xyz ;
 
-                            
-                            out.light_dir = light_dir ;
+                            vec3_t wrl_pos = (world * vec4_t( pos, 1.0 )).xyz;
+
+                            // points towards light
+                            if( is_point_light ) out.light_dir = (light_pos - wrl_pos) ;
+                            // points towards light
+                            else out.light_dir = -light_dir ;
                         }
                     }
 
@@ -134,7 +146,7 @@ class my_app : public motor::application::app
                     }
                 })";
 
-            mgr->add( "light_pass_directional", shd );
+            mgr->add( "light_pass", shd );
             // variables are set when the shader is done.
             // @see on_update
         }
@@ -203,7 +215,7 @@ class my_app : public motor::application::app
             wi.y = 100;
             wi.w = 800;
             wi.h = 600;
-            wi.gen = motor::application::graphics_generation::gen4_gl4;
+            wi.gen = motor::application::graphics_generation::gen4_auto;
 
             this_t::send_window_message( this_t::create_window( wi ),
                 [ & ]( motor::application::app::window_view & wnd )
@@ -215,6 +227,7 @@ class my_app : public motor::application::app
         }
 
         // #2 : init window
+        #if 0
         {
             motor::application::window_info_t wi;
             wi.x = 820;
@@ -231,7 +244,7 @@ class my_app : public motor::application::app
                 wnd.send_message( motor::application::vsync_message_t( { true } ) );
             } );
         }
-
+        #endif
         // camera
         {
             auto cam = motor::gfx::generic_camera_t( 1.0f, 1.0f, 1.0f, 1000.0f );
@@ -408,14 +421,14 @@ class my_app : public motor::application::app
                 rss.depth_s.do_change = true;
                 rss.depth_s.ss.do_activate = true;
                 rss.depth_s.ss.do_depth_write = false;
-                rss.depth_s.ss.compare_funk = motor::graphics::depth_compare::less_equal ;
+                rss.depth_s.ss.compare_funk = motor::graphics::depth_compare::less_equal;
 
                 rss.blend_s.do_change = true;
                 rss.blend_s.ss.do_activate = true;
                 rss.blend_s.ss.blend_func = motor::graphics::blend_function::add;
                 rss.blend_s.ss.dst_blend_factor = motor::graphics::blend_factor::one;
                 rss.blend_s.ss.src_blend_factor = motor::graphics::blend_factor::src_alpha;
-                
+
 #if 0
                 // this is done in the frame restart of the
                 // rendering backends. Here we can not do it
@@ -457,14 +470,29 @@ class my_app : public motor::application::app
             {
                 auto t = motor::shared( motor::scene::logic_group_t() );
                 {
-                    motor::scene::trafo3d_component_t tc(
-                        motor::math::m3d::trafof_t( motor::math::vec3f_t( 1.0f, 1.0f, 1.0f ),
-                            motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ),
-                            motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) );
+                    {
+                        motor::scene::trafo3d_component_t tc(
+                            motor::math::m3d::trafof_t( motor::math::vec3f_t( 1.0f, 1.0f, 1.0f ),
+                                motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ),
+                                motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ) ) );
 
-                    t->add_component(
-                        motor::shared( motor::scene::name_component_t( "trafo node 1" ) ) );
-                    t->add_component( motor::shared( std::move( tc ) ) );
+                        t->add_component( motor::shared( std::move( tc ) ) );
+                    }
+
+                    {
+                        t->add_component(
+                            motor::shared( motor::scene::name_component_t( "trafo node 1" ) ) );
+                    }
+                    {
+                        motor::gfx::directional_light_t light( 10.0f,
+                            motor::math::vec4f_t( 1.0f, 1.0f, 0.5, 1.0f ),
+                            motor::math::vec3f_t( 0.0f, -1.0f, 0.0f ) );
+
+                        auto light_comp = motor::shared( motor::scene::light_component_t(
+                            motor::shared( std::move( light ) ) ) );
+
+                        t->add_component( motor::move( light_comp ) );
+                    }
                 }
 
                 {
@@ -472,8 +500,8 @@ class my_app : public motor::application::app
 
                     // add render settings
                     {
-                        //motor::scene::render_settings_component_t rsc( motor::share( root_so ) );
-                        //rs->add_component( motor::shared( std::move( rsc ) ) );
+                        // motor::scene::render_settings_component_t rsc( motor::share( root_so ) );
+                        // rs->add_component( motor::shared( std::move( rsc ) ) );
                     }
 
                     // render object 1
@@ -508,6 +536,7 @@ class my_app : public motor::application::app
                         rs->add_child( motor::shared( std::move( rn ) ) );
                     }
 
+                    #if 1
                     // render object 2
                     {
                         auto rn = motor::scene::logic_leaf_t();
@@ -538,7 +567,8 @@ class my_app : public motor::application::app
                         }
                         rs->add_child( motor::shared( std::move( rn ) ) );
                     }
-
+                    #endif
+                    #if 0
                     // render object 3
                     {
                         auto rn = motor::scene::logic_leaf_t();
@@ -569,7 +599,7 @@ class my_app : public motor::application::app
                         }
                         rs->add_child( motor::shared( std::move( rn ) ) );
                     }
-
+                    #endif
                     t->add_child( motor::move( rs ) );
                 }
 
@@ -635,37 +665,52 @@ class my_app : public motor::application::app
         size_t render_id = size_t( -1 );
 
         fe->push( root_so );
+        #if 0
         {
             motor::scene::render_visitor_t vis(
                 this_file::to_idx( this_file::passes::base_color_pass ), ++render_id, fe, _camera );
             motor::scene::node_t::traverser( _root ).apply( &vis );
         }
-        
+        #endif
         fe->push( light_so );
-        #if 1
+
+        if( _use_light_traversal )
+        {
+            motor::scene::light_collector_visitor_t vis;
+            motor::scene::node_t::traverser( _root ).apply( &vis );
+            
+            vis.for_each_light( [ & ]( size_t const, motor::scene::light_component_mtr_t light )
+            {
+                motor::scene::light_pass_render_visitor_t vis_light(
+                    this_file::to_idx( this_file::passes::light_pass ), ++render_id,
+                    fe, _camera, light->borrow_light() );
+                motor::scene::node_t::traverser( _root ).apply( &vis_light );
+                
+            } );
+        }
+#if 1
         if( _use_light_1 )
         {
             auto light =
                 motor::gfx::directional_light_t( motor::math::vec3f_t( -1.0f, -1.0f, 1.0f ) );
 
             motor::scene::light_pass_render_visitor_t vis(
-                this_file::to_idx( this_file::passes::light_pass_directional ), ++render_id, fe,
+                this_file::to_idx( this_file::passes::light_pass ), ++render_id, fe,
                 _camera, &light );
             motor::scene::node_t::traverser( _root ).apply( &vis );
         }
-        #endif
-        #if 1
+
         if( _use_light_2 )
         {
             auto light =
                 motor::gfx::directional_light_t( motor::math::vec3f_t( 1.0f, -1.0f, 1.0f ) );
 
             motor::scene::light_pass_render_visitor_t vis(
-                this_file::to_idx( this_file::passes::light_pass_directional ), ++render_id, fe,
+                this_file::to_idx( this_file::passes::light_pass ), ++render_id, fe,
                 _camera, &light );
             motor::scene::node_t::traverser( _root ).apply( &vis );
         }
-        #endif
+#endif
         fe->pop( motor::graphics::gen4::backend::pop_type::render_state );
         fe->pop( motor::graphics::gen4::backend::pop_type::render_state );
     }
@@ -688,14 +733,13 @@ class my_app : public motor::application::app
         _mslm->for_each_configure_done(
             [ & ]( motor::string_in_t msl_name, motor::graphics::msl_object_mtr_t msl ) //
         {
-            if( msl_name == "light_pass_directional" )
+            if( msl_name == "light_pass" )
             {
                 motor::scene::add_msl_to_set_visitor_t v(
-                    this_file::to_idx( this_file::passes::light_pass_directional ),
+                    this_file::to_idx( this_file::passes::light_pass ),
                     motor::share( msl ),
-                    [ & ]( motor::string_in_t node_name, motor::graphics::variable_set_mtr_t vs )
-                {
-                    
+                    [ & ]( motor::string_in_t node_name, motor::graphics::variable_set_mtr_t vs ) {
+
                 } );
                 motor::scene::node_t::traverser( _root ).apply( &v );
             }
@@ -746,12 +790,13 @@ class my_app : public motor::application::app
     {
 
         {
-            if( ImGui::Begin("Properties") )
+            if( ImGui::Begin( "Properties" ) )
             {
-                ImGui::Checkbox( "light 1", &_use_light_1 ) ;
-                ImGui::Checkbox( "light 2", &_use_light_2 ) ;
+                ImGui::Checkbox( "scene lights", &_use_light_traversal );
+                ImGui::Checkbox( "light 1", &_use_light_1 );
+                ImGui::Checkbox( "light 2", &_use_light_2 );
             }
-            ImGui::End() ;
+            ImGui::End();
         }
         return true;
     }
