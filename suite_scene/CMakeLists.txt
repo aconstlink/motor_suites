@@ -10,6 +10,7 @@ set( tests
     "06_manager_render.cpp"
     "07_multi_render_per_msl.cpp"
     "08_light_pass.cpp"
+    "09_lights_gltf.cpp"
     )
 
 foreach( _test ${tests} )

@@ -27,7 +27,7 @@
 #include <motor/scene/component/camera_component.h>
 #include <motor/scene/component/light_component.hpp>
 
-#include <motor/scene/visitor/variable_update_visitor.h>
+#include <motor/scene/visitor/variable_update_visitor.hpp>
 #include <motor/scene/visitor/trafo_visitor.h>
 #include <motor/scene/visitor/light_collector_visitor.hpp>
 #include <motor/scene/visitor/graphics/render_visitor.h>
@@ -227,7 +227,7 @@ class my_app : public motor::application::app
         }
 
 // #2 : init window
-#if 1
+#if 0
         {
             motor::application::window_info_t wi;
             wi.x = 820;
@@ -488,7 +488,7 @@ class my_app : public motor::application::app
 
                         {
                             motor::gfx::directional_light_t light( 10.0f,
-                                motor::math::vec4f_t( 1.0f, 1.0f, 0.5f, 1.0f ),
+                                motor::math::vec3f_t( 1.0f, 1.0f, 0.5f ),
                                 motor::math::vec3f_t( 0.0f, -1.0f, 0.0f ) );
 
                             //lc.add_light( motor::shared( std::move( light ) ) );
@@ -496,7 +496,7 @@ class my_app : public motor::application::app
 
                         {
                             motor::gfx::point_light_t light( 10.0f,
-                                motor::math::vec4f_t( 1.0f, .0f, 0.f, 1.0f ),
+                                motor::math::vec3f_t( 1.0f, .0f, 0.f ),
                                 motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ), 10.0f );
 
                             lc.add_light( motor::shared( std::move( light ) ) );

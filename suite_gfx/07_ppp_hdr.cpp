@@ -5,7 +5,7 @@
 #include <motor/scene/visitor/graphics/render_visitor.h>
 #include <motor/scene/visitor/graphics/light_pass_render_visitor.h>
 #include <motor/scene/visitor/trafo_visitor.h>
-#include <motor/scene/visitor/variable_update_visitor.h>
+#include <motor/scene/visitor/variable_update_visitor.hpp>
 #include <motor/scene/visitor/graphics/add_msl_to_set_visitor.hpp>
 #include <motor/scene/visitor/graphics/connect_msl_slot_visitor.hpp>
 
