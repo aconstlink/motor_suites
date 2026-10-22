@@ -170,7 +170,7 @@ class my_app : public motor::application::app
             } );
         }
 #endif
-#if 1
+#if 0
         {
             motor::application::window_info_t wi;
             wi.x = 100 + ( 1920 >> 1 );

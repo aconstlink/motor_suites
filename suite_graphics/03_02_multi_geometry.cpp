@@ -458,7 +458,7 @@ namespace this_file
                 }
                 fe->pop( motor::graphics::gen4::backend::pop_type::render_state ) ; 
                 
-                fe->fence( [=]( void_t ){} ) ;
+                fe->fence( [=]( motor::graphics::gen4::frontend::fence_phase const ){} ) ;
             }
         }
 

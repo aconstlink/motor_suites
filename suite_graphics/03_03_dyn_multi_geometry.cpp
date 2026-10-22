@@ -523,9 +523,8 @@ class my_app : public motor::application::app
                 msl_obj_scene->unlink_geometry( _geo1_idx );
                 msl_obj_scene->drop_variable_set( _vs1_idx );
 
-                // must be communicated to the backends.
-                // otherwise, the linke
-                fe->update_geometry_link( msl_obj_scene, _geo1_idx );
+                // This is old. geometry links are resolved automatically
+                //fe->update_geometry_link( msl_obj_scene, _geo1_idx );
 
                 _geo1_idx = size_t( -1 );
             }
@@ -543,9 +542,8 @@ class my_app : public motor::application::app
                 msl_obj_scene->unlink_geometry( _geo2_idx );
                 msl_obj_scene->drop_variable_set( _vs2_idx );
 
-                // must be communicated to the backends.
-                // otherwise, the linke
-                fe->update_geometry_link( msl_obj_scene, _geo2_idx );
+                // This is old. geometry links are resolved automatically                
+                //fe->update_geometry_link( msl_obj_scene, _geo2_idx );
 
                 _geo2_idx = size_t( -1 );
             }
@@ -577,7 +575,7 @@ class my_app : public motor::application::app
             }
             fe->pop( motor::graphics::gen4::backend::pop_type::render_state );
 
-            fe->fence( [ = ]( void_t ) {} );
+            fe->fence( [ = ]( motor::graphics::gen4::frontend::fence_phase const ) {} );
         }
     }
 

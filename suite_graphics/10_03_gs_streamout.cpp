@@ -363,6 +363,10 @@ namespace this_file
             if ( wid == 2 ) return ;
 
             {
+                auto const res = fe->decode( msl_obj ) ;
+                if( res.first != motor::graphics::object_state::ready ) return ;
+            }
+            {
                 fe->use( &so_obj ) ;
                 motor::graphics::gen4::backend::render_detail_t detail ;
                 detail.feed_from_streamout = false ;
