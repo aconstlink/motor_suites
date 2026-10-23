@@ -11,6 +11,7 @@ set( subdirs
     "06_00_double_dispatch"
     "06_01_double_dispatch"
     "07_document"
+    "08_id_registry"
     )
 
 if( WIN32 )
