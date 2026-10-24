@@ -152,7 +152,7 @@ class my_app : public motor::application::app
             _scale_os = motor::shared( os_trafo_t() );
         }
 
-#if 1
+#if 0
         {
             motor::application::window_info_t wi;
             wi.x = 100;
@@ -170,7 +170,7 @@ class my_app : public motor::application::app
             } );
         }
 #endif
-#if 0
+#if 1
         {
             motor::application::window_info_t wi;
             wi.x = 100 + ( 1920 >> 1 );
