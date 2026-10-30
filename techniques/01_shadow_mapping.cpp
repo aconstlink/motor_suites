@@ -70,7 +70,7 @@ class my_app : public motor::application::app
     motor::io::database_mtr_t _db = nullptr;
 
     motor::gfx::msl_manager_mtr_t _own_mmgr = nullptr;
-
+    size_t _reg0 = size_t( -1 );
     motor::scene::node_mtr_t _root = nullptr;
 
   private: // post processing and shadow mapping
@@ -152,7 +152,7 @@ class my_app : public motor::application::app
             _scale_os = motor::shared( os_trafo_t() );
         }
 
-#if 0
+#if 1
         {
             motor::application::window_info_t wi;
             wi.x = 100;
@@ -442,6 +442,77 @@ class my_app : public motor::application::app
                 "depth_pass", motor::io::location_t( "01_shadow_mapping.shaders.depth_pass.msl" ) );
             _own_mmgr->add( "shadow_depth_pass",
                 motor::io::location_t( "01_shadow_mapping.shaders.shadow_depth_pass.msl" ) );
+
+            _reg0 = _own_mmgr->register_funk(
+                [ this ]( motor::string_in_t msl_name, motor::graphics::msl_object_mtr_t msl )
+            {
+                if( msl_name == "color_pass" )
+                {
+                    motor::scene::add_msl_to_set_visitor_t v(
+                        this_file::to_id( this_file::msl_id::color_pass_id ), motor::share( msl ) );
+                    motor::scene::node_t::traverser( _root ).apply( &v );
+                }
+                if( msl_name == "light_pass" )
+                {
+                    {
+                        motor::scene::add_msl_to_set_visitor_t v(
+                            this_file::to_id( this_file::msl_id::light_pass_id ),
+                            motor::share( msl ) );
+                        motor::scene::node_t::traverser( _root ).apply( &v );
+                    }
+
+                    {
+                        motor::scene::connect_msl_slot_visitor_t v(
+                            this_file::to_id( this_file::msl_id::light_pass_id ),
+                            [ & ]( motor::wire::inputs_ref_t inputs )
+                        {
+                            {
+                                auto * input = inputs.borrow_or_add(
+                                    "shininess", motor::shared( this_t::float_is_t( 0.0f ) ) );
+                                if( input ) input->connect( motor::share( _shininess ) );
+                            }
+
+                            {
+                                auto * input = inputs.borrow_or_add( "specular_strength",
+                                    motor::shared( this_t::float_is_t( 0.0f ) ) );
+                                if( input ) input->connect( motor::share( _specular_strength ) );
+                            }
+
+                            {
+                                auto * input = inputs.borrow_or_add( "light_intensity",
+                                    motor::shared( this_t::float_is_t( 0.0f ) ) );
+                                if( input ) input->connect( motor::share( _light_intensity ) );
+                            }
+
+                            {
+                                auto * input = inputs.borrow_or_add(
+                                    "bias", motor::shared( this_t::float_is_t( 0.0f ) ) );
+                                if( input ) input->connect( motor::share( _bias ) );
+                            }
+
+                            {
+                                auto * input = inputs.borrow_or_add(
+                                    "hemi_top_color", motor::shared( this_t::vec3_is_t() ) );
+                                if( input ) input->connect( motor::share( _hemi_top_color ) );
+                            }
+                        } );
+                        motor::scene::node_t::traverser( _root ).apply( &v );
+                    }
+                }
+                else if( msl_name == "shadow_depth_pass" )
+                {
+                    motor::scene::add_msl_to_set_visitor_t v(
+                        this_file::to_id( this_file::msl_id::shadow_depth_id ),
+                        motor::share( msl ) );
+                    motor::scene::node_t::traverser( _root ).apply( &v );
+                }
+                else if( msl_name == "depth_pass" )
+                {
+                    motor::scene::add_msl_to_set_visitor_t v(
+                        this_file::to_id( this_file::msl_id::depth_pass_id ), motor::share( msl ) );
+                    motor::scene::node_t::traverser( _root ).apply( &v );
+                }
+            } );
         }
     }
 
@@ -468,6 +539,8 @@ class my_app : public motor::application::app
     virtual void_t on_update( motor::application::app::update_data_in_t ud ) noexcept
     {
         _own_mmgr->on_update();
+
+#if 0
         _own_mmgr->for_each_configure_done(
             [ & ]( motor::string_in_t name, motor::graphics::msl_object_mtr_t msl ) //
         {
@@ -536,7 +609,7 @@ class my_app : public motor::application::app
                 motor::scene::node_t::traverser( _root ).apply( &v );
             }
         } );
-
+#endif
         // 4 seconds animation is in sync with the blender export
         {
             static float_t t = 0.0f;
@@ -565,6 +638,11 @@ class my_app : public motor::application::app
         }
 #endif
 
+        
+    }
+
+    virtual void_t on_graphics( motor::application::app::graphics_data_in_t gd ) noexcept 
+    {
         // absolutely required. this visitor bakes local
         // transformations, i.e. if animations occure or if
         // the local trafor is just commited to the usable
@@ -579,8 +657,6 @@ class my_app : public motor::application::app
             motor::scene::node_t::traverser( _root ).apply( &v );
         }
     }
-
-    virtual void_t on_graphics( motor::application::app::graphics_data_in_t gd ) noexcept {}
 
     virtual void_t on_first_frame( this_t::window_id_t const wid,
         motor::graphics::gen4::frontend_ptr_t fe,
@@ -606,9 +682,6 @@ class my_app : public motor::application::app
         motor::graphics::gen4::frontend_ptr_t fe,
         motor::application::app::render_data_in_t ) noexcept
     {
-        motor::log::global_t::status(
-            !_async_done, "[07_ppp] : async not done yet but rendering." );
-
         _own_mmgr->on_render( fe );
 
         // make shadow pass for sun light

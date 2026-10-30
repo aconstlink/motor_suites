@@ -60,6 +60,7 @@ class my_app : public motor::application::app
     motor::gfx::generic_camera_mtr_t _camera;
 
     motor::gfx::msl_manager_mtr_t _mslm;
+    size_t _reg0 = size_t(-1) ;
 
     bool_t _msls_are_init = false;
     bool_t _button_pressed = true;
@@ -167,6 +168,48 @@ class my_app : public motor::application::app
             // variables are set when the shader is done.
             // @see on_update
         }
+
+        _reg0 = _mslm->register_funk(
+            [ this ]( motor::string_in_t msl_name, motor::graphics::msl_object_mtr_t msl )
+        {
+            if( msl_name == "shader_0" )
+            {
+                motor::scene::add_msl_to_set_visitor_t v( 0, motor::share( msl ),
+                    [ & ]( motor::string_in_t node_name, motor::graphics::variable_set_mtr_t vs )
+                {
+                    if( node_name == "Render Object 0" )
+                    {
+                        auto * var = vs->data_variable< motor::math::vec4f_t >( "color" );
+                        var->set( motor::math::vec4f_t( 0.0f, 0.0f, 1.0f, 1.0f ) );
+                    }
+                    else if( node_name == "Render Object 1" )
+                    {
+                        auto * var = vs->data_variable< motor::math::vec4f_t >( "color" );
+                        var->set( motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) );
+                    }
+
+                    // apply on all others
+                    else
+                    {
+                        auto * var = vs->data_variable< motor::math::vec4f_t >( "color" );
+                        var->set( motor::math::vec4f_t( 0.0f, 1.0f, 0.0f, 1.0f ) );
+                    }
+                } );
+                motor::scene::node_t::traverser( _root ).apply( &v );
+            }
+
+            // added but not rendered.
+            if( msl_name == "shader_1" )
+            {
+                motor::scene::add_msl_to_set_visitor_t v( 1, motor::share( msl ),
+                    [ & ]( motor::string_in_t node_name, motor::graphics::variable_set_mtr_t vs )
+                {
+                    auto * var = vs->data_variable< motor::math::vec4f_t >( "color" );
+                    var->set( motor::math::vec4f_t( 0.0f, 1.0f, 1.0f, 1.0f ) );
+                } );
+                motor::scene::node_t::traverser( _root ).apply( &v );
+            }
+        } );
     }
 
     void_t release_manager_shaders( void_t ) noexcept {}
@@ -571,6 +614,7 @@ class my_app : public motor::application::app
         // push method: call completion listeners
         _mslm->on_update();
 
+        #if 0
         // pull method: ask completion and react
         _mslm->for_each_configure_done(
             [ & ]( motor::string_in_t msl_name, motor::graphics::msl_object_mtr_t msl ) //
@@ -613,7 +657,7 @@ class my_app : public motor::application::app
                 motor::scene::node_t::traverser( _root ).apply( &v );
             }
         } );
-
+        #endif
         // must use this in order to update trafo components.
         {
             motor::scene::variable_update_visitor_t v;

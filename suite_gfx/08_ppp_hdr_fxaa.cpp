@@ -69,7 +69,7 @@ class my_app : public motor::application::app
     motor::io::database_mtr_t _db = nullptr;
 
     motor::gfx::msl_manager_mtr_t _own_mmgr = nullptr;
-
+    size_t _reg0 = size_t( -1 );
     motor::scene::node_mtr_t _root = nullptr;
 
   private: // post processing
@@ -228,7 +228,7 @@ class my_app : public motor::application::app
         }
 
         {
-            _pp_pipe = motor::shared( motor::gfx::hdr_postprocess_pipeline_t(1920,1080) );
+            _pp_pipe = motor::shared( motor::gfx::hdr_postprocess_pipeline_t( 1920, 1080 ) );
             _pp_pipe->init();
         }
 
@@ -256,8 +256,9 @@ class my_app : public motor::application::app
                     // import the gltf asset.
                     {
                         motor::property::property_sheet_t ps;
-                        ps.add_property< motor::string_t >( "base_name",
-                            motor::property::generic_property< motor::string_t >( "08_ppp_hdr_fxaa" ) );
+                        ps.add_property< motor::string_t >(
+                            "base_name", motor::property::generic_property< motor::string_t >(
+                                             "08_ppp_hdr_fxaa" ) );
 
                         auto item = mod_reg->import_from(
                             motor::io::location_t( "assets.test_scene1.gltf" ), _db,
@@ -378,6 +379,64 @@ class my_app : public motor::application::app
                 "light_pass", motor::io::location_t( "08_ppp_hdr_fxaa.shaders.light_pass.msl" ) );
             _own_mmgr->add(
                 "depth_pass", motor::io::location_t( "08_ppp_hdr_fxaa.shaders.depth_pass.msl" ) );
+
+            _reg0 = _own_mmgr->register_funk(
+                [ this ]( motor::string_in_t msl_name, motor::graphics::msl_object_mtr_t msl )
+            {
+                if( msl_name == "color_pass" )
+                {
+                    motor::scene::add_msl_to_set_visitor_t v(
+                        this_file::to_id( this_file::msl_id::color_pass_id ), motor::share( msl ) );
+                    motor::scene::node_t::traverser( _root ).apply( &v );
+                }
+                else if( msl_name == "light_pass" )
+                {
+                    {
+                        motor::scene::add_msl_to_set_visitor_t v(
+                            this_file::to_id( this_file::msl_id::light_pass_id ),
+                            motor::share( msl ) );
+                        motor::scene::node_t::traverser( _root ).apply( &v );
+                    }
+
+                    {
+                        motor::scene::connect_msl_slot_visitor_t v(
+                            this_file::to_id( this_file::msl_id::light_pass_id ),
+                            [ & ]( motor::wire::inputs_ref_t inputs )
+                        {
+                            {
+                                auto * input = inputs.borrow_or_add(
+                                    "shininess", motor::shared( this_t::float_is_t( 0.0f ) ) );
+                                if( input ) input->connect( motor::share( _shininess ) );
+                            }
+
+                            {
+                                auto * input = inputs.borrow_or_add( "specular_strength",
+                                    motor::shared( this_t::float_is_t( 0.0f ) ) );
+                                if( input ) input->connect( motor::share( _specular_strength ) );
+                            }
+
+                            {
+                                auto * input = inputs.borrow_or_add( "light_intensity",
+                                    motor::shared( this_t::float_is_t( 0.0f ) ) );
+                                if( input ) input->connect( motor::share( _light_intensity ) );
+                            }
+
+                            {
+                                auto * input = inputs.borrow_or_add(
+                                    "hemi_top_color", motor::shared( this_t::vec3_is_t() ) );
+                                if( input ) input->connect( motor::share( _hemi_top_color ) );
+                            }
+                        } );
+                        motor::scene::node_t::traverser( _root ).apply( &v );
+                    }
+                }
+                else if( msl_name == "depth_pass" )
+                {
+                    motor::scene::add_msl_to_set_visitor_t v(
+                        this_file::to_id( this_file::msl_id::depth_pass_id ), motor::share( msl ) );
+                    motor::scene::node_t::traverser( _root ).apply( &v );
+                }
+            } );
         }
     }
 
@@ -404,6 +463,8 @@ class my_app : public motor::application::app
     virtual void_t on_update( motor::application::app::update_data_in_t ud ) noexcept
     {
         _own_mmgr->on_update();
+
+#if 0
         _own_mmgr->for_each_configure_done(
             [ & ]( motor::string_in_t name, motor::graphics::msl_object_mtr_t msl ) //
         {
@@ -460,7 +521,7 @@ class my_app : public motor::application::app
                 motor::scene::node_t::traverser( _root ).apply( &v );
             }
         } );
-
+#endif
         // 4 seconds animation is in sync with the blender export
         {
             static float_t t = 0.0f;
@@ -668,11 +729,10 @@ class my_app : public motor::application::app
                 {
                     //_pp_pipe->set_map_to_screen_texture_temp( "scene.00.shadow_framebuffer.depth"
                     //);
-                    _pp_pipe->set_map_to_screen_texture_temp(
-                        "gfx.postprocess.fb.full.hdr.0.0"
+                    _pp_pipe->set_map_to_screen_texture_temp( "gfx.postprocess.fb.full.hdr.0.0"
                         //"scene.00.shadow_accum_framebuffer.0"
-                        //"gfx.postprocess.hdr.framebuffer.0.depth" 
-                        );
+                        //"gfx.postprocess.hdr.framebuffer.0.depth"
+                    );
                 }
             }
         }
