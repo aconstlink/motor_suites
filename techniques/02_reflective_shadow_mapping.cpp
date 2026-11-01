@@ -9,6 +9,7 @@
 #include <motor/scene/visitor/variable_update_visitor.hpp>
 #include <motor/scene/visitor/graphics/add_msl_to_set_visitor.hpp>
 #include <motor/scene/visitor/graphics/connect_msl_slot_visitor.hpp>
+#include <motor/scene/visitor/graphics/debug_graphics_visitor.hpp>
 
 #include <motor/scene/node/logic_group.h>
 #include <motor/scene/component/trafo3d_component.h>
@@ -75,6 +76,8 @@ class my_app : public motor::application::app
     size_t _reg0 = size_t( -1 );
     motor::scene::node_mtr_t _root = nullptr;
 
+    motor::gfx::primitive_render_3d_mtr_t _prim_render = nullptr;
+
   private: // post processing and shadow mapping
 
     motor::gfx::hdr_postprocess_pipeline_mtr_t _pp_pipe = nullptr;
@@ -108,6 +111,9 @@ class my_app : public motor::application::app
 
     bool_t _render_light = true;
     bool_t _render_normals = false;
+    bool_t _render_default = false;
+
+    bool_t _draw_debug = false;
 
   private: // wire
 
@@ -159,7 +165,7 @@ class my_app : public motor::application::app
             _scale_os = motor::shared( os_trafo_t() );
         }
 
-#if 1
+#if 0
         {
             motor::application::window_info_t wi;
             wi.x = 100;
@@ -515,7 +521,8 @@ class my_app : public motor::application::app
                 else if( msl_name == "normal_vis_pass" )
                 {
                     motor::scene::add_msl_to_set_visitor_t v(
-                        this_file::to_id( this_file::msl_id::normal_pass_id ), motor::share( msl ) );
+                        this_file::to_id( this_file::msl_id::normal_pass_id ),
+                        motor::share( msl ) );
                     motor::scene::node_t::traverser( _root ).apply( &v );
                 }
                 else if( msl_name == "light_pass" )
@@ -580,6 +587,12 @@ class my_app : public motor::application::app
                 }
             } );
         }
+
+        {
+            motor::gfx::primitive_render_3d_t prim_render;
+            prim_render.init( "my_debug_render" );
+            _prim_render = motor::shared( std::move( prim_render ) );
+        }
     }
 
     virtual void_t on_event( window_id_t const wid,
@@ -633,11 +646,9 @@ class my_app : public motor::application::app
             while( !_async_done );
         }
 #endif
-
-        
     }
 
-    virtual void_t on_graphics( motor::application::app::graphics_data_in_t gd ) noexcept 
+    virtual void_t on_graphics( motor::application::app::graphics_data_in_t gd ) noexcept
     {
         // absolutely required. this visitor bakes local
         // transformations, i.e. if animations occure or if
@@ -652,6 +663,28 @@ class my_app : public motor::application::app
             motor::scene::trafo_visitor_t v;
             motor::scene::node_t::traverser( _root ).apply( &v );
         }
+
+        auto * cam = _cameras[ _cam_id ].second;
+
+        if( _draw_debug )
+        {
+            _prim_render->draw_arrow( motor::math::vec3f_t( 0.0f ),
+                motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ), 10.0f,
+                motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ) );
+
+            _prim_render->draw_wire_circle( cam->get_camera_matrix(),
+                motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ), 10.0f,
+                motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ), 20 );
+        }
+
+        {
+            {
+                motor::scene::debug_graphics_visitor_t v( cam, _prim_render );
+                motor::scene::node_t::traverser( _root ).apply( &v );
+            }
+            _prim_render->set_view_proj( cam->get_view_matrix(), cam->get_proj_matrix() );
+            _prim_render->prepare_for_rendering();
+        }
     }
 
     virtual void_t on_first_frame( this_t::window_id_t const wid,
@@ -663,6 +696,8 @@ class my_app : public motor::application::app
         fe->configure< motor::graphics::state_object_t >( _light_so );
         fe->configure< motor::graphics::state_object_t >( _shadow_depth_so );
         fe->configure< motor::graphics::framebuffer_object_t >( _shadow_depth_fb );
+
+        _prim_render->configure( fe );
     }
 
     virtual void_t on_last_frame( this_t::window_id_t const wid,
@@ -674,6 +709,8 @@ class my_app : public motor::application::app
         fe->release< motor::graphics::state_object_t >( _light_so );
         fe->release< motor::graphics::state_object_t >( _shadow_depth_so );
         fe->release< motor::graphics::framebuffer_object_t >( _shadow_depth_fb );
+
+        _prim_render->release( fe );
     }
 
     virtual void_t on_render( this_t::window_id_t const wid,
@@ -720,6 +757,9 @@ class my_app : public motor::application::app
         {
             _pp_pipe->render( fe, _show_temp_rt );
         }
+
+        _prim_render->prepare_for_rendering( fe );
+        _prim_render->render( fe );
     }
 
     //************************************************************************************
@@ -753,6 +793,13 @@ class my_app : public motor::application::app
             {
                 motor::scene::render_visitor_t rnd_vis(
                     this_file::to_id( this_file::msl_id::normal_pass_id ), ++render_id, fe,
+                    _cameras[ _cam_id ].second );
+                motor::scene::node_t::traverser( _root ).apply( &rnd_vis );
+            }
+            if( _render_default )
+            {
+                motor::scene::render_visitor_t rnd_vis(
+                    this_file::to_id( this_file::msl_id::default_id ), ++render_id, fe,
                     _cameras[ _cam_id ].second );
                 motor::scene::node_t::traverser( _root ).apply( &rnd_vis );
             }
@@ -860,9 +907,24 @@ class my_app : public motor::application::app
 
         if( ImGui::Begin( "Rendering" ) )
         {
-
+            ImGui::Checkbox( "Render Debug", &_draw_debug );
             ImGui::Checkbox( "Render Light", &_render_light );
-            ImGui::Checkbox( "Render Normals", &_render_normals );
+
+            if( ImGui::Checkbox( "Render Normals", &_render_normals ) )
+            {
+                if( _render_normals )
+                {
+                    _render_default = false;
+                }
+            }
+
+            if( ImGui::Checkbox( "Render Default", &_render_default ) )
+            {
+                if( _render_default )
+                {
+                    _render_normals = false;
+                }
+            }
         }
         ImGui::End();
 
@@ -983,6 +1045,7 @@ class my_app : public motor::application::app
         motor::wire::release( motor::move( _merger ) );
 
         motor::release( motor::move( _final_so ) );
+        motor::release( motor::move( _light_so ) );
 
         motor::release( motor::move( _root ) );
 
@@ -1000,6 +1063,8 @@ class my_app : public motor::application::app
         motor::release( motor::move( _shadow_depth_fb ) );
         motor::release( motor::move( _shadow_depth_so ) );
         motor::release( motor::move( _sun_cam ) );
+
+        motor::release( motor::move( _prim_render ) );
     }
 };
 } // namespace this_file

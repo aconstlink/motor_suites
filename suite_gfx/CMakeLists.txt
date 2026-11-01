@@ -10,6 +10,7 @@ set( tests
     "06_keyframes_3d.cpp"
     "07_ppp_hdr.cpp"
     "08_ppp_hdr_fxaa.cpp"
+    "09_pr3d_collide.cpp"
     )
 
 foreach( _test ${tests} )
