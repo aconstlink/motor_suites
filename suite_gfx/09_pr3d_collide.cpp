@@ -15,6 +15,7 @@
 #include <motor/collide/3d/hit_test.hpp>
 
 #include <motor/math/primitive/3d/ray.hpp>
+#include <motor/math/primitive/3d/frustum.hpp>
 
 #include <motor/math/utility/angle.hpp>
 #include <motor/math/utility/fn.hpp>
@@ -54,14 +55,16 @@ class my_app : public motor::application::app
         volumes,
         volume_point,
         volume_ray,
+        volume_frustum,
         num_tests
     };
 
-    bool_t _show_tests[ num_tests ] = { false, false, true };
+    bool_t _show_tests[ num_tests ] = { false, false, false, true };
 
     bool_t _ortho = false;
 
     float_t _base_speed = 1.0f;
+    size_t _contacts = 0;
 
     virtual void_t on_init( void_t ) noexcept
     {
@@ -232,6 +235,26 @@ class my_app : public motor::application::app
                 pr.draw_wire_cube(
                     aabb2.points(), motor::math::vec4f_t( 0.9f, 0.93f, 0.97f, 1.0f ) );
             }
+
+            // frustum
+            {
+                motor::math::vec3f_t o( 0.0f, -50.0f, 50.0f );
+                auto const p = motor::math::quat4f_t( t, motor::math::vec3f_t::up ) *
+                               motor::math::vec3f_t( 0.0f, 1.0f * std::sin( t * 5.0f ), 50.0f );
+
+                motor::gfx::generic_camera_t cam;
+
+                cam.set_dims( 40.0f, 30.0f, 10.0f, 150.0f );
+                if( _ortho )
+                    cam.orthographic();
+                else
+                    cam.perspective_fov( motor::math::angle< float_t >::degree_to_radian( 45.0f ) );
+                cam.look_at( o, motor::math::vec3f_t::up, p - o );
+
+                motor::math::frustum3f_t f( cam.get_view_matrix(), cam.get_proj_matrix() );
+
+                pr.draw_frustum( f, motor::math::vec4f_t( 0.9f, 0.93f, 0.97f, 1.0f ) );
+            }
         }
         else if( _show_tests[ test_id::volume_point ] )
         {
@@ -239,7 +262,7 @@ class my_app : public motor::application::app
                            motor::math::vec3f_t( 0.0f, 1.0f * std::sin( t * 5.0f ), 50.0f );
 
             {
-                pr.draw_circle( camera.get_camera_matrix(), p, 2.0f,
+                pr.draw_circle( camera.get_camera_matrix(), p, 1.0f,
                     motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ), motor::math::vec4f_t(), 10 );
             }
 
@@ -267,6 +290,36 @@ class my_app : public motor::application::app
                     color = motor::math::vec4f_t( 1.0f, 0.0f, 0.0, 1.0f );
 
                 pr.draw_wire_sphere( s.get_center(), s.get_radius(), color, 50 );
+            }
+
+            // obb/point
+            {
+                auto const orientation = ( motor::math::quat4f_t( t, motor::math::vec3f_t::up ) *
+                                           motor::math::quat4f_t( t, motor::math::vec3f_t::right ) )
+                                             .to_matrix();
+
+                motor::collide::obb3f_t const obb( motor::math::vec3f_t( -50.0f, 0.0f, 0.0f ),
+                    motor::math::vec3f_t( 10.0f, 10.0f, 10.0f ), orientation );
+
+                motor::math::vec4f_t color( 0.0f, 1.0f, 0.0, 1.0f );
+
+                auto ht = motor::collide::c3d::hit_test< float_t >::hit_test_obb_point( obb, p );
+                if( ht != motor::collide::hit_test_type::outside )
+                {
+                    color = motor::math::vec4f_t( 1.0f, 0.0f, 0.0, 1.0f );
+
+                    // first contact
+                    if( ++_contacts == 1 ) _base_speed *= 0.5f;
+                }
+                else
+                {
+                    // last contact
+                    if( _contacts != 0 ) _base_speed *= 2.0f;
+
+                    _contacts = 0;
+                }
+
+                pr.draw_wire_cube( obb.points(), color );
             }
         }
         else if( _show_tests[ test_id::volume_ray ] )
@@ -314,6 +367,78 @@ class my_app : public motor::application::app
                 pr.draw_circle( camera.get_camera_matrix(), r.point_at( hit ), 1.0f,
                     motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ), motor::math::vec4f_t(), 10 );
             }
+
+            // obb/ray
+            {
+                auto const orientation = ( motor::math::quat4f_t( t, motor::math::vec3f_t::up ) *
+                                           motor::math::quat4f_t( t, motor::math::vec3f_t::right ) )
+                                             .to_matrix();
+
+                motor::collide::obb3f_t const obb( motor::math::vec3f_t( -50.0f, 0.0f, 0.0f ),
+                    motor::math::vec3f_t( 10.0f, 10.0f, 10.0f ), orientation );
+
+                motor::math::vec4f_t color( 0.0f, 1.0f, 0.0, 1.0f );
+
+                float_t hit = 0.0f;
+                auto ht = motor::collide::c3d::hit_test< float_t >::hit_test_obb_ray( obb, r, hit );
+                if( ht != motor::collide::hit_test_type::outside )
+                {
+                    color = motor::math::vec4f_t( 1.0f, 0.0f, 0.0, 1.0f );
+
+                    // first contact
+                    if( ++_contacts == 1 ) _base_speed *= 0.5f;
+                }
+                else
+                {
+                    // last contact
+                    if( _contacts != 0 ) _base_speed *= 2.0f;
+
+                    _contacts = 0;
+                }
+
+                pr.draw_wire_cube( obb.points(), color );
+                pr.draw_circle( camera.get_camera_matrix(), r.point_at( hit ), 1.0f,
+                    motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ), motor::math::vec4f_t(), 10 );
+            }
+        }
+        else if( _show_tests[ test_id::volume_frustum ] )
+        {
+            motor::math::frustum3f_t f ;
+
+            // frustum
+            {
+                motor::math::vec3f_t o( 0.0f, 0.0f, 0.0f );
+                auto const p = motor::math::quat4f_t( t, motor::math::vec3f_t::up ) *
+                               motor::math::vec3f_t( 0.0f, 1.0f * std::sin( t * 5.0f ), 50.0f );
+
+                motor::gfx::generic_camera_t cam;
+
+                cam.set_dims( 40.0f, 30.0f, 10.0f, 150.0f );
+                if( _ortho )
+                    cam.orthographic();
+                else
+                    cam.perspective_fov( motor::math::angle< float_t >::degree_to_radian( 45.0f ) );
+                cam.look_at( o, motor::math::vec3f_t::up, p - o );
+
+                f = motor::math::frustum3f_t( cam.get_view_matrix(), cam.get_proj_matrix() );
+
+                pr.draw_frustum( f, motor::math::vec4f_t( 0.9f, 0.93f, 0.97f, 1.0f ) );
+            }
+
+            // aabb/frustum
+            {
+                motor::collide::aabb3f_t const aabb(
+                    motor::math::vec3f_t( 50.0f, 0.0f, 0.0f ), 20.0 );
+
+                motor::math::vec4f_t color( 0.0f, 1.0f, 0.0, 1.0f );
+
+                auto const ht =
+                    motor::collide::c3d::hit_test< float_t >::hit_test_frustum_aabb( f, aabb );
+                if( ht != motor::collide::hit_test_type::outside )
+                    color = motor::math::vec4f_t( 1.0f, 0.0f, 0.0, 1.0f );
+
+                pr.draw_wire_cube( aabb.points(), color );
+            }
         }
 
         pr.set_view_proj( camera.mat_view(), camera.mat_proj() );
@@ -356,7 +481,11 @@ class my_app : public motor::application::app
             if( ImGui::Checkbox( "Orthographic", &_ortho ) )
             {
                 if( _ortho )
+                {
+                    auto const d = camera.get_dims();
                     camera.orthographic( 0.5f );
+                    camera.set_sensor_dims( d.x(), d.y() );
+                }
                 else
                     camera.perspective_fov(
                         motor::math::angle< float_t >::degree_to_radian( 45.0f ) );
@@ -365,8 +494,9 @@ class my_app : public motor::application::app
 
             // Choose one test and keep its array entry active.
             {
-                char const * const test_names[ num_tests ] = {
-                    "Volumes", "Point/Volume Intersection", "Ray/Volume Intersection" };
+                char const * const test_names[ num_tests ] = { "Volumes",
+                    "Point/Volume Intersection", "Ray/Volume Intersection",
+                    "Frustum/Volume Intersection" };
 
                 int_t selected_test = 0;
                 for( size_t i = 0; i < num_tests; ++i )
