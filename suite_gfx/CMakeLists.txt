@@ -45,3 +45,13 @@ foreach( _test ${tests} )
       RUNTIME DESTINATION bin )
 
 endforeach()
+
+add_executable( 10_bounding_volumes "10_bounding_volumes.cpp" )
+target_link_libraries( 10_bounding_volumes PRIVATE motor::math motor::log motor::memory )
+set_target_properties( 10_bounding_volumes PROPERTIES FOLDER "suites/suite_gfx" )
+install( TARGETS 10_bounding_volumes EXPORT suites-targets RUNTIME DESTINATION bin )
+
+if( BUILD_TESTING )
+    add_test( NAME gfx_bounding_volumes COMMAND 10_bounding_volumes )
+    set_tests_properties( gfx_bounding_volumes PROPERTIES TIMEOUT 30 LABELS "gfx;collide" )
+endif()

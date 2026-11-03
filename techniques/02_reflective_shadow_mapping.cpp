@@ -114,6 +114,9 @@ class my_app : public motor::application::app
     bool_t _render_default = false;
 
     bool_t _draw_debug = false;
+    bool_t _draw_leafs = true;
+    size_t _max_depth = 0;
+    size_t _draw_depth = 0;
 
   private: // wire
 
@@ -666,6 +669,8 @@ class my_app : public motor::application::app
 
         auto * cam = _cameras[ _cam_id ].second;
 
+// test
+#if 0
         if( _draw_debug )
         {
             _prim_render->draw_arrow( motor::math::vec3f_t( 0.0f ),
@@ -676,11 +681,18 @@ class my_app : public motor::application::app
                 motor::math::vec3f_t( 0.0f, 0.0f, 0.0f ), 10.0f,
                 motor::math::vec4f_t( 1.0f, 0.0f, 0.0f, 1.0f ), 20 );
         }
+#endif
 
         {
+            if( _draw_debug )
             {
-                motor::scene::debug_graphics_visitor_t v( cam, _prim_render );
+                motor::scene::debug_graphics_visitor_t::draw_context dc = {
+                    cam, _prim_render, _draw_depth, _draw_leafs };
+
+                motor::scene::debug_graphics_visitor_t v( dc );
                 motor::scene::node_t::traverser( _root ).apply( &v );
+
+                _max_depth = v.get_max_depth();
             }
             _prim_render->set_view_proj( cam->get_view_matrix(), cam->get_proj_matrix() );
             _prim_render->prepare_for_rendering();
@@ -907,7 +919,16 @@ class my_app : public motor::application::app
 
         if( ImGui::Begin( "Rendering" ) )
         {
-            ImGui::Checkbox( "Render Debug", &_draw_debug );
+            {
+                ImGui::Checkbox( "Render Debug", &_draw_debug );
+                ImGui::Checkbox( "Render Leafs", &_draw_leafs );
+                {
+                    int_t v = int_t( _draw_depth );
+                    ImGui::SliderInt( "Render Level", &v, 0, int_t( _max_depth ) );
+                    _draw_depth = size_t( v );
+                }
+                ImGui::Separator();
+            }
             ImGui::Checkbox( "Render Light", &_render_light );
 
             if( ImGui::Checkbox( "Render Normals", &_render_normals ) )

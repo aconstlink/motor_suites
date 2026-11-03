@@ -5,6 +5,7 @@ set( tests
     "01_msl_from_file.cpp"
     "02_parser_test.cpp"
     "03_noise_buildins.cpp"
+    "04_hlsl_clip_depth.cpp"
     )
 
 if( WIN32 )
@@ -36,3 +37,12 @@ foreach( _test ${tests} )
       RUNTIME DESTINATION bin )
 
 endforeach()
+
+if( WIN32 )
+  target_link_libraries( 04_hlsl_clip_depth PRIVATE d3dcompiler )
+endif()
+
+if( BUILD_TESTING )
+  add_test( NAME msl_hlsl_clip_depth COMMAND 04_hlsl_clip_depth )
+  set_tests_properties( msl_hlsl_clip_depth PROPERTIES TIMEOUT 30 LABELS "msl;graphics" )
+endif()
