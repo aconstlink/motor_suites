@@ -608,7 +608,7 @@ class my_app : public motor::application::app
 
             _num_lights_found = uint_t( vis.get_num_lights() );
 
-            vis.for_each_light( [ & ]( size_t const i, motor::scene::light_component_mtr_t light )
+            vis.for_each_light_component( [ & ]( size_t const i, motor::scene::light_component_mtr_t light )
             {
                 if( i < _max_lights_render )
                 {
@@ -618,6 +618,8 @@ class my_app : public motor::application::app
                             this_file::to_idx( this_file::passes::light_pass ), ++render_id, fe,
                             _camera, l );
                         motor::scene::node_t::traverser( _root ).apply( &vis_light );
+
+                        return true ;
                     } );
                 }
             } );

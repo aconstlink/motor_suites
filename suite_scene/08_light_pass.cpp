@@ -733,7 +733,7 @@ class my_app : public motor::application::app
             motor::scene::light_collector_visitor_t vis;
             motor::scene::node_t::traverser( _root ).apply( &vis );
 
-            vis.for_each_light( [ & ]( size_t const, motor::scene::light_component_mtr_t light )
+            vis.for_each_light_component( [ & ]( size_t const, motor::scene::light_component_mtr_t light )
             {
                 light->for_each_light( [ & ]( motor::gfx::light_mtr_t l )
                 {
@@ -741,6 +741,7 @@ class my_app : public motor::application::app
                         this_file::to_idx( this_file::passes::light_pass ), ++render_id, fe,
                         _camera, l );
                     motor::scene::node_t::traverser( _root ).apply( &vis_light );
+                    return true ;
                 } );
             } );
         }

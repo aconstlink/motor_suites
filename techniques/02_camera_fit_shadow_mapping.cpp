@@ -52,7 +52,9 @@ enum class msl_id
     light_pass_id,
     depth_pass_id,
     shadow_depth_id,
+    shadow_light_id,
     shadow_accum_id,
+    rsm_pass_id,
     num_ids
 };
 
@@ -83,6 +85,7 @@ class my_app : public motor::application::app
     motor::gfx::hdr_postprocess_pipeline_mtr_t _pp_pipe = nullptr;
     motor::property::property_sheet_t _pp_sheet;
     bool_t _show_temp_rt = false;
+    int_t _temp_rt_index = 0;
 
     // this is where the depth of the light source is rendered to.
     // rendered from the light perspective.
@@ -114,9 +117,13 @@ class my_app : public motor::application::app
     bool_t _render_default = false;
 
     bool_t _draw_debug = false;
-    bool_t _draw_leafs = true;
+    bool_t _draw_leafs = false;
     size_t _max_depth = 0;
     size_t _draw_depth = 0;
+
+    bool_t _draw_sun_ortho = false;
+
+    motor::collide::aabb3f_t _world_bounds;
 
   private: // wire
 
@@ -151,7 +158,7 @@ class my_app : public motor::application::app
     float_os_mtr_t _shininess = motor::shared( float_os_t( 80.0f ) );
     float_os_mtr_t _specular_strength = motor::shared( float_os_t( 30.0f ) );
     float_os_mtr_t _light_intensity = motor::shared( float_os_t( 2.0f ) );
-    float_os_mtr_t _bias = motor::shared( float_os_t( 0.0f ) );
+    float_os_mtr_t _bias = motor::shared( float_os_t( 0.02f ) );
 
     vec3_os_mtr_t _hemi_top_color =
         motor::shared( vec3_os_t( motor::math::vec3f_t( 0.0f, 0.0f, 10.0f ) ) );
@@ -308,7 +315,7 @@ class my_app : public motor::application::app
                 rss.polygon_s.ss.do_activate = true;
                 rss.polygon_s.ss.fm = motor::graphics::fill_mode::fill;
                 rss.polygon_s.ss.ff = motor::graphics::front_face::counter_clock_wise;
-                rss.polygon_s.ss.cm = motor::graphics::cull_mode::front;
+                rss.polygon_s.ss.cm = motor::graphics::cull_mode::back;
                 rss.depth_s.ss.compare_funk = motor::graphics::depth_compare::less;
 
                 rss.clear_s.do_change = true;
@@ -356,10 +363,10 @@ class my_app : public motor::application::app
                         motor::property::property_sheet_t ps;
                         ps.add_property< motor::string_t >(
                             "base_name", motor::property::generic_property< motor::string_t >(
-                                             "02_reflective_shadow_mapping" ) );
+                                             "02_camera_fit_shadow_mapping" ) );
 
                         auto item = mod_reg->import_from(
-                            motor::io::location_t( "02_reflective_shadow_mapping.scene.gltf" ), _db,
+                            motor::io::location_t( "02_camera_fit_shadow_mapping.scene.gltf" ), _db,
                             motor::shared( std::move( ps ) ) );
 
                         auto * ret_item = item.get();
@@ -468,27 +475,18 @@ class my_app : public motor::application::app
             }
         }
 
-        // get sun camera and create shadow framebuffer
+        // create dummy sun camera and create shadow mapping framebuffer
+        // This shadow mapping framebuffer will also carry more info for RSM
+        // world poisiton, world normals and color info
         {
-            for( auto & cam : _cameras )
-            {
-                if( cam.first != "cam.sun" ) continue;
-                _sun_cam = motor::share( cam.second );
-                break;
-            }
+            motor::gfx::generic_camera_t gcam;
+            _sun_cam = motor::shared( std::move( gcam ) );
 
-            float_t w = 1000.0f;
-            float_t h = 1000.0f;
-
-            if( _sun_cam )
-            {
-                w = _sun_cam->get_dims().x();
-                h = _sun_cam->get_dims().y();
-            }
+            _cameras.emplace_back( std::make_pair( "sun cam", motor::share( _sun_cam ) ) );
 
             auto fb = motor::graphics::framebuffer_object_t(
-                "02_reflective_shadow_mapping.shadow_depth_framebuffer" );
-            fb.set_target( motor::graphics::color_target_type::rgba_uint_8, 1 )
+                "02_camera_fit_shadow_mapping.shadow_depth_framebuffer" );
+            fb.set_target( motor::graphics::color_target_type::rgba_float_32, 2 )
                 .set_target( motor::graphics::depth_stencil_target_type::depth32 )
                 .resize( size_t( 1920 >> 1 ), size_t( 1080 >> 1 ) );
 
@@ -500,17 +498,22 @@ class my_app : public motor::application::app
         {
             _own_mmgr = motor::shared( motor::gfx::msl_manager_t( motor::share( _db ) ) );
             _own_mmgr->add( "color_pass",
-                motor::io::location_t( "02_reflective_shadow_mapping.shaders.color_pass.msl" ) );
+                motor::io::location_t( "02_camera_fit_shadow_mapping.shaders.color_pass.msl" ) );
             _own_mmgr->add( "light_pass",
-                motor::io::location_t( "02_reflective_shadow_mapping.shaders.light_pass.msl" ) );
+                motor::io::location_t( "02_camera_fit_shadow_mapping.shaders.light_pass.msl" ) );
             _own_mmgr->add( "depth_pass",
-                motor::io::location_t( "02_reflective_shadow_mapping.shaders.depth_pass.msl" ) );
+                motor::io::location_t( "02_camera_fit_shadow_mapping.shaders.depth_pass.msl" ) );
             _own_mmgr->add( "normal_vis_pass",
                 motor::io::location_t(
-                    "02_reflective_shadow_mapping.shaders.normal_vis_pass.msl" ) );
+                    "02_camera_fit_shadow_mapping.shaders.normal_vis_pass.msl" ) );
             _own_mmgr->add( "shadow_depth_pass",
                 motor::io::location_t(
-                    "02_reflective_shadow_mapping.shaders.shadow_depth_pass.msl" ) );
+                    "02_camera_fit_shadow_mapping.shaders.shadow_depth_pass.msl" ) );
+            _own_mmgr->add( "rsm_pass",
+                motor::io::location_t( "02_camera_fit_shadow_mapping.shaders.rsm_pass.msl" ) );
+            _own_mmgr->add( "shadow_light_pass",
+                motor::io::location_t(
+                    "02_camera_fit_shadow_mapping.shaders.shadow_light_pass.msl" ) );
 
             _reg0 = _own_mmgr->register_funk(
                 [ this ]( motor::string_in_t msl_name, motor::graphics::msl_object_mtr_t msl )
@@ -562,7 +565,54 @@ class my_app : public motor::application::app
 
                             {
                                 auto * input = inputs.borrow_or_add(
-                                    "bias", motor::shared( this_t::float_is_t( 0.0f ) ) );
+                                    "bias", motor::shared( this_t::float_is_t( 0.02f ) ) );
+                                if( input ) input->connect( motor::share( _bias ) );
+                            }
+
+                            {
+                                auto * input = inputs.borrow_or_add(
+                                    "hemi_top_color", motor::shared( this_t::vec3_is_t() ) );
+                                if( input ) input->connect( motor::share( _hemi_top_color ) );
+                            }
+                        } );
+                        motor::scene::node_t::traverser( _root ).apply( &v );
+                    }
+                }
+                else if( msl_name == "shadow_light_pass" )
+                {
+                    {
+                        motor::scene::add_msl_to_set_visitor_t v(
+                            this_file::to_id( this_file::msl_id::shadow_light_id ),
+                            motor::share( msl ) );
+                        motor::scene::node_t::traverser( _root ).apply( &v );
+                    }
+
+                    {
+                        motor::scene::connect_msl_slot_visitor_t v(
+                            this_file::to_id( this_file::msl_id::shadow_light_id ),
+                            [ & ]( motor::wire::inputs_ref_t inputs )
+                        {
+                            {
+                                auto * input = inputs.borrow_or_add(
+                                    "shininess", motor::shared( this_t::float_is_t( 0.0f ) ) );
+                                if( input ) input->connect( motor::share( _shininess ) );
+                            }
+
+                            {
+                                auto * input = inputs.borrow_or_add( "specular_strength",
+                                    motor::shared( this_t::float_is_t( 0.0f ) ) );
+                                if( input ) input->connect( motor::share( _specular_strength ) );
+                            }
+
+                            {
+                                auto * input = inputs.borrow_or_add( "light_intensity",
+                                    motor::shared( this_t::float_is_t( 0.0f ) ) );
+                                if( input ) input->connect( motor::share( _light_intensity ) );
+                            }
+
+                            {
+                                auto * input = inputs.borrow_or_add(
+                                    "bias", motor::shared( this_t::float_is_t( 0.02f ) ) );
                                 if( input ) input->connect( motor::share( _bias ) );
                             }
 
@@ -580,6 +630,12 @@ class my_app : public motor::application::app
                     motor::scene::add_msl_to_set_visitor_t v(
                         this_file::to_id( this_file::msl_id::shadow_depth_id ),
                         motor::share( msl ) );
+                    motor::scene::node_t::traverser( _root ).apply( &v );
+                }
+                else if( msl_name == "rsm_pass" )
+                {
+                    motor::scene::add_msl_to_set_visitor_t v(
+                        this_file::to_id( this_file::msl_id::rsm_pass_id ), motor::share( msl ) );
                     motor::scene::node_t::traverser( _root ).apply( &v );
                 }
                 else if( msl_name == "depth_pass" )
@@ -626,7 +682,7 @@ class my_app : public motor::application::app
         {
             static float_t t = 0.0f;
             t += ud.sec_dt;
-            t = motor::math::fn< float_t >::mod( t, 8.0 );
+            t = motor::math::fn< float_t >::mod( t, 15.0 );
 
             _time->set_and_exchange( t );
         }
@@ -649,21 +705,24 @@ class my_app : public motor::application::app
             while( !_async_done );
         }
 #endif
+
+        {
+            motor::scene::trafo_visitor_t v;
+            motor::scene::node_t::traverser( _root ).apply( &v );
+            _world_bounds = v.get_world_box();
+        }
     }
 
+    //******************************************************************************************************
     virtual void_t on_graphics( motor::application::app::graphics_data_in_t gd ) noexcept
     {
         // absolutely required. this visitor bakes local
         // transformations, i.e. if animations occure or if
-        // the local trafor is just commited to the usable
+        // the local trafo is just commited to the usable
         // transformation by the trafo visitor
+        // must be called in on graphics at the moment.
         {
             motor::scene::variable_update_visitor_t v;
-            motor::scene::node_t::traverser( _root ).apply( &v );
-        }
-
-        {
-            motor::scene::trafo_visitor_t v;
             motor::scene::node_t::traverser( _root ).apply( &v );
         }
 
@@ -683,6 +742,82 @@ class my_app : public motor::application::app
         }
 #endif
 
+        // sun cam creation
+        // here we need the world box which is used to create the othographic box
+        // so that the camera can see all the geometry/objects in the scene
+        // 1. create loot_at using the light direction
+        // 2. transform the world aabb into view space world aabb-> view obb-> view aabb
+        // 3. use view aabb for width, height, near, far computation
+        // 4. create orthographic projection
+        // 5. fix cam position in view space using the view aabb
+        // 6. transform new cam position back to world space and assign to camera.
+        {
+            motor::gfx::directional_light_mtr_t lg = nullptr;
+
+            // find sun light direction
+            // in this case, just take the first directional we find and
+            // use that as the sun light.
+            {
+                motor::scene::light_collector_visitor_t vis;
+                motor::scene::node_t::traverser( _root ).apply( &vis );
+                vis.for_each_light( [ & ]( size_t const i, motor::gfx::light_mtr_t light )
+                {
+                    if( light->is_shadow_casting() &&
+                        light->get_light_type() == motor::gfx::light_type::directional )
+                    {
+                        lg = static_cast< motor::gfx::directional_light_mtr_t >( light );
+                        return false;
+                    }
+                    return true;
+                } );
+            }
+
+            if( lg != nullptr )
+            {
+                // create look at
+                auto const dir = lg->get_transformed_direction().normalized();
+                _sun_cam->look_at_by_dir( motor::math::vec3f_t(), dir.negated() );
+
+                // transform world aabb to view space => view obb
+                auto const view_obb = motor::collide::transform3f_t::from_aabb(
+                    _world_bounds, motor::math::m3d::trafof_t( _sun_cam->get_view_matrix() ) );
+
+                // transform view obb to aabb in view space => view aabb
+                auto const view_aabb = motor::collide::transform_bounds3f_t::to_aabb( view_obb );
+
+                // now because the box is camera aligned, we can easily grap the values.
+                float_t const margin = 0.5f;
+                float_t const near_plane = 0.1f;
+                float_t const far_plane =
+                    near_plane + view_aabb.get_max().z() - view_aabb.get_min().z() + 2.0f * margin;
+
+                // fix projection
+                {
+                    float_t const width = view_aabb.get_dims().x() + 2.0f * margin;
+                    float_t const height = view_aabb.get_dims().y() + 2.0f * margin;
+
+                    _sun_cam->set_dims( width, height, near_plane, far_plane );
+                    _sun_cam->orthographic();
+                }
+
+                // fix position
+                {
+                    auto const center = view_aabb.get_center();
+                    auto const position_view = motor::math::vec3f_t(
+                        center.x(), center.y(), view_aabb.get_max().z() + near_plane + margin );
+
+                    auto const position_world = ( _sun_cam->get_camera_matrix() *
+                                                  motor::math::vec4f_t( position_view, 1.0f ) )
+                                                    .xyz();
+
+                    _sun_cam->translate_to( position_world );
+                }
+
+                // at this point, the sun cam should enclose the whole scene.
+            }
+        }
+
+        // use the debug_graphics_visitor_t and render the scene
         {
             if( _draw_debug )
             {
@@ -694,6 +829,18 @@ class my_app : public motor::application::app
 
                 _max_depth = v.get_max_depth();
             }
+
+            // render sun_cam frustum
+            if( _draw_debug )
+            {
+                std::array< motor::math::vec3f_t, 8 > points;
+                if( _sun_cam->get_frustum().points( points ) )
+                {
+                    _prim_render->draw_wire_cube(
+                        points, motor::math::vec4f_t( 0.0f, 1.0f, 0.0f, 1.0f ) );
+                }
+            }
+
             _prim_render->set_view_proj( cam->get_view_matrix(), cam->get_proj_matrix() );
             _prim_render->prepare_for_rendering();
         }
@@ -738,7 +885,7 @@ class my_app : public motor::application::app
             fe->push( _shadow_depth_so );
             motor::gfx::generic_camera_mtr_t cam = _sun_cam;
             motor::scene::render_visitor_t vis(
-                this_file::to_id( this_file::msl_id::shadow_depth_id ), fe, cam );
+                this_file::to_id( this_file::msl_id::/*shadow_depth_id*/ rsm_pass_id ), fe, cam );
             motor::scene::node_t::traverser( _root ).apply( &vis );
             fe->pop( motor::graphics::gen4::backend::pop_type::render_state );
             fe->unuse( motor::graphics::gen4::backend::unuse_type::framebuffer );
@@ -818,22 +965,27 @@ class my_app : public motor::application::app
 
             if( _render_light )
             {
+#if 1
+                fe->push( _light_so );
                 if( _sun_cam )
                 {
+
                     motor::gfx::directional_light_t dl( _sun_cam->get_direction().negated() );
                     motor::gfx::single_shadow_data_t sd = { _sun_cam->get_proj_matrix(),
                         _sun_cam->get_view_matrix(),
-                        "02_reflective_shadow_mapping.shadow_depth_framebuffer.depth" };
+                        "02_camera_fit_shadow_mapping.shadow_depth_framebuffer.depth" };
 
                     motor::gfx::generic_camera_mtr_t cam = _cameras[ _cam_id ].second;
 
                     motor::scene::light_pass_render_visitor_t vis(
-                        this_file::to_id( this_file::msl_id::light_pass_id ), ++render_id, fe, cam,
-                        &dl, &sd );
+                        this_file::to_id( this_file::msl_id::shadow_light_id ), ++render_id, fe,
+                        cam, &dl, &sd );
 
                     motor::scene::node_t::traverser( _root ).apply( &vis );
                 }
-
+                fe->pop( motor::graphics::gen4::backend::pop_type::render_state );
+#endif
+#if 0
                 {
                     fe->push( _light_so );
 
@@ -841,7 +993,7 @@ class my_app : public motor::application::app
                         motor::scene::light_collector_visitor_t vis;
                         motor::scene::node_t::traverser( _root ).apply( &vis );
 
-                        vis.for_each_light(
+                        vis.for_each_light_component(
                             [ & ]( size_t const i, motor::scene::light_component_mtr_t light )
                         {
                             light->for_each_light( [ & ]( motor::gfx::light_mtr_t l )
@@ -850,12 +1002,14 @@ class my_app : public motor::application::app
                                     this_file::to_id( this_file::msl_id::light_pass_id ),
                                     ++render_id, fe, _cameras[ _cam_id ].second, l );
                                 motor::scene::node_t::traverser( _root ).apply( &vis_light );
+                                return true;
                             } );
                         } );
                     }
 
                     fe->pop( motor::graphics::gen4::backend::pop_type::render_state );
                 }
+#endif
             }
 
             fe->pop( motor::graphics::gen4::backend::pop_type::render_state );
@@ -875,6 +1029,7 @@ class my_app : public motor::application::app
         // SECTION: cameras
         {
             auto cams = _cc.get_cameras();
+            cams.emplace_back( std::make_pair( "sun cam", _sun_cam ) );
 
             if( cams.size() > 0 )
             {
@@ -919,6 +1074,7 @@ class my_app : public motor::application::app
 
         if( ImGui::Begin( "Rendering" ) )
         {
+
             {
                 ImGui::Checkbox( "Render Debug", &_draw_debug );
                 ImGui::Checkbox( "Render Leafs", &_draw_leafs );
@@ -929,7 +1085,9 @@ class my_app : public motor::application::app
                 }
                 ImGui::Separator();
             }
+
             ImGui::Checkbox( "Render Light", &_render_light );
+            ImGui::Checkbox( "Draw Sun Light Ortho", &_draw_sun_ortho );
 
             if( ImGui::Checkbox( "Render Normals", &_render_normals ) )
             {
@@ -946,6 +1104,34 @@ class my_app : public motor::application::app
                     _render_normals = false;
                 }
             }
+
+            {
+                static char const * const labels[] = { "Shadow depth", "RSM positions (color 0)",
+                    "RSM normals (color 1)", "HDR color 0", "HDR color 1", "HDR color 2",
+                    "HDR color 3", "HDR depth" };
+                static char const * const textures[] = {
+                    "02_camera_fit_shadow_mapping.shadow_depth_framebuffer.depth",
+                    "02_camera_fit_shadow_mapping.shadow_depth_framebuffer.0",
+                    "02_camera_fit_shadow_mapping.shadow_depth_framebuffer.1",
+                    "gfx.postprocess.hdr.framebuffer.0.0", "gfx.postprocess.hdr.framebuffer.0.1",
+                    "gfx.postprocess.hdr.framebuffer.0.2", "gfx.postprocess.hdr.framebuffer.0.3",
+                    "gfx.postprocess.hdr.framebuffer.0.depth" };
+                static_assert( IM_ARRAYSIZE( labels ) == IM_ARRAYSIZE( textures ) );
+
+                ImGui::Separator();
+
+                ImGui::Checkbox( "Temp Render Target", &_show_temp_rt );
+
+                if( ImGui::ListBox(
+                        "Render target", &_temp_rt_index, labels, IM_ARRAYSIZE( labels ), 5 ) )
+                {
+                }
+
+                if( _show_temp_rt )
+                {
+                    _pp_pipe->set_map_to_screen_texture_temp( textures[ _temp_rt_index ] );
+                }
+            }
         }
         ImGui::End();
 
@@ -959,17 +1145,7 @@ class my_app : public motor::application::app
             if( has_changed ) _pp_pipe->update_properies();
 
             {
-                if( ImGui::Checkbox( "Show temp render target ##scene_manager", &_show_temp_rt ) )
-                {
-                    //_pp_pipe->set_map_to_screen_texture_temp( "scene.00.shadow_framebuffer.depth"
-                    //);
-                    _pp_pipe->set_map_to_screen_texture_temp(
-                        //"gfx.postprocess.hdr.framebuffer.0.depth"
-                        "gfx.postprocess.hdr.framebuffer.0.1"
-
-                        //"02_reflective_shadow_mapping.shadow_depth_framebuffer.depth"
-                    );
-                }
+                ImGui::Checkbox( "Show temp render target ##scene_manager", &_show_temp_rt );
             }
         }
         ImGui::End();
