@@ -1,14 +1,39 @@
-# Shadow mapping examples
+# Camera and shadow mapping examples
 
-These two applications exercise shadow mapping with imported glTF scenes, the
-motor scene graph, msl shaders and the HDR postprocessing pipeline.
+These three applications demonstrate camera movement and shadow mapping in motor.
+The shadow mapping examples use imported glTF scenes, the scene graph, msl shaders
+and the HDR postprocessing pipeline.
 
-| Application | Shadow camera | Main purpose |
+| Application | Camera setup | Main purpose |
 | --- | --- | --- |
+| [00_camera_movement](00_camera_movement.cpp) | Free camera and animated spline camera | Keyboard/mouse camera control and visualizing camera motion. |
 | [01_shadow_mapping](01_shadow_mapping.cpp) | Imported camera named `cam.sun` | Shadow mapping using an explicitly authored light camera. |
 | [02_camera_fit_shadow_mapping](02_camera_fit_shadow_mapping.cpp) | Generated from the scene bounds and a directional light | Automatic shadow-camera fitting, with scene culling bounds and position/normal visualization. |
 
+## 00_camera_movement
+
+Demonstrates moving a free camera with keyboard input and rotating it with the
+mouse. A second camera follows animated spline paths; primitive rendering
+visualizes the paths and camera view volume.
+
+| Input | Action |
+| --- | --- |
+| `W` / `S` | Move forward / backward |
+| `A` / `D` | Move sideways |
+| `Q` / `E` | Move along the vertical axis |
+| Right mouse button + mouse movement | Rotate the free camera |
+| Left Ctrl + horizontal mouse movement | Roll the free camera |
+| `1` | Select the free camera |
+| `2` | Select the animated camera |
+| `3` | Cycle between cameras |
+
+Movement and rotation controls apply while the free camera is selected. The
+debug UI also provides camera position and orthographic/perspective controls.
+
 ## 01_shadow_mapping
+
+<!-- Screenshot placeholder: add images/01_shadow_mapping.png. -->
+![Shadow mapping with an authored light camera](images/01_shadow_mapping.png)
 
 The original shadow mapping example imports geometry, cameras and animation from
 [shadow_mapping_scene.gltf](working/assets/shadow_mapping_scene.gltf). It uses the
@@ -25,6 +50,9 @@ The scene must provide the `cam.sun` camera; this example does not fit a shadow
 camera automatically.
 
 ## 02_camera_fit_shadow_mapping
+
+<!-- Screenshot placeholder: add images/02_camera_fit_shadow_mapping.png. -->
+![Automatically fitted shadow camera and scene bounds](images/02_camera_fit_shadow_mapping.png)
 
 **This second shadow mapping application tests automatic camera fitting to scene
 culling bounds.** It creates an orthographic shadow camera for a directional
@@ -80,12 +108,12 @@ pass is implemented.
 
 ## Build
 
-Both targets are defined in this directory's [CMakeLists.txt](CMakeLists.txt).
+All three targets are defined in this directory's [CMakeLists.txt](CMakeLists.txt).
 From the repository root, with an existing configured build directory:
 
 ```sh
-cmake --build <build-dir> --config Debug --target 01_shadow_mapping 02_camera_fit_shadow_mapping
+cmake --build <build-dir> --config Debug --target 00_camera_movement 01_shadow_mapping 02_camera_fit_shadow_mapping
 ```
 
-The examples use motor's IO database to access the assets under `working`.
+The shadow mapping examples use motor's IO database to access the assets under `working`.
 They are interactive visual tests, not automated image-comparison tests.
