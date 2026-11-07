@@ -670,6 +670,8 @@ class my_app : public motor::application::app
         {
             float_t const w = float_t( sv.resize_msg.w );
             float_t const h = float_t( sv.resize_msg.h );
+
+            _pp_pipe->on_resize_window( uint_t(sv.resize_msg.w), uint_t(sv.resize_msg.h) ) ;
         }
     }
 

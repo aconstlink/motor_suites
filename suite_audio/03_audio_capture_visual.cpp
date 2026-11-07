@@ -23,7 +23,6 @@ namespace audio_widgets
 {
 using namespace motor::core::types;
 
-
 } // namespace audio_widgets
 
 namespace this_file
@@ -47,11 +46,6 @@ class my_app : public motor::application::app
 
     motor::tool::imgui_onset_meter low_onset_widget;
     motor::tool::imgui_onset_meter mid_onset_widget;
-
-    float_t low_raw = 0.0f;
-    float_t low_onset = 0.0f;
-    float_t mid_raw = 0.0f;
-    float_t mid_onset = 0.0f;
 
     int_t low_onset_counter = 0;
 
@@ -97,14 +91,11 @@ class my_app : public motor::application::app
                 [ & ]( size_t const, size_t const g ) { sum += captured_frequencies[ g ]; } );
 
             // Keep the raw meter and filtered signal in the same squared-amplitude units.
-            low_raw = sum;
             kix.update( sum, ad.sec_dt );
 
             if( kix_detector.update( sum, ad.sec_dt ) )
             {
-                // this one kicks if onsect detected.
-                // it has an arm time a minimum and a reference level
-                low_onset = 1.0f;
+                // detected
             }
         }
 
@@ -115,12 +106,11 @@ class my_app : public motor::application::app
                 [ & ]( size_t const, size_t const g ) { sum += captured_frequencies[ g ]; } );
 
             // Keep the raw meter and filtered signal in the same squared-amplitude units.
-            mid_raw = sum;
             mids.update( sum, ad.sec_dt );
 
             if( mid_detector.update( sum, ad.sec_dt ) )
             {
-                mid_onset = 1.0f;
+                // detected
             }
         }
     }
@@ -132,6 +122,7 @@ class my_app : public motor::application::app
         {
             motor::log::global_t::status( "[my_app] : window created" );
         }
+
         if( sv.close_changed )
         {
             motor::log::global_t::status( "[my_app] : window closed" );
@@ -146,11 +137,11 @@ class my_app : public motor::application::app
         {
             {
                 ImGui::SameLine();
-                low_onset_widget.draw( "40\n250\nHz", low_raw, kix_detector, low_onset );
+                low_onset_widget.draw( "40\n250\nHz", kix_detector );
             }
             {
                 ImGui::SameLine();
-                mid_onset_widget.draw( "250\n2000\nHz", mid_raw, mid_detector, mid_onset );
+                mid_onset_widget.draw( "250\n2000\nHz", mid_detector );
             }
             {
                 float_t peak = 0.0000000001f;
@@ -173,7 +164,6 @@ class my_app : public motor::application::app
                     int_t( captured_samples.size() ), 0, nullptr, -scale, scale,
                     ImVec2( ImGui::GetContentRegionAvail().x, 50.0f ) );
             }
-            
         }
         ImGui::End();
 
