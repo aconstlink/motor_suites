@@ -69,6 +69,7 @@ class my_app : public motor::application::app
     size_t f3 = size_t( -1 );
     size_t f4 = size_t( -1 );
     size_t f5 = size_t( -1 );
+    size_t f6 = size_t( -1 );
 
   public:
 
@@ -197,6 +198,21 @@ class my_app : public motor::application::app
             _animation_filters_node->connect_signal_is( f5, motor::share( _time ) );
             _animation_filters_node->set_duration( f5, 5.0f );
         }
+
+        // should be triangle
+        {
+            f6 = _animation_filters_node->add_filter(
+                []( motor::wire::trigger_filter_node_t::filter_data const & d )
+            {   
+                float_t const dh = d.duration * 0.5f ;
+                float_t const sig = d.sig_abs - d.sig_start ;
+                return  30.0f * ((dh - std::abs( sig - dh )))/dh ;
+            } );
+            _animation_filters_node->connect_signal_is( f6, motor::share( _time ) );
+            _animation_filters_node->set_duration( f6, 1.0f );
+        }
+
+
         {
             _animation_filters_node->conenct_time_is( motor::share( _time ) );
             // need to trigger once so filters can be active
@@ -387,6 +403,16 @@ class my_app : public motor::application::app
                     ys1[ cur_pos ] = _animation_filters_node->get_filter_output_signal( f5 );
 
                     ImPlot::PlotLine( "f5(x)", xs1.data(), ys1.data(), int_t( cur_pos ) );
+                }
+
+                {
+                    static std::array< float_t, max_values > xs1;
+                    static std::array< float_t, max_values > ys1;
+
+                    xs1[ cur_pos ] = _time->get_value();
+                    ys1[ cur_pos ] = _animation_filters_node->get_filter_output_signal( f6 );
+
+                    ImPlot::PlotLine( "f6(x)", xs1.data(), ys1.data(), int_t( cur_pos ) );
                 }
 
                 ImPlot::EndPlot();
