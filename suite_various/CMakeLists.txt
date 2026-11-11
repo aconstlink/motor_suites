@@ -4,6 +4,7 @@ set( tests
     "01_picking_2d.cpp"
     "02_branching_spline.cpp"
     "03_particle_system.cpp"
+    "04_wire_animation.cpp"
     )
 
 foreach( _test ${tests} )
