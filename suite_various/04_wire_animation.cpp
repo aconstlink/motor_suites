@@ -144,14 +144,15 @@ class my_app : public motor::application::app
         {
             f0 = _animation_filters_node->add_filter(
                 []( motor::wire::trigger_filter_node_t::filter_data const & d )
-            { return d.sig_abs; } );
+            { return d.sig_abs; }, {} );
             _animation_filters_node->connect_signal_is( f0, motor::share( _time ) );
         }
 
         // should always be 1
         {
             f1 = _animation_filters_node->add_filter(
-                []( motor::wire::trigger_filter_node_t::filter_data const & ) { return 1.0f; } );
+                []( motor::wire::trigger_filter_node_t::filter_data const & ) { return 1.0f; },
+                {} );
             _animation_filters_node->connect_signal_is( f1, motor::share( _time ) );
         }
 
@@ -159,14 +160,15 @@ class my_app : public motor::application::app
         {
             f2 = _animation_filters_node->add_filter(
                 []( motor::wire::trigger_filter_node_t::filter_data const & d )
-            { return motor::math::fn< float_t >::mod( d.sig_abs, 2.0f ); } );
+            { return motor::math::fn< float_t >::mod( d.sig_abs, 2.0f ); }, {} );
             _animation_filters_node->connect_signal_is( f2, motor::share( _time ) );
         }
 
         // should be a constant with duration
         {
             f3 = _animation_filters_node->add_filter(
-                []( motor::wire::trigger_filter_node_t::filter_data const & ) { return 5.0f; } );
+                []( motor::wire::trigger_filter_node_t::filter_data const & ) { return 5.0f; },
+                {} );
             _animation_filters_node->connect_signal_is( f3, motor::share( _time ) );
             _animation_filters_node->set_duration( f3, 0.5f );
             _animation_filters_node->reset_on_detrigger( f3, true );
@@ -181,7 +183,7 @@ class my_app : public motor::application::app
                 float_t const k = 3.0f;
                 float_t const e = std::exp( -k );
                 return 20.0f * ( std::exp( -k * u ) - e ) / ( 1.0f - e );
-            } );
+            }, {} );
             _animation_filters_node->connect_signal_is( f4, motor::share( _time ) );
             _animation_filters_node->set_duration( f4, 2.0f );
         }
@@ -194,24 +196,24 @@ class my_app : public motor::application::app
                 return d.duration * std::sin( ( ( d.sig_abs - d.sig_start ) / d.duration ) * 2.0f *
                                               3.143652834f ) +
                        d.duration;
-            } );
+            }, { 5.0f, motor::wire::trigger_filter_node_t::trigger_behavoir::reset_on_trigger } );
             _animation_filters_node->connect_signal_is( f5, motor::share( _time ) );
-            _animation_filters_node->set_duration( f5, 5.0f );
+            // is set via add_filter
+            //_animation_filters_node->set_duration( f5, 5.0f );
         }
 
         // should be triangle
         {
             f6 = _animation_filters_node->add_filter(
                 []( motor::wire::trigger_filter_node_t::filter_data const & d )
-            {   
-                float_t const dh = d.duration * 0.5f ;
-                float_t const sig = d.sig_abs - d.sig_start ;
-                return  30.0f * ((dh - std::abs( sig - dh )))/dh ;
-            } );
+            {
+                float_t const dh = d.duration * 0.5f;
+                float_t const sig = d.sig_abs - d.sig_start;
+                return 30.0f * ( ( dh - std::abs( sig - dh ) ) ) / dh;
+            }, {} );
             _animation_filters_node->connect_signal_is( f6, motor::share( _time ) );
             _animation_filters_node->set_duration( f6, 1.0f );
         }
-
 
         {
             _animation_filters_node->conenct_time_is( motor::share( _time ) );
@@ -254,7 +256,6 @@ class my_app : public motor::application::app
             _time->set_and_exchange( _time->get_value() + ud.sec_dt );
         }
 
-
         if( _auto_trigger )
         {
 
@@ -268,9 +269,8 @@ class my_app : public motor::application::app
                 _animation_filters_node->get_task(), motor::concurrent::schedule_type::pool );
         }
 
-        while( !_synced ) ;
-        _synced = false ;
-        
+        while( !_synced );
+        _synced = false;
     }
 
     //******************************************************************************************************
