@@ -216,7 +216,7 @@ class my_app : public motor::application::app
         }
 
         {
-            _animation_filters_node->conenct_time_is( motor::share( _time ) );
+            _animation_filters_node->connect_time_is( motor::share( _time ) );
             // need to trigger once so filters can be active
             _animation_filters_node->trigger();
         }
