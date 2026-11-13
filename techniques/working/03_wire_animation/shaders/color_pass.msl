@@ -30,12 +30,12 @@ config color_pass
 
     pixel_shader
     {
-        vec4_t color( 100.0,0.0,0.0,1.0);
+        vec4_t base_color( 1.0,0.0,0.0,1.0);
         
         in vec2_t tx : texcoord ;
         in vec3_t nrm : normal ;
      
-        
+        float_t intensity(10.0);
 
         out vec4_t color0 : color0 ;
         out vec4_t color1 : color1 ;
@@ -45,7 +45,7 @@ config color_pass
         void main()
         {
             
-            out.color0 = color ;
+            out.color0 = base_color * intensity ;
             //out.color0 = out.color0*0.0001 + vec4_t(1.0,1.0,1.0,1.0) ;
             //out.color0 = vec4_t( n, 1.0 ) ;
             //out.color1 = vec4_t( light, light, light, 1.0 ) ;

@@ -20,12 +20,7 @@
 #include <future>
 #include <semaphore>
 
-// this test look long and complex, but it really also does some things.
-// 1. it loads a gltf scene(only geometry, cameras and animation)
-// 2. distributes loaded shaders to the scene graph
-// 3. connects animation timing nodes(from the wire layer)
-// 4. renders depth pass into post processing pipeline(ppp)
-// 5. renders light pass into ppp
+// testing the new trigger_filter_node from wire.
 namespace this_file
 {
 using namespace motor::core::types;
@@ -34,9 +29,7 @@ class my_app : public motor::application::app
 {
     motor_this_typedefs( my_app );
 
-    motor::gfx::primitive_render_3d_mtr_t _prim_render = nullptr;
-
-  private: // rendering properties
+    motor::gfx::primitive_render_3d_mtr_t _prim_render = nullptr;  
 
   private: // wire
 
@@ -88,6 +81,8 @@ class my_app : public motor::application::app
         motor::release( motor::move( _animation_filters_node ) );
         motor::release( motor::move( _merger ) );
     }
+
+    
 
     virtual void_t on_init( void_t ) noexcept
     {
@@ -419,6 +414,8 @@ class my_app : public motor::application::app
             }
         }
         ImGui::End();
+
+        
         return true;
     }
 

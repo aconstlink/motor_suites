@@ -1,4 +1,4 @@
-config color_pass
+config normal_vis_pass
 {
     vertex_shader
     {

@@ -24,7 +24,13 @@
 #include <motor/math/utility/angle.hpp>
 #include <motor/math/animation/keyframe_sequence.hpp>
 
+#include <motor/audio/util/frequency_bands.hpp>
+#include <motor/audio/util/onset_detector.hpp>
+#include <motor/audio/object/capture_object.hpp>
+#include <motor/tool/structs.h>
+#include <motor/tool/imgui/onset_meter.hpp>
 #include <motor/tool/imgui/imgui_property.h>
+#include <motor/tool/imgui/imnodes_wire.h>
 
 #include <motor/wire/slot/output_slot.h>
 
@@ -35,12 +41,7 @@
 
 #include <future>
 
-// this test look long and complex, but it really also does some things.
-// 1. it loads a gltf scene(only geometry, cameras and animation)
-// 2. distributes loaded shaders to the scene graph
-// 3. connects animation timing nodes(from the wire layer)
-// 4. renders depth pass into post processing pipeline(ppp)
-// 5. renders light pass into ppp
+// testing the audio onset detection with some gltf scene import.
 namespace this_file
 {
 
@@ -80,12 +81,24 @@ class my_app : public motor::application::app
 
     motor::gfx::primitive_render_3d_mtr_t _prim_render = nullptr;
 
+private: // audio
+
+    motor::audio::capture_object_t co;
+    motor::vector< float_t > captured_samples;
+    motor::vector< float_t > captured_frequencies;
+
+    motor::audio::onset_detector kix_detector;
+    motor::audio::onset_detector mid_detector;
+
+    motor::tool::imgui_onset_meter low_onset_widget;
+    motor::tool::imgui_onset_meter mid_onset_widget;
+
   private: // post processing and shadow mapping
 
     motor::gfx::hdr_postprocess_pipeline_mtr_t _pp_pipe = nullptr;
     motor::property::property_sheet_t _pp_sheet;
     bool_t _show_temp_rt = false;
-    int_t _temp_rt_index = 0;    
+    int_t _temp_rt_index = 0;
 
   private: // camera
 
@@ -139,6 +152,8 @@ class my_app : public motor::application::app
 
     motor::wire::inode_mtr_t _end_node = nullptr;
 
+    motor::tool::imnodes_wire_t _imn_wire;
+
   private: // shader variable slots
 
     motor_typedefs( motor::wire::input_slot< float_t >, float_is );
@@ -147,6 +162,7 @@ class my_app : public motor::application::app
     motor_typedefs( motor::wire::output_slot< float_t >, float_os );
     motor_typedefs( motor::wire::output_slot< motor::math::vec3f_t >, vec3_os );
 
+    float_os_mtr_t _intensity = motor::shared( float_os_t( 10.0f ) );
     float_os_mtr_t _shininess = motor::shared( float_os_t( 80.0f ) );
     float_os_mtr_t _specular_strength = motor::shared( float_os_t( 30.0f ) );
     float_os_mtr_t _light_intensity = motor::shared( float_os_t( 2.0f ) );
@@ -161,7 +177,60 @@ class my_app : public motor::application::app
     my_app( my_app const & ) = delete;
     my_app( my_app && ) {}
 
-    virtual ~my_app( void_t ) noexcept {}
+    virtual ~my_app( void_t ) noexcept 
+    {
+        motor::release( motor::move( _intensity ) )  ;
+        motor::release( motor::move( _shininess ) );
+        motor::release( motor::move( _specular_strength ) );
+        motor::release( motor::move( _light_intensity ) );
+        motor::release( motor::move( _hemi_top_color ) );
+        motor::release( motor::move( _bias ) );
+    }
+
+    //*******************************************************************************************
+    virtual void_t on_audio( motor::audio::frontend_ptr_t fptr, audio_data_in_t ad ) noexcept
+    {
+        if( ad.first_frame )
+        {
+            fptr->configure( motor::audio::capture_type::what_u_hear, &co );
+        }
+
+        fptr->capture( &co );
+        co.copy_samples_to( captured_samples );
+        co.copy_frequencies_to( captured_frequencies );
+
+        float_t const bin_width = co.get_bin_width_hz< float_t >();
+
+        if( captured_frequencies.empty() ) return;
+
+        motor::audio::frequency_bands fb( bin_width, captured_frequencies.size() );
+
+        // low / kix ( 40 ; 250 Hz )
+        {
+            float_t sum = 0.0f;
+            fb.for_each( 40.0f, 250.0f,
+                [ & ]( size_t const, size_t const g ) { sum += captured_frequencies[ g ]; } );
+
+            if( kix_detector.update( sum, ad.sec_dt ) )
+            {
+                // detected
+            }
+        }
+
+        // mid ( 250 ; 2000 Hz )
+        {
+            float_t sum = 0.0f;
+            fb.for_each( 250.0f, 2000.0f,
+                [ & ]( size_t const, size_t const g ) { sum += captured_frequencies[ g ]; } );
+
+            if( mid_detector.update( sum, ad.sec_dt ) )
+            {
+                // detected
+            }
+        }
+    }
+
+    //*******************************************************************************************
     virtual void_t on_init( void_t ) noexcept
     {
         motor::string_t const prefix = "03_wire_animation";
@@ -186,7 +255,7 @@ class my_app : public motor::application::app
             _pp_pipe->init();
         }
 
-        this_t::init_render_sates();
+        this_t::init_render_states();
         this_t::init_scene( prefix, motor::io::location_t( "03_wire_animation.scene.gltf" ) );
         this_t::init_msl_manager( prefix, loc_prefix );
 
@@ -194,11 +263,14 @@ class my_app : public motor::application::app
         {
             this_t::release_node_dump();
 
-            auto t = motor::shared( motor::wire::funk_node_t(
+            auto t = motor::shared( motor::wire::funk_node_t( "update sync",
                 [ = ]( motor::wire::funk_node_ptr_t ) { this->_async_done = true; } ) );
 
             _node_dump.emplace_back( motor::share( t ) );
             _end_node->then( motor::move( t ) );
+
+
+            _imn_wire.build( _start_node );
         }
 
         // reload cameras
@@ -217,7 +289,7 @@ class my_app : public motor::application::app
                 _cam_id = 0;
             else
                 motor::log::global_t::error( "scene has no cameras." );
-        }        
+        }
 
         {
             motor::gfx::primitive_render_3d_t prim_render;
@@ -226,6 +298,7 @@ class my_app : public motor::application::app
         }
     }
 
+    //*******************************************************************************************
     void_t init_msl_manager( motor::string_in_t prefix, motor::string_in_t loc_prefix ) noexcept
     {
         // manager
@@ -251,9 +324,26 @@ class my_app : public motor::application::app
             {
                 if( msl_name == "color_pass" )
                 {
-                    motor::scene::add_msl_to_set_visitor_t v(
-                        this_file::to_id( this_file::msl_id::color_pass_id ), motor::share( msl ) );
-                    motor::scene::node_t::traverser( _root ).apply( &v );
+                    {
+                        motor::scene::add_msl_to_set_visitor_t v(
+                            this_file::to_id( this_file::msl_id::color_pass_id ),
+                            motor::share( msl ) );
+                        motor::scene::node_t::traverser( _root ).apply( &v );
+                    }
+
+                    {
+                        motor::scene::connect_msl_slot_visitor_t v(
+                            this_file::to_id( this_file::msl_id::color_pass_id ),
+                            [ & ]( motor::wire::inputs_ref_t inputs )
+                        {
+                            {
+                                auto * input = inputs.borrow_or_add(
+                                    "intensity", motor::shared( this_t::float_is_t( 10.0f ) ) );
+                                if( input ) input->connect( motor::share( _intensity ) );
+                            }
+                        } );
+                        motor::scene::node_t::traverser( _root ).apply( &v );
+                    }
                 }
                 else if( msl_name == "normal_vis_pass" )
                 {
@@ -380,7 +470,7 @@ class my_app : public motor::application::app
     }
 
     //*******************************************************************************************
-    void_t init_render_sates( void_t )
+    void_t init_render_states( void_t )
     {
 #if 0
         {
@@ -507,9 +597,10 @@ class my_app : public motor::application::app
             }
 
             _light_so = motor::shared( motor::graphics::state_object_t( std::move( so ) ) );
-        }        
+        }
     }
 
+    //******************************************************************************************************
     void_t init_scene( motor::string_in_t prefix, motor::io::location_cref_t loc ) noexcept
     {
         // init scene tree
@@ -614,6 +705,7 @@ class my_app : public motor::application::app
         }
     }
 
+    //******************************************************************************************************
     virtual void_t on_event( window_id_t const wid,
         motor::application::window_message_listener::state_vector_cref_t sv ) noexcept
     {
@@ -720,7 +812,6 @@ class my_app : public motor::application::app
             // render sun_cam frustum
             if( _draw_debug )
             {
-               
             }
 
             _prim_render->set_view_proj( cam->get_view_matrix(), cam->get_proj_matrix() );
@@ -728,6 +819,7 @@ class my_app : public motor::application::app
         }
     }
 
+    //******************************************************************************************************
     virtual void_t on_first_frame( this_t::window_id_t const wid,
         motor::graphics::gen4::frontend_ptr_t fe,
         motor::application::app::render_data_in_t ) noexcept
@@ -739,6 +831,7 @@ class my_app : public motor::application::app
         _prim_render->configure( fe );
     }
 
+    //******************************************************************************************************
     virtual void_t on_last_frame( this_t::window_id_t const wid,
         motor::graphics::gen4::frontend_ptr_t fe,
         motor::application::app::render_data_in_t ) noexcept
@@ -750,6 +843,7 @@ class my_app : public motor::application::app
         _prim_render->release( fe );
     }
 
+    //******************************************************************************************************
     virtual void_t on_render( this_t::window_id_t const wid,
         motor::graphics::gen4::frontend_ptr_t fe,
         motor::application::app::render_data_in_t ) noexcept
@@ -823,7 +917,7 @@ class my_app : public motor::application::app
             if( _render_default )
             {
                 motor::scene::render_visitor_t rnd_vis(
-                    this_file::to_id( this_file::msl_id::default_id ), ++render_id, fe,
+                    this_file::to_id( this_file::msl_id::color_pass_id ), ++render_id, fe,
                     _cameras[ _cam_id ].second );
                 motor::scene::node_t::traverser( _root ).apply( &rnd_vis );
             }
@@ -963,52 +1057,61 @@ class my_app : public motor::application::app
         }
         ImGui::End();
 
-        if( ImGui::Begin( "Light Variables" ) )
+        if( ImGui::Begin( "Variables" ) )
         {
             {
-                float_t v = _shininess->get_value();
-                if( ImGui::SliderFloat( "Shininess", &v, 0.0f, 100.0f ) )
+                float_t v = _intensity->get_value();
+                if( ImGui::SliderFloat( "Intensity", &v, 0.0f, 100.0f ) )
                 {
-                    _shininess->set_and_exchange( v );
-                }
-            }
-
-            {
-                float_t v = _specular_strength->get_value();
-                if( ImGui::SliderFloat( "specular_strength", &v, 0.0f, 100.0f ) )
-                {
-                    _specular_strength->set_and_exchange( v );
-                }
-            }
-
-            {
-                float_t v = _light_intensity->get_value();
-                if( ImGui::SliderFloat( "light_intensity", &v, 0.1f, 10.0f ) )
-                {
-                    _light_intensity->set_and_exchange( v );
-                }
-            }
-
-            {
-
-                float_t v[ 3 ] = { _hemi_top_color->get_value().x(),
-                    _hemi_top_color->get_value().y(), _hemi_top_color->get_value().z() };
-
-                if( ImGui::SliderFloat3( "upper hemnisphere color", v, 0.1f, 10.0f ) )
-                {
-                    _hemi_top_color->set_and_exchange( motor::math::vec3f_t( v ) );
-                }
-            }
-
-            {
-                float_t v = _bias->get_value();
-                if( ImGui::SliderFloat( "bias", &v, 0.0001f, 0.1f ) )
-                {
-                    _bias->set_and_exchange( v );
+                    _intensity->set_and_exchange( v );
                 }
             }
         }
         ImGui::End();
+
+        if( ImGui::Begin( "Detection" ) )
+        {
+            {
+                ImGui::SameLine();
+                low_onset_widget.draw( "40\n250\nHz", kix_detector );
+            }
+            {
+                ImGui::SameLine();
+                mid_onset_widget.draw( "250\n2000\nHz", mid_detector );
+            }
+            {
+                float_t peak = 0.0000000001f;
+                for( float_t const value : captured_frequencies )
+                {
+                    peak = std::max( peak, value );
+                }
+                ImGui::PlotHistogram( "Squared amplitude", captured_frequencies.data(),
+                    int_t( captured_frequencies.size() ) >> 2, 0, nullptr, 0.0f, peak * 1.05f,
+                    ImVec2( ImGui::GetContentRegionAvail().x, 50.0f ) );
+            }
+            {
+                float_t peak = 0.00001f;
+                for( float_t const sample : captured_samples )
+                {
+                    peak = std::max( peak, std::abs( sample ) );
+                }
+                float_t const scale = peak * 1.05f;
+                ImGui::PlotLines( "Samples", captured_samples.data(),
+                    int_t( captured_samples.size() ), 0, nullptr, -scale, scale,
+                    ImVec2( ImGui::GetContentRegionAvail().x, 50.0f ) );
+            }
+        }
+        ImGui::End();
+
+        // #1 : nodes graph window
+        if( ImGui::Begin( "node graph visualization" ) )
+        {
+            _imn_wire.begin();
+            _imn_wire.visualize( 0 );
+            _imn_wire.end( true );
+        }
+        ImGui::End();
+
         return true;
     }
 
@@ -1057,12 +1160,7 @@ class my_app : public motor::application::app
 
         motor::release( motor::move( _own_mmgr ) );
 
-        motor::release( motor::move( _shininess ) );
-        motor::release( motor::move( _specular_strength ) );
-        motor::release( motor::move( _light_intensity ) );
-        motor::release( motor::move( _hemi_top_color ) );
-        motor::release( motor::move( _bias ) );
-
+        
 
         motor::release( motor::move( _prim_render ) );
     }
