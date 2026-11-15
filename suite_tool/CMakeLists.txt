@@ -9,6 +9,7 @@ set( tests
     "04_02_imnodes_wire.cpp"
     "05_imgui_properties.cpp"
     "06_imgui_scene_visitor.cpp"
+    "07_imgui_canvas_2d.cpp"
     )
 
 foreach( _test ${tests} )
