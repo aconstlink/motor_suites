@@ -19,6 +19,14 @@ namespace this_file
 {
 using namespace motor::core::types;
 
+namespace palette
+{
+ImColor const mint( 112, 210, 185 );
+ImColor const cornflower( 143, 169, 230 );
+ImColor const apricot( 239, 169, 130 );
+ImColor const grid( 82, 89, 97 );
+} // namespace palette
+
 class my_app : public motor::application::app
 {
     motor_this_typedefs( my_app );
@@ -90,35 +98,25 @@ class my_app : public motor::application::app
         ImGui::SetNextWindowSize( ImVec2( 640.0f, 450.0f ), ImGuiCond_FirstUseEver );
         if( ImGui::Begin( "Canvas Test" ) )
         {
-            if( can.begin( "canvas", ImVec2() ) )
+            if( can.begin( "canvas", ImVec2(), { .grid_color = palette::grid } ) )
             {
-                can.draw_line( { motor::math::vec2f_t( -200.0f, 55.0f ),
-                    motor::math::vec2f_t( -140.0f, 85.0f ) } );
+                can.draw_line( { motor::math::vec2f_t( -192.0f, 57.0f ),
+                    motor::math::vec2f_t( -128.0f, 87.0f ), palette::mint } );
 
-                can.draw_point(
-                    { motor::math::vec2f_t( -60.0f, 70.0f ), ImColor( 1.0f, 0.0f, 0.0f ) } );
+                can.draw_point( { motor::math::vec2f_t( -52.0f, 72.0f ), palette::apricot } );
 
-                can.draw_circle( { motor::math::vec2f_t( 60.0f, 70.0f ), 20.0f,
-                    ImColor( 1.0f, 0.0f, 0.0f ), true } );
+                can.draw_circle(
+                    { motor::math::vec2f_t( 52.0f, 72.0f ), 19.0f, palette::cornflower, true } );
 
-                can.draw_circle( { motor::math::vec2f_t( 160.0f, 70.0f ), 20.0f,
-                    ImColor( 1.0f, 1.0f, 0.0f ), false } );
+                can.draw_circle(
+                    { motor::math::vec2f_t( 160.0f, 72.0f ), 19.0f, palette::cornflower, false } );
 
                 can.draw_poly_line( this_t::make_test_polyline() );
 
                 can.draw_polygon( this_t::make_test_polygon() );
 
-                {
-                    auto const ni = this_t::make_test_node();
-                    can.draw_node( ni );
-                }
-
-                {
-                    auto const [ a, b ] = this_t::make_test_nodes();
-                    can.draw_link( { a.pos, a.size, b.pos, b.size } );
-                    can.draw_node( a );
-                    can.draw_node( b );
-                }
+                this_t::draw_test_rects( can );
+                this_t::draw_test_text( can );
 
                 can.end();
             }
@@ -134,10 +132,10 @@ class my_app : public motor::application::app
 
         motor::tool::imgui::canvas_2d_t::poly_line_info line{};
         line.thickness = 2.0f;
-        line.color = ImColor( 0.2f, 0.85f, 0.75f );
-        line.points = { vec2_t( -210.0f, -10.0f ), vec2_t( -180.0f, -10.0f ),
-            vec2_t( -160.0f, 20.0f ), vec2_t( -140.0f, 0.0f ), vec2_t( -95.0f, 0.0f ),
-            vec2_t( -65.0f, -25.0f ), vec2_t( -35.0f, -25.0f ) };
+        line.color = palette::mint;
+        line.points = { vec2_t( -192.0f, -12.0f ), vec2_t( -168.0f, -12.0f ),
+            vec2_t( -144.0f, 20.0f ), vec2_t( -120.0f, 0.0f ), vec2_t( -92.0f, 0.0f ),
+            vec2_t( -64.0f, -20.0f ), vec2_t( -24.0f, -20.0f ) };
         return line;
     }
 
@@ -147,43 +145,76 @@ class my_app : public motor::application::app
 
         motor::tool::imgui::canvas_2d_t::polygon_info poly{};
         poly.outline_width = 2.0f;
-        poly.outline_color = ImColor( 0.2f, 0.85f, 0.75f );
+        poly.fill_color = ImColor( 56, 107, 99 );
+        poly.outline_color = palette::mint;
         poly.points = {
-            vec2_t( 55.0f, 5.0f ),
-            vec2_t( 150.0f, 20.0f ),
-            vec2_t( 175.0f, 0.0f ),
-            vec2_t( 150.0f, -25.0f ),
-            vec2_t( 80.0f, -25.0f ),
+            vec2_t( 48.0f, 4.0f ),
+            vec2_t( 152.0f, 20.0f ),
+            vec2_t( 192.0f, 0.0f ),
+            vec2_t( 160.0f, -20.0f ),
+            vec2_t( 76.0f, -20.0f ),
         };
         return poly;
     }
 
-    static motor::tool::imgui::canvas_2d_t::node_info make_test_node( void_t ) noexcept
+    static void_t draw_test_rects( motor::tool::imgui::canvas_2d_ref_t can ) noexcept
     {
-        motor::tool::imgui::canvas_2d_t::node_info ret;
-        ret.title = "Hello World";
-        ret.pos = motor::math::vec2f_t( -210.0f, -65.0f );
-        ret.size = motor::math::vec2f_t( 100.0f, 50.0f );
-        return ret;
+        using vec2_t = motor::math::vec2f_t;
+
+        {
+            motor::tool::imgui::canvas_2d_t::rect_filled_info info{
+                .pos = vec2_t( -192.0f, -110.0f ),
+                .size = vec2_t( 96.0f, 48.0f ),
+                .color = palette::mint };
+            can.draw_rect_filled( info );
+        }
+
+        {
+            motor::tool::imgui::canvas_2d_t::rect_filled_info info{
+                .pos = vec2_t( -48.0f, -110.0f ),
+                .size = vec2_t( 96.0f, 48.0f ),
+                .color = palette::cornflower,
+                .radius = 6.0f,
+                .flags = ImDrawFlags_RoundTop | ImDrawFlags_RoundBottom };
+            can.draw_rect_filled( info );
+        }
+
+        {
+            motor::tool::imgui::canvas_2d_t::rect_filled_info info{ .pos = vec2_t( 96.0f, -110.0f ),
+                .size = vec2_t( 96.0f, 48.0f ),
+                .color = palette::apricot,
+                .radius = 6.0f,
+                .flags = ImDrawFlags_RoundTop | ImDrawFlags_RoundBottom };
+            can.draw_rect_filled( info );
+        }
     }
 
-    static std::pair< motor::tool::imgui::canvas_2d_t::node_info,
-        motor::tool::imgui::canvas_2d_t::node_info >
-    make_test_nodes( void_t ) noexcept
+    static void_t draw_test_text( motor::tool::imgui::canvas_2d_ref_t can ) noexcept
     {
-        motor::tool::imgui::canvas_2d_t::node_info a;
+        using vec2_t = motor::math::vec2f_t;
+
         {
-            a.title = "Node A";
-            a.pos = motor::math::vec2f_t( -60.0f, -65.0f );
-            a.size = motor::math::vec2f_t( 100.0f, 50.0f );
+            motor::tool::imgui::canvas_2d_t::text_info info{ .title = "Hello World",
+                .pos = vec2_t( -192.0f, -110.0f - 10.0f ),
+                .color = palette::mint };
+            can.draw_text( info );
         }
-        motor::tool::imgui::canvas_2d_t::node_info b;
+
         {
-            b.title = "Node B";
-            b.pos = motor::math::vec2f_t( 110.0f, -90.0f );
-            b.size = motor::math::vec2f_t( 100.0f, 50.0f );
+            motor::tool::imgui::canvas_2d_t::text_info info{ .title = "Hello World",
+                .pos = vec2_t( -48.0f, -110.0f - 20.0f ),
+                .font_height = 20,
+                .color = palette::cornflower };
+            can.draw_text( info );
         }
-        return std::make_pair( a, b );
+
+        {
+            motor::tool::imgui::canvas_2d_t::text_info info{ .title = "Hello World",
+                .pos = vec2_t( 96.0f, -110.0f - 30.0f ),
+                .font_height = 30,
+                .color = palette::apricot };
+            can.draw_text( info );
+        }
     }
 
     virtual void_t on_shutdown( void_t ) noexcept {}

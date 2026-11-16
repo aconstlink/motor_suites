@@ -8,6 +8,7 @@
 #include <motor/controls/types/three_mouse.hpp>
 
 #include <motor/tool/imgui/canvas_2d.h>
+#include <motor/tool/imgui/graph_viewer.h>
 
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
@@ -62,7 +63,8 @@ class my_app : public motor::application::app
         }
     }
 
-    motor::tool::imgui::canvas_2d_t can;
+    motor::tool::imgui::canvas_2d_t _can;
+    motor::tool::imgui::graph_viewer_t _gv ;
 
     virtual bool_t on_tool(
         this_t::window_id_t const wid, motor::application::app::tool_data_ref_t ) noexcept
@@ -90,16 +92,55 @@ class my_app : public motor::application::app
         ImGui::SetNextWindowSize( ImVec2( 640.0f, 450.0f ), ImGuiCond_FirstUseEver );
         if( ImGui::Begin( "Canvas Test" ) )
         {
-            if( can.begin( "canvas", ImVec2() ) )
+            if( _can.begin( "canvas", ImVec2() ) )
             {
                 
-
-                can.end();
+                {
+                    auto const ni = this_t::make_test_node();
+                    _gv.draw_node( _can, ni );
+                }
+                #if 0
+                {
+                    auto const [ a, b ] = this_t::make_test_nodes();
+                    can.draw_link( { a.pos, a.size, b.pos, b.size } );
+                    can.draw_node( a );
+                    can.draw_node( b );
+                }
+                #endif
+                _can.end();
             }
         }
         ImGui::End();
 
         return true;
+    }
+
+    static motor::tool::imgui::graph_viewer_t::node_info make_test_node( void_t ) noexcept
+    {
+        motor::tool::imgui::graph_viewer_t::node_info ret;
+        ret.title = "Hello World";
+        ret.pos = motor::math::vec2f_t( -210.0f, -65.0f );
+        ret.size = motor::math::vec2f_t( 100.0f, 50.0f );
+        return ret;
+    }
+
+    static std::pair< motor::tool::imgui::graph_viewer_t::node_info,
+        motor::tool::imgui::graph_viewer_t::node_info >
+    make_test_nodes( void_t ) noexcept
+    {
+        motor::tool::imgui::graph_viewer_t::node_info a;
+        {
+            a.title = "Node A";
+            a.pos = motor::math::vec2f_t( -60.0f, -65.0f );
+            a.size = motor::math::vec2f_t( 100.0f, 50.0f );
+        }
+        motor::tool::imgui::graph_viewer_t::node_info b;
+        {
+            b.title = "Node B";
+            b.pos = motor::math::vec2f_t( 110.0f, -90.0f );
+            b.size = motor::math::vec2f_t( 100.0f, 50.0f );
+        }
+        return std::make_pair( a, b );
     }
 
     virtual void_t on_shutdown( void_t ) noexcept {}
