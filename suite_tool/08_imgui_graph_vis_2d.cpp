@@ -1,4 +1,5 @@
-
+// SPDX-FileCopyrightText: 2023-2026 Alex Link
+// SPDX-License-Identifier: MIT
 
 #include <motor/profiling/probe_guard.hpp>
 
@@ -24,6 +25,17 @@ class my_app : public motor::application::app
 {
     motor_this_typedefs( my_app );
 
+    motor::tool::imgui::canvas_2d_t _can;
+    motor::tool::imgui::graph_viewer_t _gv;
+
+  public:
+
+    my_app( void_t ) noexcept {}
+    my_app( this_rref_t rhv ) noexcept : _can( std::move( rhv._can ) ), _gv( std::move( rhv._gv ) )
+    {
+    }
+    virtual ~my_app( void_t ) noexcept {}
+
     virtual void_t on_init( void_t ) noexcept
     {
         MOTOR_PROBE( "application", "on_init" );
@@ -45,6 +57,8 @@ class my_app : public motor::application::app
                 wnd.send_message( motor::application::vsync_message_t( { true } ) );
             } );
         }
+
+        _nodes = this_t::add_test_nodes_with_link( _gv, _can );
     }
 
     virtual void_t on_event( window_id_t const wid,
@@ -63,9 +77,6 @@ class my_app : public motor::application::app
         }
     }
 
-    motor::tool::imgui::canvas_2d_t _can;
-    motor::tool::imgui::graph_viewer_t _gv ;
-
     virtual bool_t on_tool(
         this_t::window_id_t const wid, motor::application::app::tool_data_ref_t ) noexcept
     {
@@ -74,14 +85,7 @@ class my_app : public motor::application::app
         static float_t pos_x = 0.0f;
         static float_t pos_y = 0.0f;
 
-#if 1
-        {
-            if( ImGui::Begin( "test window" ) )
-            {
-            }
-            ImGui::End();
-        }
-
+#if 0 
         {
             bool_t show = true;
             ImGui::ShowDemoWindow( &show );
@@ -94,53 +98,131 @@ class my_app : public motor::application::app
         {
             if( _can.begin( "canvas", ImVec2() ) )
             {
-                
+                if( _gv.begin( &_can ) )
                 {
-                    auto const ni = this_t::make_test_node();
-                    _gv.draw_node( _can, ni );
+                    {
+                        this_t::draw_nodes_and_links( _gv, _nodes );
+                    }
+                    _gv.end();
                 }
-                #if 0
-                {
-                    auto const [ a, b ] = this_t::make_test_nodes();
-                    can.draw_link( { a.pos, a.size, b.pos, b.size } );
-                    can.draw_node( a );
-                    can.draw_node( b );
-                }
-                #endif
                 _can.end();
             }
         }
         ImGui::End();
-
         return true;
     }
 
-    static motor::tool::imgui::graph_viewer_t::node_info make_test_node( void_t ) noexcept
+#if 0
+    static void_t draw_test_node( motor::tool::imgui::graph_viewer_ref_t gv,
+        motor::tool::imgui::canvas_2d_ref_t can ) noexcept
     {
-        motor::tool::imgui::graph_viewer_t::node_info ret;
-        ret.title = "Hello World";
-        ret.pos = motor::math::vec2f_t( -210.0f, -65.0f );
-        ret.size = motor::math::vec2f_t( 100.0f, 50.0f );
-        return ret;
+        motor::tool::imgui::graph_viewer_t::node_info ni;
+        ni.title = "Hello World";
+        ni.pos = motor::math::vec2f_t( -210.0f, -65.0f );
+        ni.size = motor::math::vec2f_t( 100.0f, 100.0f );
+
+        gv.draw_node( ni );
+    }
+#endif
+
+    struct add_nodes_return
+    {
+        std::pair< size_t, size_t > nodes_ab;
+        std::pair< size_t, size_t > nodes_cd;
+    };
+    this_t::add_nodes_return _nodes;
+
+    static add_nodes_return add_test_nodes_with_link( motor::tool::imgui::graph_viewer_ref_t gv,
+        motor::tool::imgui::canvas_2d_ref_t can ) noexcept
+    {
+        // the node ids
+        std::pair< size_t, size_t > nodes_ab;
+        std::pair< size_t, size_t > nodes_cd;
+
+        // node a
+        {
+            motor::tool::imgui::graph_viewer_t::node_info ni;
+            ni.title = "Node A";
+            ni.pos = motor::math::vec2f_t( -210.0f, -265.0f );
+            ni.size = motor::math::vec2f_t( 100.0f, 100.0f );
+
+            nodes_ab.first = gv.add_node( ni );
+        }
+
+        // node b
+        {
+            motor::tool::imgui::graph_viewer_t::node_info ni;
+            ni.title = "Node B";
+            ni.pos = motor::math::vec2f_t( 10.0f, -305.0f );
+            ni.size = motor::math::vec2f_t( 100.0f, 100.0f );
+
+            nodes_ab.second = gv.add_node( ni );
+        }
+
+        // node c
+        {
+            motor::tool::imgui::graph_viewer_t::node_info ni;
+            ni.title = "Node C";
+            ni.pos = motor::math::vec2f_t( 150.0f, -155.0f );
+            ni.size = motor::math::vec2f_t( 100.0f, 100.0f );
+
+            nodes_cd.first = gv.add_node( ni );
+        }
+
+        // node c
+        {
+            motor::tool::imgui::graph_viewer_t::node_info ni;
+            ni.title = "Node D";
+            ni.pos = motor::math::vec2f_t( 140.0f, -405.0f );
+            ni.size = motor::math::vec2f_t( 100.0f, 100.0f );
+
+            nodes_cd.second = gv.add_node( ni );
+        }
+
+        return { nodes_ab, nodes_cd };
     }
 
-    static std::pair< motor::tool::imgui::graph_viewer_t::node_info,
-        motor::tool::imgui::graph_viewer_t::node_info >
-    make_test_nodes( void_t ) noexcept
+    void_t draw_nodes_and_links(
+        motor::tool::imgui::graph_viewer_ref_t gv, add_nodes_return const & n ) noexcept
     {
-        motor::tool::imgui::graph_viewer_t::node_info a;
+        // the link ab
         {
-            a.title = "Node A";
-            a.pos = motor::math::vec2f_t( -60.0f, -65.0f );
-            a.size = motor::math::vec2f_t( 100.0f, 50.0f );
+            motor::tool::imgui::graph_viewer_t::link_info li{
+                .node_id_from = n.nodes_ab.first, .node_id_to = n.nodes_ab.second };
+
+            gv.draw_link( li );
         }
-        motor::tool::imgui::graph_viewer_t::node_info b;
+
+        // link ac
         {
-            b.title = "Node B";
-            b.pos = motor::math::vec2f_t( 110.0f, -90.0f );
-            b.size = motor::math::vec2f_t( 100.0f, 50.0f );
+            motor::tool::imgui::graph_viewer_t::link_info li{
+                .node_id_from = n.nodes_ab.first, .node_id_to = n.nodes_cd.first };
+
+            gv.draw_link( li );
         }
-        return std::make_pair( a, b );
+
+        // link ad
+        {
+            motor::tool::imgui::graph_viewer_t::link_info li{
+                .node_id_from = n.nodes_ab.first, .node_id_to = n.nodes_cd.second };
+
+            gv.draw_link( li );
+        }
+
+        // link bc
+        {
+            motor::tool::imgui::graph_viewer_t::link_info li{
+                .node_id_from = n.nodes_ab.second, .node_id_to = n.nodes_cd.first };
+
+            gv.draw_link( li );
+        }
+
+        {
+            gv.draw_node( n.nodes_ab.first );
+            gv.draw_node( n.nodes_ab.second );
+            gv.draw_node( n.nodes_cd.first );
+            gv.draw_node( n.nodes_cd.second );
+        }
     }
 
     virtual void_t on_shutdown( void_t ) noexcept {}

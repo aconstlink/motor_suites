@@ -1,4 +1,5 @@
-
+// SPDX-FileCopyrightText: 2023-2026 Alex Link
+// SPDX-License-Identifier: MIT
 
 #include <motor/profiling/probe_guard.hpp>
 
@@ -115,8 +116,9 @@ class my_app : public motor::application::app
 
                 can.draw_polygon( this_t::make_test_polygon() );
 
-                this_t::draw_test_rects( can );
+                this_t::draw_test_filled_rects( can );
                 this_t::draw_test_text( can );
+                this_t::draw_test_rects( can );
 
                 can.end();
             }
@@ -157,7 +159,7 @@ class my_app : public motor::application::app
         return poly;
     }
 
-    static void_t draw_test_rects( motor::tool::imgui::canvas_2d_ref_t can ) noexcept
+    static void_t draw_test_filled_rects( motor::tool::imgui::canvas_2d_ref_t can ) noexcept
     {
         using vec2_t = motor::math::vec2f_t;
 
@@ -214,6 +216,38 @@ class my_app : public motor::application::app
                 .font_height = 30,
                 .color = palette::apricot };
             can.draw_text( info );
+        }
+    }
+
+    static void_t draw_test_rects( motor::tool::imgui::canvas_2d_ref_t can ) noexcept
+    {
+        using vec2_t = motor::math::vec2f_t;
+        {
+            motor::tool::imgui::canvas_2d_t::rect_info info{ .pos = vec2_t( -192.0f, -210.0f ),
+                .size = vec2_t( 96.0f, 48.0f ),
+                .color = palette::mint };
+
+            can.draw_rect( info );
+        }
+
+        {
+            motor::tool::imgui::canvas_2d_t::rect_info info{ .pos = vec2_t( -48.0f, -210.0f ),
+                .size = vec2_t( 96.0f, 48.0f ),
+                .color = palette::cornflower,
+                .thickness = 3.0f,
+                .radius = 6.0f };
+            can.draw_rect( info );
+        }
+
+        {
+            motor::tool::imgui::canvas_2d_t::rect_info info{
+                .pos = vec2_t( 96.0f, -210.0f ),
+                .size = vec2_t( 96.0f, 48.0f ),
+                .color = palette::apricot,
+                .thickness = 6.0f,
+                .radius = 6.0f,
+            };
+            can.draw_rect( info );
         }
     }
 
