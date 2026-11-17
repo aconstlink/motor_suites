@@ -30,6 +30,8 @@ class my_app : public motor::application::app
 
     motor::wire::inode_mtr_t _start;
 
+    bool_t _force_focus = true;
+
     virtual void_t on_init( void_t ) noexcept
     {
         MOTOR_PROBE( "application", "on_init" );
@@ -130,11 +132,16 @@ class my_app : public motor::application::app
         // #1 : nodes graph window
         if( ImGui::Begin( "node graph visualization" ) )
         {
-            auto const [min, max] = _gv.calculate_extend() ;
-            _can.focus_via_rect( min, max ) ;
 
             if( _can.begin( "my_canvas", { 0, 0 } ) )
             {
+                if( ImGui::IsKeyPressed( ImGuiKey_F1 ) || _force_focus )
+                {
+                    auto const [ min, max ] = _gv.calculate_extend();
+                    _can.focus_via_rect( min, max );
+                    _force_focus = false;
+                }
+
                 {
                     _gv.begin( &_can );
                     _gvw.visualize( _gv );

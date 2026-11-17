@@ -30,7 +30,10 @@
 #include <motor/tool/structs.h>
 #include <motor/tool/imgui/onset_meter.hpp>
 #include <motor/tool/imgui/imgui_property.h>
-#include <motor/tool/imgui/imnodes_wire.h>
+
+#include <motor/tool/imgui/canvas_2d.h>
+#include <motor/tool/imgui/graph_viewer.h>
+#include <motor/tool/imgui/graph_view_wire.h>
 
 #include <motor/wire/slot/output_slot.h>
 
@@ -152,7 +155,9 @@ private: // audio
 
     motor::wire::inode_mtr_t _end_node = nullptr;
 
-    motor::tool::imnodes_wire_t _imn_wire;
+    motor::tool::imgui::canvas_2d_t _can ;
+    motor::tool::imgui::graph_viewer_t _gv ;
+    motor::tool::imgui::graph_view_wire_t _gvw ;
 
   private: // shader variable slots
 
@@ -270,7 +275,7 @@ private: // audio
             _end_node->then( motor::move( t ) );
 
 
-            _imn_wire.build( _start_node );
+            _gvw.build( _gv, _start_node );
         }
 
         // reload cameras
@@ -1106,9 +1111,14 @@ private: // audio
         // #1 : nodes graph window
         if( ImGui::Begin( "node graph visualization" ) )
         {
-            _imn_wire.begin();
-            _imn_wire.visualize( 0 );
-            _imn_wire.end( true );
+            if( _can.begin( "canvas", {} ) )
+            {
+                _gv.begin( &_can ) ;
+                _gvw.visualize( _gv ) ;
+                _gv.end() ;
+                _can.end() ;
+            }
+            
         }
         ImGui::End();
 
