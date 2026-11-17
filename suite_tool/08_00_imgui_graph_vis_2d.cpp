@@ -217,12 +217,18 @@ class my_app : public motor::application::app
             gv.draw_link( li );
         }
 
+#if 1
+        {
+            gv.draw_all_nodes();
+        }
+#else
         {
             gv.draw_node( n.nodes_ab.first );
             gv.draw_node( n.nodes_ab.second );
             gv.draw_node( n.nodes_cd.first );
             gv.draw_node( n.nodes_cd.second );
         }
+#endif
     }
 
     virtual void_t on_shutdown( void_t ) noexcept {}
