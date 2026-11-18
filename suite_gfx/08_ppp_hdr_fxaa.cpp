@@ -351,7 +351,7 @@ class my_app : public motor::application::app
             this_t::release_cameras();
 
             motor::scene::node_t::traverser( _root ).apply( &_cc );
-            auto cams = _cc.get_cameras();
+            auto cams = _cc.borrow_cameras();
 
             if( cams.size() > 0 )
             {
@@ -683,7 +683,7 @@ class my_app : public motor::application::app
     {
         // SECTION: cameras
         {
-            auto cams = _cc.get_cameras();
+            auto cams = _cc.borrow_cameras();
 
             if( cams.size() > 0 )
             {

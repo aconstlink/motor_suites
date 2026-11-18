@@ -496,7 +496,7 @@ class my_app : public motor::application::app
             motor::scene::camera_collector_visitor_t cc;
             motor::scene::node_t::traverser( _root ).apply( &cc );
 
-            auto cams = cc.get_cameras();
+            auto cams = cc.borrow_cameras();
             if( cams.size() > 0 )
             {
                 motor::release( motor::move( _camera ) ) ;
@@ -730,7 +730,7 @@ class my_app : public motor::application::app
                     motor::scene::camera_collector_visitor_t cc;
                     motor::scene::node_t::traverser( _root ).apply( &cc );
 
-                    auto cams = cc.get_cameras();
+                    auto cams = cc.move_cameras();
 
                     if( cams.size() > 0 )
                     {

@@ -10,6 +10,7 @@
 #include <motor/scene/visitor/graphics/add_msl_to_set_visitor.hpp>
 #include <motor/scene/visitor/graphics/connect_msl_slot_visitor.hpp>
 #include <motor/scene/visitor/graphics/debug_graphics_visitor.hpp>
+#include <motor/scene/visitor/for_each_node_visitor.hpp>
 
 #include <motor/scene/node/logic_group.h>
 #include <motor/scene/component/trafo3d_component.h>
@@ -36,6 +37,8 @@
 #include <motor/tool/imgui/graph_view_wire.h>
 
 #include <motor/wire/slot/output_slot.h>
+#include <motor/wire/kit/inout_node.hpp>
+#include <motor/wire/kit/trigger_filter_node.hpp>
 
 #include <motor/log/global.h>
 #include <motor/memory/global.h>
@@ -84,7 +87,7 @@ class my_app : public motor::application::app
 
     motor::gfx::primitive_render_3d_mtr_t _prim_render = nullptr;
 
-private: // audio
+  private: // audio
 
     motor::audio::capture_object_t co;
     motor::vector< float_t > captured_samples;
@@ -151,13 +154,17 @@ private: // audio
     // if the async chain is done, this flag is tirggered.
     std::atomic< bool_t > _async_done = false;
 
+    motor::wire::inode_mtr_t _app_start_node = nullptr;
     motor::wire::inode_mtr_t _start_node = nullptr;
 
     motor::wire::inode_mtr_t _end_node = nullptr;
 
-    motor::tool::imgui::canvas_2d_t _can ;
-    motor::tool::imgui::graph_viewer_t _gv ;
-    motor::tool::imgui::graph_view_wire_t _gvw ;
+    motor::tool::imgui::canvas_2d_t _can;
+    motor::tool::imgui::graph_viewer_t _gv;
+    motor::tool::imgui::graph_view_wire_t _gvw;
+
+    motor::wire::trigger_filter_node_mtr_t _tfn;
+    size_t _f0 = size_t( -1 );
 
   private: // shader variable slots
 
@@ -182,9 +189,9 @@ private: // audio
     my_app( my_app const & ) = delete;
     my_app( my_app && ) {}
 
-    virtual ~my_app( void_t ) noexcept 
+    virtual ~my_app( void_t ) noexcept
     {
-        motor::release( motor::move( _intensity ) )  ;
+        motor::release( motor::move( _intensity ) );
         motor::release( motor::move( _shininess ) );
         motor::release( motor::move( _specular_strength ) );
         motor::release( motor::move( _light_intensity ) );
@@ -248,11 +255,14 @@ private: // audio
             _time = motor::shared( os_float_t( 0.0f ) );
             _scale_os = motor::shared( os_trafo_t() );
 
+            _app_start_node = motor::shared(
+                motor::wire::funk_node_t( "app start", []( motor::wire::funk_node_mtr_t ) {} ) );
+
             _start_node = motor::shared(
-                motor::wire::funk_node_t( "start", []( motor::wire::funk_node_mtr_t ) {} ) );
+                motor::wire::funk_node_t( "scene start", []( motor::wire::funk_node_mtr_t ) {} ) );
 
             _end_node = motor::shared(
-                motor::wire::funk_node_t( "end", []( motor::wire::funk_node_mtr_t ) {} ) );
+                motor::wire::funk_node_t( "scene end", []( motor::wire::funk_node_mtr_t ) {} ) );
             ;
         }
         {
@@ -263,20 +273,7 @@ private: // audio
         this_t::init_render_states();
         this_t::init_scene( prefix, motor::io::location_t( "03_wire_animation.scene.gltf" ) );
         this_t::init_msl_manager( prefix, loc_prefix );
-
-        // reconnect nodes
-        {
-            this_t::release_node_dump();
-
-            auto t = motor::shared( motor::wire::funk_node_t( "update sync",
-                [ = ]( motor::wire::funk_node_ptr_t ) { this->_async_done = true; } ) );
-
-            _node_dump.emplace_back( motor::share( t ) );
-            _end_node->then( motor::move( t ) );
-
-
-            _gvw.build( _gv, _start_node );
-        }
+        this_t::connect_nodes();
 
         // reload cameras
         {
@@ -301,6 +298,69 @@ private: // audio
             prim_render.init( "my_debug_render" );
             _prim_render = motor::shared( std::move( prim_render ) );
         }
+    }
+
+    //*******************************************************************************************
+    void_t connect_nodes( void_t ) noexcept
+    {
+        this_t::release_node_dump();
+
+        // end of frame sync
+        {
+            auto t = motor::shared( motor::wire::funk_node_t( "update sync",
+                [ = ]( motor::wire::funk_node_ptr_t ) { this->_async_done = true; } ) );
+
+            _node_dump.emplace_back( motor::share( t ) );
+            _end_node->then( motor::move( t ) );
+        }
+
+        _tfn = motor::shared( motor::wire::trigger_filter_node_t( "trigger filter" ) );
+
+        // would be linear with input signal
+        {
+            _f0 = _tfn->add_filter( []( motor::wire::trigger_filter_node_t::filter_data const & d )
+            { return d.sig_abs; }, {} );
+            _tfn->connect_signal_is( _f0, motor::share( _time ) );
+            _app_start_node->then( motor::share( _tfn ) );
+        }
+
+        {
+            motor::scene::for_each_node_visitor_t v(
+                [ & ]( motor::scene::for_each_node_visitor_t::for_each_data const & d )
+            {
+                if( d.name == "kicks.head" )
+                {
+                    if( auto * tcomp =
+                            d.node->borrow_component< motor::scene::trafo3d_component_t >() )
+                    {
+                        auto rotation_node =
+                            motor::wire::make_inout_node< float_t, motor::math::quat4f_t >(
+                                "rotate_kick_head", "time", "rotation", [ = ]( auto * self )
+                        {
+                            float_t const angle = self->input().get_value() * 0.5f;
+                            self->output().set_value( motor::math::quat4f_t(
+                                angle, motor::math::vec3f_t( 0.0f, 1.0f, 0.0f ) ) );
+                        } );
+
+                        auto composer = tcomp->create_composer();
+                        composer->ensure_and_borrow_rotation_is()->connect(
+                            rotation_node->outputs().get( "rotation" ) );
+
+                        _tfn->then( motor::move( rotation_node ) )
+                            ->then( motor::share( composer) )
+                            ->then( motor::share( _start_node ) );
+                    }
+                }
+                else if( d.name == "kicks.cube" )
+                {
+                }
+
+                return motor::scene::result::ok;
+            } );
+            motor::scene::node_t::traverser( _root ).apply( &v );
+        }
+
+        _gvw.build( _gv, _app_start_node );
     }
 
     //*******************************************************************************************
@@ -753,7 +813,7 @@ private: // audio
         {
             _async_done = false;
             motor::concurrent::global_t::schedule(
-                _start_node->get_task(), motor::concurrent::schedule_type::pool );
+                _app_start_node->get_task(), motor::concurrent::schedule_type::pool );
         }
 
 // sync of pool tasks need to be done by the user itself.
@@ -1016,34 +1076,6 @@ private: // audio
                     _render_normals = false;
                 }
             }
-
-            {
-                static char const * const labels[] = { "Shadow depth", "RSM positions (color 0)",
-                    "RSM normals (color 1)", "HDR color 0", "HDR color 1", "HDR color 2",
-                    "HDR color 3", "HDR depth" };
-                static char const * const textures[] = {
-                    "02_camera_fit_shadow_mapping.shadow_depth_framebuffer.depth",
-                    "02_camera_fit_shadow_mapping.shadow_depth_framebuffer.0",
-                    "02_camera_fit_shadow_mapping.shadow_depth_framebuffer.1",
-                    "gfx.postprocess.hdr.framebuffer.0.0", "gfx.postprocess.hdr.framebuffer.0.1",
-                    "gfx.postprocess.hdr.framebuffer.0.2", "gfx.postprocess.hdr.framebuffer.0.3",
-                    "gfx.postprocess.hdr.framebuffer.0.depth" };
-                static_assert( IM_ARRAYSIZE( labels ) == IM_ARRAYSIZE( textures ) );
-
-                ImGui::Separator();
-
-                ImGui::Checkbox( "Temp Render Target", &_show_temp_rt );
-
-                if( ImGui::ListBox(
-                        "Render target", &_temp_rt_index, labels, IM_ARRAYSIZE( labels ), 5 ) )
-                {
-                }
-
-                if( _show_temp_rt )
-                {
-                    _pp_pipe->set_map_to_screen_texture_temp( textures[ _temp_rt_index ] );
-                }
-            }
         }
         ImGui::End();
 
@@ -1113,12 +1145,11 @@ private: // audio
         {
             if( _can.begin( "canvas", {} ) )
             {
-                _gv.begin( &_can ) ;
-                _gvw.visualize( _gv ) ;
-                _gv.end() ;
-                _can.end() ;
+                _gv.begin( &_can );
+                _gvw.visualize( _gv );
+                _gv.end();
+                _can.end();
             }
-            
         }
         ImGui::End();
 
@@ -1169,8 +1200,6 @@ private: // audio
         this_t::release_node_dump();
 
         motor::release( motor::move( _own_mmgr ) );
-
-        
 
         motor::release( motor::move( _prim_render ) );
     }
